@@ -10,6 +10,7 @@ import { SAMPLES } from '../data/samples';
 import { parseEpub } from '../lib/epubParser';
 import { parsePdf } from '../lib/pdfParser';
 import { fetchWebpageHtml, parseWebpageHtml } from '../utils/webParser';
+import { parsePlainText, parseMarkdown } from '../lib/textParser';
 
 interface DocumentUploadProps {
   onDocumentAdded: (doc: DocumentBook) => void;
@@ -87,8 +88,14 @@ export default function DocumentUpload({
         importedBook = await parsePdf(file, (curr, total) => {
           setProgressMessage(`Extraction du texte : Page ${curr} sur ${total}`);
         });
+      } else if (extension === 'txt') {
+        setProgressMessage('Lecture du fichier texte...');
+        importedBook = await parsePlainText(file);
+      } else if (extension === 'md' || extension === 'markdown') {
+        setProgressMessage('Conversion du Markdown...');
+        importedBook = await parseMarkdown(file);
       } else {
-        throw new Error('Format de fichier non supporté. Veuillez importer un fichier PDF ou ePUB.');
+        throw new Error('Format non supporté. Formats acceptés : PDF, ePUB, TXT, Markdown (.md).');
       }
 
       // Finalize book object
@@ -266,7 +273,7 @@ export default function DocumentUpload({
                 id="file-pick"
                 ref={fileInputRef}
                 onChange={handleFileChange}
-                accept=".pdf,.epub"
+                accept=".pdf,.epub,.txt,.md,.markdown"
                 className="hidden"
                 disabled={loading}
               />
@@ -285,7 +292,7 @@ export default function DocumentUpload({
                 </div>
                 <div className="flex gap-4 pt-2 text-[10px] text-stone-500 font-mono">
                   <span className="flex items-center gap-1">
-                    <FileText className="w-3.5 h-3.5" /> PDF (Texte indexé)
+                    <FileText className="w-3.5 h-3.5" /> PDF · ePUB · TXT · MD
                   </span>
                   <span className="flex items-center gap-1">
                     <BookOpen className="w-3.5 h-3.5" /> ePUB (Chapitré)
@@ -505,7 +512,7 @@ export default function DocumentUpload({
             id="file-pick"
             ref={fileInputRef}
             onChange={handleFileChange}
-            accept=".pdf,.epub"
+            accept=".pdf,.epub,.txt,.md,.markdown"
             className="hidden"
             disabled={loading}
           />
@@ -746,6 +753,7 @@ export default function DocumentUpload({
                         const isPdfState = book.type === 'pdf';
                         const isEpubState = book.type === 'epub';
                         const isWebState = book.type === 'web';
+                        const isTxtState = book.type === 'txt' || book.type === 'md';
                         const isSampleState = book.type === 'sample' || !book.type;
 
                         // Beautiful color styling classes based on file type
@@ -769,6 +777,8 @@ export default function DocumentUpload({
                           blockCardStyles = 'bg-[#141210] border-amber-950/40 hover:border-amber-500/30 hover:bg-amber-950/5';
                           visualAccentBg = 'bg-amber-950/20 border-amber-900/30 text-amber-500';
                           typeBadgeStyles = 'text-amber-400 bg-amber-500/10 border-amber-500/15';
+                        } else if (isTxtState) {
+                          typeBadgeStyles = 'text-teal-400 bg-teal-500/10 border-teal-500/15';
                         }
 
                         return (
