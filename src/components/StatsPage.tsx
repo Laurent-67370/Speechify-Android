@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { motion } from 'motion/react';
-import { BarChart2, Target, BookOpen, Clock, Pencil, Check, X } from 'lucide-react';
+import { BarChart2, Target, BookOpen, Clock, Pencil, Check, X, TrendingUp, Award } from 'lucide-react';
 import { DocumentBook } from '../types';
 
 interface StatsPageProps {
@@ -22,20 +22,42 @@ function _todayStr(): string {
 }
 
 function getWeekData(): DayData[] {
-  const data: DayData[] = [];
   const DAY_LABELS = ['Di', 'Lu', 'Ma', 'Me', 'Je', 'Ve', 'Sa'];
-  for (let i = 6; i >= 0; i--) {
+  return Array.from({ length: 7 }, (_, i) => {
     const d = new Date();
-    d.setDate(d.getDate() - i);
+    d.setDate(d.getDate() - (6 - i));
     const key = `speechify_day_${d.toISOString().slice(0, 10)}`;
-    const val = parseFloat(localStorage.getItem(key) || '0');
-    data.push({ label: DAY_LABELS[d.getDay()], val, isToday: i === 0 });
-  }
-  return data;
+    return {
+      label: DAY_LABELS[d.getDay()],
+      val: parseFloat(localStorage.getItem(key) || '0'),
+      isToday: i === 6,
+    };
+  });
 }
 
-function getBookDurationMinutes(book: DocumentBook): number {
-  // Estimation rapide : total mots / 200 mots/min
+function getWeekTotal(data: DayData[]): number {
+  return parseFloat(data.reduce((s, d) => s + d.val, 0).toFixed(1));
+}
+
+function getStreak(data: DayData[]): number {
+  let streak = 0;
+  for (let i = data.length - 1; i >= 0; i--) {
+    if (data[i].val > 0) streak++;
+    else break;
+  }
+  return streak;
+}
+
+function getBookProgress(book: DocumentBook): number {
+  if (book.progressPercent !== undefined) return Math.round(book.progressPercent);
+  const totalParagraphs = book.chapters.reduce((s, c) => s + (c.paragraphs?.length || 0), 0);
+  if (!totalParagraphs) return 0;
+  const done = book.chapters.slice(0, book.currentChapterIndex)
+    .reduce((s, c) => s + (c.paragraphs?.length || 0), 0) + (book.currentParagraphIndex || 0);
+  return Math.min(100, Math.round((done / totalParagraphs) * 100));
+}
+
+function getBookDuration(book: DocumentBook): number {
   let totalWords = 0;
   book.chapters.forEach(c => {
     totalWords += c.wordCount || c.content?.split(/\s+/).filter(Boolean).length || 0;
@@ -44,19 +66,10 @@ function getBookDurationMinutes(book: DocumentBook): number {
   return Math.max(5, Math.ceil(totalWords / 200));
 }
 
-const TYPE_ICONS: Record<string, string> = {
-  pdf: '📄',
-  epub: '📚',
-  web: '🌐',
-  sample: '✨',
-};
+const TYPE_ICONS: Record<string, string> = { pdf: '📄', epub: '📚', web: '🌐', sample: '✨' };
 
 export default function StatsPage({
-  recentBooks,
-  listeningMinutesToday,
-  dailyGoalMinutes,
-  onUpdateDailyGoal,
-  theme,
+  recentBooks, listeningMinutesToday, dailyGoalMinutes, onUpdateDailyGoal, theme,
 }: StatsPageProps) {
   const [weekData, setWeekData] = useState<DayData[]>([]);
   const [barsVisible, setBarsVisible] = useState(false);
@@ -64,29 +77,15 @@ export default function StatsPage({
   const [tempGoal, setTempGoal] = useState(dailyGoalMinutes);
 
   const isDark = theme === 'dark';
-
   const goalPct = Math.min(100, Math.round((listeningMinutesToday / dailyGoalMinutes) * 100));
-  const totalLibMin = recentBooks.reduce((acc, b) => acc + getBookDurationMinutes(b), 0);
-
-  // Calcule la progression de chaque livre (% paragraphe courant / total)
-  const getBookProgress = useCallback((book: DocumentBook): number => {
-    if (book.progressPercent !== undefined) return Math.round(book.progressPercent);
-    const totalChapters = book.chapters.length;
-    if (!totalChapters) return 0;
-    const totalParagraphs = book.chapters.reduce((s, c) => s + (c.paragraphs?.length || 0), 0);
-    if (!totalParagraphs) return 0;
-    const done =
-      book.chapters
-        .slice(0, book.currentChapterIndex)
-        .reduce((s, c) => s + (c.paragraphs?.length || 0), 0) +
-      (book.currentParagraphIndex || 0);
-    return Math.min(100, Math.round((done / totalParagraphs) * 100));
-  }, []);
+  const weekTotal = getWeekTotal(weekData);
+  const streak = getStreak(weekData);
+  const totalLibMin = recentBooks.reduce((acc, b) => acc + getBookDuration(b), 0);
 
   useEffect(() => {
-    setWeekData(getWeekData());
-    // Légère temporisation pour l'animation d'entrée
-    const t = setTimeout(() => setBarsVisible(true), 120);
+    const data = getWeekData();
+    setWeekData(data);
+    const t = setTimeout(() => setBarsVisible(true), 150);
     return () => clearTimeout(t);
   }, [listeningMinutesToday]);
 
@@ -98,172 +97,164 @@ export default function StatsPage({
     setIsEditingGoal(false);
   };
 
+  const base = isDark
+    ? 'bg-[#0a0a09] text-stone-100'
+    : 'bg-[#F9F8F6] text-[#2D2926]';
+  const card = isDark
+    ? 'bg-[#131212] border-stone-900'
+    : 'bg-white border-stone-200/80 shadow-sm';
+
   return (
-    <div
-      className={`w-full min-h-full p-4 sm:p-6 pb-28 overflow-y-auto space-y-4 font-sans transition-all duration-300 ${
-        isDark ? 'bg-[#0a0a09] text-stone-100' : 'bg-[#F9F8F6] text-[#2D2926]'
-      }`}
-    >
-      {/* Header */}
-      <div className="max-w-xl mx-auto">
-        <div className="flex items-center gap-3 mb-1">
-          <div className={`p-2 rounded-xl ${isDark ? 'bg-stone-900' : 'bg-stone-100'}`}>
+    <div className={`w-full min-h-full overflow-y-auto pb-28 ${base}`}>
+      {/* ── Header ── */}
+      <div className={`sticky top-0 z-10 px-4 pt-5 pb-3 ${isDark ? 'bg-[#0a0a09]' : 'bg-[#F9F8F6]'}`}>
+        <div className="max-w-lg mx-auto flex items-center gap-3">
+          <div className={`p-2 rounded-xl ${isDark ? 'bg-[#646cff]/10' : 'bg-[#646cff]/10'}`}>
             <BarChart2 className="w-5 h-5 text-[#646cff]" />
           </div>
           <div>
-            <h2 className={`text-2xl font-black tracking-tight ${isDark ? 'text-white' : 'text-stone-900'}`}>
+            <h2 className={`text-xl font-black tracking-tight ${isDark ? 'text-white' : 'text-stone-900'}`}>
               Statistiques
             </h2>
-            <p className="text-xs text-stone-400 font-medium">Votre progression d'écoute</p>
+            <p className="text-[11px] text-stone-400 font-medium">Votre progression d'écoute</p>
           </div>
         </div>
       </div>
 
-      <div className="max-w-xl mx-auto space-y-4">
+      <div className="max-w-lg mx-auto px-4 space-y-3">
 
-        {/* ── Carte : Aujourd'hui ── */}
-        <div className={`rounded-[20px] border p-5 ${
-          isDark ? 'bg-[#131212] border-stone-900' : 'bg-white border-stone-200'
-        }`}>
-          <div className="flex items-center gap-1.5 mb-4">
-            <Clock className="w-3.5 h-3.5 text-stone-400" />
-            <span className="text-[11px] font-bold uppercase tracking-widest text-stone-400">⏱ Aujourd'hui</span>
-          </div>
-
-          <div className="flex items-end justify-between mb-3">
+        {/* ── Objectif du jour ── */}
+        <div className={`rounded-2xl border p-5 ${card}`}>
+          <div className="flex items-start justify-between mb-4">
             <div>
-              <p className="text-4xl font-black text-[#646cff] leading-none tracking-tight">
-                {listeningMinutesToday.toFixed(1)}
-                <span className="text-xl ml-1 font-bold text-stone-400">min</span>
-              </p>
-              <p className="text-xs text-stone-400 mt-1">sur {dailyGoalMinutes} min d'objectif</p>
+              <div className="flex items-center gap-1.5 mb-1">
+                <Clock className="w-3.5 h-3.5 text-[#646cff]" />
+                <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">Aujourd'hui</span>
+              </div>
+              <div className="flex items-baseline gap-1.5">
+                <span className="text-4xl font-black text-[#646cff] leading-none">
+                  {listeningMinutesToday.toFixed(1)}
+                </span>
+                <span className="text-sm font-bold text-stone-400">min</span>
+              </div>
+              <p className="text-[11px] text-stone-400 mt-1">objectif : {dailyGoalMinutes} min</p>
             </div>
-            <span className="text-2xl font-black text-[#646cff]">{goalPct}%</span>
+            {/* Cercle % */}
+            <div className="relative w-16 h-16 flex-shrink-0">
+              <svg className="w-16 h-16 -rotate-90" viewBox="0 0 64 64">
+                <circle cx="32" cy="32" r="26" fill="none" stroke={isDark ? '#1e1e1d' : '#f1f0ee'} strokeWidth="6" />
+                <motion.circle
+                  cx="32" cy="32" r="26" fill="none"
+                  stroke="#646cff" strokeWidth="6"
+                  strokeLinecap="round"
+                  strokeDasharray={`${2 * Math.PI * 26}`}
+                  initial={{ strokeDashoffset: 2 * Math.PI * 26 }}
+                  animate={{ strokeDashoffset: 2 * Math.PI * 26 * (1 - goalPct / 100) }}
+                  transition={{ duration: 0.8, ease: [0.16, 1, 0.3, 1] }}
+                />
+              </svg>
+              <div className="absolute inset-0 flex items-center justify-center">
+                <span className="text-xs font-black text-[#646cff]">{goalPct}%</span>
+              </div>
+            </div>
           </div>
 
-          {/* Barre de progression objectif */}
-          <div className={`h-2.5 rounded-full overflow-hidden ${isDark ? 'bg-stone-800' : 'bg-stone-100'}`}>
+          {/* Barre linéaire */}
+          <div className={`h-2 rounded-full overflow-hidden mb-3 ${isDark ? 'bg-stone-800' : 'bg-stone-100'}`}>
             <motion.div
               className="h-full rounded-full"
-              style={{ background: 'linear-gradient(90deg, #646cff, #a78bfa)' }}
+              style={{ background: 'linear-gradient(90deg,#646cff,#a78bfa)' }}
               initial={{ width: 0 }}
               animate={{ width: `${goalPct}%` }}
-              transition={{ duration: 0.6, ease: [0.16, 1, 0.3, 1] }}
+              transition={{ duration: 0.7, ease: [0.16, 1, 0.3, 1] }}
             />
           </div>
 
           {/* Modifier objectif */}
-          <div className="flex justify-end mt-3">
+          <div className="flex justify-end">
             {isEditingGoal ? (
               <div className="flex items-center gap-2">
                 <input
-                  type="number"
-                  value={tempGoal}
+                  type="number" value={tempGoal}
                   onChange={e => setTempGoal(parseInt(e.target.value) || 1)}
-                  min={1}
-                  max={480}
+                  min={1} max={480}
                   className={`w-16 text-center text-xs font-bold px-2 py-1.5 rounded-lg border focus:outline-none focus:border-[#646cff] ${
-                    isDark
-                      ? 'bg-stone-900 border-stone-700 text-white'
-                      : 'bg-stone-50 border-stone-300 text-stone-900'
+                    isDark ? 'bg-stone-900 border-stone-700 text-white' : 'bg-stone-50 border-stone-300 text-stone-900'
                   }`}
                 />
-                <button
-                  onClick={handleSaveGoal}
-                  className="p-1.5 bg-[#646cff] hover:bg-[#525aff] text-white rounded-lg cursor-pointer transition-colors"
-                >
+                <button onClick={handleSaveGoal} className="p-1.5 bg-[#646cff] text-white rounded-lg cursor-pointer">
                   <Check className="w-3.5 h-3.5" />
                 </button>
-                <button
-                  onClick={() => setIsEditingGoal(false)}
-                  className={`p-1.5 rounded-lg cursor-pointer transition-colors ${
-                    isDark ? 'text-stone-400 hover:text-white' : 'text-stone-400 hover:text-stone-700'
-                  }`}
-                >
+                <button onClick={() => setIsEditingGoal(false)} className="p-1.5 text-stone-400 cursor-pointer">
                   <X className="w-3.5 h-3.5" />
                 </button>
               </div>
             ) : (
               <button
                 onClick={() => { setTempGoal(dailyGoalMinutes); setIsEditingGoal(true); }}
-                className="flex items-center gap-1.5 text-[11px] font-bold text-[#646cff] hover:text-[#525aff] cursor-pointer transition-colors"
+                className="flex items-center gap-1 text-[11px] font-bold text-[#646cff] cursor-pointer"
               >
-                <Pencil className="w-3 h-3" />
-                <span>objectif : {dailyGoalMinutes} min</span>
+                <Pencil className="w-3 h-3" /> Modifier l'objectif
               </button>
             )}
           </div>
         </div>
 
-        {/* ── Grille : Totaux ── */}
-        <div className="grid grid-cols-2 gap-3">
-          {/* Documents */}
-          <div className={`rounded-[20px] border p-4 ${
-            isDark ? 'bg-[#131212] border-stone-900' : 'bg-white border-stone-200'
-          }`}>
-            <div className="flex items-center gap-1.5 mb-3">
-              <BookOpen className="w-3.5 h-3.5 text-stone-400" />
-              <span className="text-[10px] font-bold uppercase tracking-widest text-stone-400">📚 Documents</span>
-            </div>
-            <p className="text-3xl font-black text-[#646cff] leading-none tracking-tight">
-              {recentBooks.length}
-            </p>
-            <p className="text-[10px] text-stone-400 mt-1.5">dans la bibliothèque</p>
-          </div>
-
-          {/* Total écouté */}
-          <div className={`rounded-[20px] border p-4 ${
-            isDark ? 'bg-[#131212] border-stone-900' : 'bg-white border-stone-200'
-          }`}>
-            <div className="flex items-center gap-1.5 mb-3">
-              <Target className="w-3.5 h-3.5 text-stone-400" />
-              <span className="text-[10px] font-bold uppercase tracking-widest text-stone-400">🎧 Total</span>
-            </div>
-            <p className="text-3xl font-black text-[#646cff] leading-none tracking-tight">
-              {totalLibMin}
-            </p>
-            <p className="text-[10px] text-stone-400 mt-1.5">minutes estimées</p>
-          </div>
+        {/* ── KPIs ── */}
+        <div className="grid grid-cols-3 gap-2.5">
+          {[
+            { icon: <TrendingUp className="w-4 h-4" />, label: 'Cette semaine', value: `${weekTotal}`, unit: 'min' },
+            { icon: <Award className="w-4 h-4" />, label: 'Série active', value: `${streak}`, unit: streak > 1 ? 'jours' : 'jour' },
+            { icon: <BookOpen className="w-4 h-4" />, label: 'Bibliothèque', value: `${recentBooks.length}`, unit: 'livre' + (recentBooks.length > 1 ? 's' : '') },
+          ].map((kpi, i) => (
+            <motion.div
+              key={i}
+              initial={{ opacity: 0, y: 8 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ delay: i * 0.08 }}
+              className={`rounded-2xl border p-3.5 flex flex-col gap-1 ${card}`}
+            >
+              <div className="text-[#646cff]">{kpi.icon}</div>
+              <p className="text-2xl font-black text-[#646cff] leading-none">{kpi.value}</p>
+              <p className="text-[10px] text-stone-400 font-medium leading-tight">{kpi.unit}</p>
+              <p className="text-[9px] text-stone-500 font-medium">{kpi.label}</p>
+            </motion.div>
+          ))}
         </div>
 
         {/* ── Graphique semaine ── */}
-        <div className={`rounded-[20px] border p-5 ${
-          isDark ? 'bg-[#131212] border-stone-900' : 'bg-white border-stone-200'
-        }`}>
-          <div className="flex items-center gap-1.5 mb-4">
-            <span className="text-[11px] font-bold uppercase tracking-widest text-stone-400">📅 Cette semaine</span>
+        <div className={`rounded-2xl border p-5 ${card}`}>
+          <div className="flex items-center justify-between mb-4">
+            <div className="flex items-center gap-1.5">
+              <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">📅 7 derniers jours</span>
+            </div>
+            <span className={`text-[10px] font-bold px-2 py-0.5 rounded-full ${
+              isDark ? 'bg-[#646cff]/10 text-[#646cff]' : 'bg-[#646cff]/10 text-[#646cff]'
+            }`}>{weekTotal} min total</span>
           </div>
 
-          <div className="flex items-end gap-2 h-[90px]">
+          <div className="flex items-end gap-1.5" style={{ height: 80 }}>
             {weekData.map((day, i) => {
-              const heightPct = barsVisible
-                ? Math.max(4, Math.round((day.val / maxVal) * 72))
-                : 4;
+              const heightPx = barsVisible ? Math.max(4, Math.round((day.val / maxVal) * 64)) : 4;
               return (
                 <div key={i} className="flex-1 flex flex-col items-center gap-1">
-                  {/* Valeur au-dessus */}
-                  <span className="text-[9px] font-bold text-stone-400 min-h-[12px]">
-                    {day.val > 0 ? day.val.toFixed(1) : ''}
+                  <span className={`text-[8px] font-bold transition-all ${day.val > 0 ? 'opacity-100' : 'opacity-0'} ${
+                    day.isToday ? 'text-[#646cff]' : 'text-stone-400'
+                  }`}>
+                    {day.val > 0 ? day.val.toFixed(0) : ''}
                   </span>
-                  {/* Barre */}
                   <motion.div
-                    className={`w-full rounded-t-[4px] ${
+                    className={`w-full rounded-t-md ${
                       day.isToday
-                        ? 'bg-[#646cff] shadow-[0_0_12px_rgba(100,108,255,0.4)]'
-                        : isDark
-                          ? 'bg-stone-800'
-                          : 'bg-stone-200'
+                        ? 'bg-[#646cff] shadow-[0_0_10px_rgba(100,108,255,0.35)]'
+                        : isDark ? 'bg-stone-800' : 'bg-stone-200'
                     }`}
                     style={{ minHeight: 4 }}
                     initial={{ height: 4 }}
-                    animate={{ height: heightPct }}
-                    transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1], delay: i * 0.04 }}
-                    title={`${day.val.toFixed(1)} min`}
+                    animate={{ height: heightPx }}
+                    transition={{ duration: 0.5, ease: [0.16, 1, 0.3, 1], delay: i * 0.05 }}
                   />
-                  {/* Label jour */}
-                  <span className={`text-[10px] font-bold ${
-                    day.isToday ? 'text-[#646cff]' : 'text-stone-400'
-                  }`}>
+                  <span className={`text-[10px] font-bold ${day.isToday ? 'text-[#646cff]' : 'text-stone-400'}`}>
                     {day.label}
                   </span>
                 </div>
@@ -273,64 +264,66 @@ export default function StatsPage({
         </div>
 
         {/* ── Progression par document ── */}
-        <div className={`rounded-[20px] border p-5 ${
-          isDark ? 'bg-[#131212] border-stone-900' : 'bg-white border-stone-200'
-        }`}>
-          <div className="flex items-center gap-1.5 mb-4">
-            <span className="text-[11px] font-bold uppercase tracking-widest text-stone-400">
-              📄 Progression par document
-            </span>
-          </div>
+        {recentBooks.length > 0 && (
+          <div className={`rounded-2xl border p-5 ${card}`}>
+            <div className="flex items-center gap-1.5 mb-4">
+              <Target className="w-3.5 h-3.5 text-[#646cff]" />
+              <span className="text-[10px] font-black uppercase tracking-widest text-stone-400">Progression par livre</span>
+            </div>
 
-          {recentBooks.length === 0 ? (
-            <p className="text-[11px] text-stone-400 text-center py-4">Aucun document.</p>
-          ) : (
-            <div className="space-y-3">
-              {recentBooks.map(book => {
+            <div className="space-y-4">
+              {recentBooks.map((book, i) => {
                 const progress = getBookProgress(book);
-                const icon = TYPE_ICONS[book.type] || '📄';
-                const duration = getBookDurationMinutes(book);
+                const duration = getBookDuration(book);
                 return (
-                  <div
+                  <motion.div
                     key={book.id}
-                    className={`flex items-center gap-3 py-3 border-b last:border-b-0 ${
-                      isDark ? 'border-stone-900' : 'border-stone-100'
-                    }`}
+                    initial={{ opacity: 0, x: -8 }}
+                    animate={{ opacity: 1, x: 0 }}
+                    transition={{ delay: i * 0.06 }}
+                    className="flex items-center gap-3"
                   >
-                    {/* Icône type */}
                     <div className={`w-9 h-9 rounded-xl flex-shrink-0 flex items-center justify-center text-base ${
                       isDark ? 'bg-stone-900' : 'bg-stone-100'
                     }`}>
-                      {icon}
+                      {TYPE_ICONS[book.type] || '📄'}
                     </div>
-                    {/* Info */}
                     <div className="flex-1 min-w-0">
-                      <p className={`text-xs font-bold truncate ${isDark ? 'text-white' : 'text-stone-900'}`}>
-                        {book.title}
-                      </p>
-                      <p className="text-[10px] text-stone-400 mt-0.5">
-                        {book.type.toUpperCase()} · {duration} min
-                      </p>
-                      {/* Mini barre progression */}
-                      <div className={`h-1.5 rounded-full mt-1.5 overflow-hidden ${isDark ? 'bg-stone-800' : 'bg-stone-200'}`}>
+                      <div className="flex items-center justify-between mb-1">
+                        <p className={`text-xs font-bold truncate mr-2 ${isDark ? 'text-white' : 'text-stone-900'}`}>
+                          {book.title}
+                        </p>
+                        <span className="text-xs font-black text-[#646cff] flex-shrink-0">{progress}%</span>
+                      </div>
+                      <div className={`h-1.5 rounded-full overflow-hidden ${isDark ? 'bg-stone-800' : 'bg-stone-100'}`}>
                         <motion.div
-                          className="h-full bg-[#646cff] rounded-full"
+                          className="h-full bg-gradient-to-r from-[#646cff] to-[#a78bfa] rounded-full"
                           initial={{ width: 0 }}
                           animate={{ width: `${progress}%` }}
-                          transition={{ duration: 0.4, ease: 'easeOut' }}
+                          transition={{ duration: 0.5, ease: 'easeOut', delay: i * 0.06 }}
                         />
                       </div>
+                      <p className="text-[9px] text-stone-500 mt-0.5">
+                        {book.type.toUpperCase()} · {duration} min estimées
+                      </p>
                     </div>
-                    {/* % */}
-                    <span className="text-xs font-black text-[#646cff] flex-shrink-0 min-w-[32px] text-right">
-                      {progress}%
-                    </span>
-                  </div>
+                  </motion.div>
                 );
               })}
             </div>
-          )}
-        </div>
+          </div>
+        )}
+
+        {/* ── Message vide ── */}
+        {recentBooks.length === 0 && (
+          <div className={`rounded-2xl border p-8 text-center ${card}`}>
+            <p className="text-2xl mb-2">📚</p>
+            <p className={`text-sm font-bold ${isDark ? 'text-stone-400' : 'text-stone-500'}`}>
+              Aucun livre dans la bibliothèque
+            </p>
+            <p className="text-[11px] text-stone-500 mt-1">Importez un livre pour voir vos statistiques</p>
+          </div>
+        )}
 
       </div>
     </div>
