@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef } from 'react';
+import { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { BookOpen, HelpCircle, X, ChevronLeft, VolumeX, Library, Home, Headphones, Upload, Play, Pause, Globe } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { DocumentBook, UserSettings, Bookmark, Chapter } from './types';
@@ -7,16 +7,28 @@ import { resolveSpeechConfig } from './utils/customVoices';
 import { getAllBooksFromDB, saveAllBooksToDB } from './utils/indexedDB';
 import { useServerSync } from './utils/useServerSync';
 import { SAMPLES } from './data/samples';
+import { ErrorBoundary } from './components/ErrorBoundary';
 import DocumentUpload from './components/DocumentUpload';
 import Sidebar from './components/Sidebar';
 import TextViewer from './components/TextViewer';
 import ReaderControls from './components/ReaderControls';
 import ReaderSettings from './components/ReaderSettings';
 import HomeDashboard from './components/HomeDashboard';
-import GutenbergExplorer from './components/GutenbergExplorer';
-import InteractiveHelpGuide from './components/InteractiveHelpGuide';
-import StatsPage from './components/StatsPage';
 import { useGoogleTTS } from './utils/useGoogleTTS';
+
+// ── Code splitting : composants chargés à la demande ────────────────────────
+const GutenbergExplorer   = lazy(() => import('./components/GutenbergExplorer'));
+const InteractiveHelpGuide = lazy(() => import('./components/InteractiveHelpGuide'));
+const StatsPage           = lazy(() => import('./components/StatsPage'));
+
+// ── Loader Suspense ─────────────────────────────────────────────────────────
+function SuspenseLoader() {
+  return (
+    <div className="flex items-center justify-center h-full min-h-[200px]">
+      <div className="w-8 h-8 border-3 border-stone-700 border-t-[#646cff] rounded-full animate-spin" />
+    </div>
+  );
+}
 
 
 const DEFAULT_SETTINGS: UserSettings = {
@@ -755,6 +767,7 @@ export default function App() {
   };
 
   return (
+    <ErrorBoundary>
     <div className={`min-h-screen flex flex-col transition-all duration-300 select-none pb-12 ${
       settings.theme === 'dark' ? 'bg-[#0a0a09] text-stone-100' : 'bg-[#F9F8F6] text-[#2D2926]'
     }`}>
@@ -949,12 +962,16 @@ export default function App() {
                       exit={{ opacity: 0, y: -5 }}
                       transition={{ duration: 0.15 }}
                     >
-                      <GutenbergExplorer
-                        onDocumentAdded={handleDocumentAdded}
-                        recentBooks={recentBooks}
-                        onSelectSample={handleSelectBook}
-                        onNavigateToTab={setCurrentTab}
-                      />
+                      <ErrorBoundary>
+                        <Suspense fallback={<SuspenseLoader />}>
+                          <GutenbergExplorer
+                            onDocumentAdded={handleDocumentAdded}
+                            recentBooks={recentBooks}
+                            onSelectSample={handleSelectBook}
+                            onNavigateToTab={setCurrentTab}
+                          />
+                        </Suspense>
+                      </ErrorBoundary>
                     </motion.div>
                   ) : (
                     <motion.div
@@ -1018,13 +1035,17 @@ export default function App() {
               exit={{ opacity: 0 }}
               className="w-full h-full overflow-hidden"
             >
-              <StatsPage
-                recentBooks={recentBooks}
-                listeningMinutesToday={listeningMinutesToday}
-                dailyGoalMinutes={dailyGoalMinutes}
-                onUpdateDailyGoal={handleUpdateDailyGoal}
-                theme={settings.theme}
-              />
+              <ErrorBoundary>
+                <Suspense fallback={<SuspenseLoader />}>
+                  <StatsPage
+                    recentBooks={recentBooks}
+                    listeningMinutesToday={listeningMinutesToday}
+                    dailyGoalMinutes={dailyGoalMinutes}
+                    onUpdateDailyGoal={handleUpdateDailyGoal}
+                    theme={settings.theme}
+                  />
+                </Suspense>
+              </ErrorBoundary>
             </motion.div>
           )}
 
@@ -1366,12 +1387,17 @@ export default function App() {
       {/* 5. Overlay Welcome help guide */}
       <AnimatePresence>
         {showWelcomeHelp && (
-          <InteractiveHelpGuide 
-            onClose={() => setShowWelcomeHelp(false)} 
-            documentLanguage={activeBook?.language || 'fr'} 
-          />
+          <ErrorBoundary>
+            <Suspense fallback={<SuspenseLoader />}>
+              <InteractiveHelpGuide
+                onClose={() => setShowWelcomeHelp(false)}
+                documentLanguage={activeBook?.language || 'fr'}
+              />
+            </Suspense>
+          </ErrorBoundary>
         )}
       </AnimatePresence>
     </div>
+    </ErrorBoundary>
   );
 }
