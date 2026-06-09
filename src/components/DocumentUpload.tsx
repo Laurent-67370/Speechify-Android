@@ -1,5 +1,9 @@
 import { useState, useRef, DragEvent, ChangeEvent, useEffect, FormEvent } from 'react';
-import { Upload, BookOpen, AlertCircle, Loader2, Sparkles, FileText, Bookmark as BookmarkIcon, Trash2, Globe, Link } from 'lucide-react';
+import { 
+  Upload, BookOpen, AlertCircle, Loader2, Sparkles, FileText, 
+  Bookmark as BookmarkIcon, Trash2, Globe, Link, Search, Filter, 
+  ArrowUpDown, CheckCircle2, Clock 
+} from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { DocumentBook, Bookmark } from '../types';
 import { SAMPLES } from '../data/samples';
@@ -46,6 +50,12 @@ export default function DocumentUpload({
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [importMode, setImportMode] = useState<'file' | 'url'>('file');
   const [webUrl, setWebUrl] = useState('');
+  
+  // Filter and Sorting states for recentBooks in Bibliothèque
+  const [searchQuery, setSearchQuery] = useState('');
+  const [typeFilter, setTypeFilter] = useState<'all' | 'pdf' | 'epub' | 'web' | 'sample'>('all');
+  const [progressFilter, setProgressFilter] = useState<'all' | 'notStarted' | 'inProgress' | 'completed'>('all');
+  const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'title' | 'progress'>('newest');
   
   // Clean default logic for the active sub-tab inside library
   const [activeTab, setActiveTab] = useState<'library' | 'samples' | 'bookmarks'>(() => {
@@ -408,6 +418,47 @@ export default function DocumentUpload({
   }
 
   // Helper styles for tab switching
+  // Filter and sort the recentBooks array based on active library settings
+  const filteredAndSortedBooks = [...recentBooks]
+    .filter((book) => {
+      // 1. Search filter
+      const matchesSearch = 
+        book.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        book.author.toLowerCase().includes(searchQuery.toLowerCase());
+      
+      // 2. Type filter
+      const matchesType = typeFilter === 'all' || book.type === typeFilter;
+      
+      // 3. Progress filter
+      const p = book.progressPercent || 0;
+      let matchesProgress = true;
+      if (progressFilter === 'notStarted') {
+        matchesProgress = p === 0;
+      } else if (progressFilter === 'inProgress') {
+        matchesProgress = p > 0 && p < 99;
+      } else if (progressFilter === 'completed') {
+        matchesProgress = p >= 99;
+      }
+      
+      return matchesSearch && matchesType && matchesProgress;
+    })
+    .sort((a, b) => {
+      // 4. Sort handling
+      if (sortBy === 'newest') {
+        return (b.addedAt || 0) - (a.addedAt || 0);
+      }
+      if (sortBy === 'oldest') {
+        return (a.addedAt || 0) - (b.addedAt || 0);
+      }
+      if (sortBy === 'title') {
+        return a.title.localeCompare(b.title);
+      }
+      if (sortBy === 'progress') {
+        return (b.progressPercent || 0) - (a.progressPercent || 0);
+      }
+      return 0;
+    });
+
   const isLibraryActive = activeTab === 'library';
   const isBookmarksActive = activeTab === 'bookmarks';
 
@@ -555,95 +606,331 @@ export default function DocumentUpload({
               transition={{ duration: 0.15 }}
             >
               {recentBooks.length > 0 ? (
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  {recentBooks.map((book) => (
-                    <motion.div
-                      key={book.id}
-                      whileHover={{ y: -2, transition: { duration: 0.1 } }}
-                      onClick={() => onSelectSample(book)}
-                      className="flex items-start p-4 bg-[#111110] border border-stone-900 rounded-2xl cursor-pointer hover:border-[#646cff]/40 hover:bg-stone-900/20 transition-all text-left relative group"
-                    >
-                      <div className="p-3 bg-stone-950 border border-stone-850 rounded-xl mr-3 mt-0.5 text-[#646cff] flex-shrink-0">
-                        <FileText className="w-5 h-5" />
-                      </div>
-                      
-                      <div className="flex-grow min-w-0 pr-6">
-                        <h3 className="font-extrabold text-white text-sm truncate font-sans group-hover:text-[#646cff] transition-colors">
-                          {book.title}
-                        </h3>
-                        <p className="text-[11px] text-stone-400 truncate mt-0.5">
-                          {book.author} — <span className="uppercase font-mono text-[9px] font-bold text-[#646cff] bg-[#646cff]/10 px-1 py-0.5 rounded border border-[#646cff]/15 ml-1">{book.type}</span>
-                        </p>
-                        
-                        {book.currentChapterIndex !== undefined && (
-                          <div className="mt-1 flex items-center gap-1.5 text-[10px] font-mono font-bold text-[#767fff]">
-                            <span>Reprendre :</span>
-                            <span className="truncate max-w-[180px] sm:max-w-[240px]">
-                              {book.chapters && book.chapters[book.currentChapterIndex]
-                                ? `${book.chapters[book.currentChapterIndex].title}`
-                                : `Section ${book.currentChapterIndex + 1}`}
-                            </span>
-                          </div>
+                <div className="space-y-6">
+                  {/* Rich Search & Filter Panel */}
+                  <div className="p-4 sm:p-5 bg-[#111110] border border-stone-900 rounded-[22px] space-y-4">
+                    <div className="flex flex-col md:flex-row gap-3">
+                      {/* Search Input */}
+                      <div className="flex-grow relative">
+                        <Search className="w-4 h-4 text-stone-500 absolute left-3.5 top-3.5" />
+                        <input
+                          type="text"
+                          value={searchQuery}
+                          onChange={(e) => setSearchQuery(e.target.value)}
+                          placeholder="Rechercher par titre, auteur..."
+                          className="w-full bg-stone-950 border border-stone-900 focus:border-[#646cff]/60 px-4 py-3 pl-10 pr-10 rounded-xl text-xs text-white placeholder-stone-500 focus:outline-none transition-all"
+                        />
+                        {searchQuery && (
+                          <button
+                            type="button"
+                            onClick={() => setSearchQuery('')}
+                            className="absolute right-3.5 top-3 text-[10px] text-stone-500 hover:text-white font-mono uppercase bg-stone-900/50 px-1.5 py-0.5 rounded cursor-pointer"
+                          >
+                            Vider
+                          </button>
                         )}
-                        
-                        {/* Progress Tracker */}
-                        <div className="mt-3 flex items-center space-x-2">
-                          <div className="flex-grow bg-stone-900 rounded-full h-1.5 overflow-hidden">
-                            <div
-                              className="bg-[#646cff] h-1.5 rounded-full transition-all duration-300"
-                              style={{ width: `${book.progressPercent || 0}%` }}
-                            ></div>
-                          </div>
-                          <span className="text-[10px] font-bold text-stone-400 min-w-[28px] text-right font-mono">
-                            {Math.round(book.progressPercent || 0)}%
-                          </span>
+                      </div>
+
+                      {/* Sorting Combo */}
+                      <div className="flex items-center gap-2 bg-stone-950 border border-stone-900 rounded-xl px-3 py-2.5 min-w-[160px] md:max-w-[200px]">
+                        <ArrowUpDown className="w-3.5 h-3.5 text-stone-500 flex-shrink-0" />
+                        <select
+                          value={sortBy}
+                          onChange={(e) => setSortBy(e.target.value as any)}
+                          className="bg-transparent border-none text-xs text-stone-300 focus:outline-none w-full cursor-pointer font-bold font-sans"
+                        >
+                          <option value="newest" className="bg-[#111] text-white">Plus récent</option>
+                          <option value="oldest" className="bg-[#111] text-white">Plus ancien</option>
+                          <option value="title" className="bg-[#111] text-white">Titre (A-Z)</option>
+                          <option value="progress" className="bg-[#111] text-white">Progression</option>
+                        </select>
+                      </div>
+                    </div>
+
+                    {/* Filter categories segment */}
+                    <div className="flex flex-wrap items-center justify-between gap-y-3 gap-x-4 pt-3 border-t border-stone-900">
+                      {/* Left: Document type filter */}
+                      <div className="flex items-center space-x-2">
+                        <span className="text-[10px] uppercase font-mono text-stone-500 font-extrabold flex items-center gap-1">
+                          <Filter className="w-3 h-3" />
+                          Format :
+                        </span>
+                        <div className="flex flex-wrap gap-1">
+                          {(['all', 'pdf', 'epub', 'web', 'sample'] as const).map((type) => {
+                            const labels: Record<string, string> = {
+                              all: 'Tous',
+                              pdf: 'PDF',
+                              epub: 'ePUB',
+                              web: 'Sites Web',
+                              sample: 'Classiques'
+                            };
+                            return (
+                              <button
+                                key={type}
+                                type="button"
+                                onClick={() => setTypeFilter(type)}
+                                className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold transition-all cursor-pointer ${
+                                  typeFilter === type
+                                    ? 'bg-[#646cff] text-white'
+                                    : 'bg-stone-950 text-stone-400 hover:text-white hover:bg-stone-900 border border-stone-900'
+                                }`}
+                              >
+                                {labels[type]}
+                              </button>
+                            );
+                          })}
                         </div>
                       </div>
 
-                      {/* Delete actions */}
-                      {confirmDeleteId === book.id ? (
-                        <div className="absolute top-2 right-2 flex items-center space-x-2.5 z-10 bg-stone-950 border border-stone-850 p-1.5 rounded-xl text-[10px]">
-                          <span className="font-bold text-red-400">Effacer ?</span>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              onDeleteBook(book.id);
-                              setConfirmDeleteId(null);
-                            }}
-                            className="px-2 py-1 bg-red-650 hover:bg-red-700 text-white rounded-md font-bold transition-all cursor-pointer"
-                          >
-                            Oui
-                          </button>
-                          <button
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setConfirmDeleteId(null);
-                            }}
-                            className="px-2 py-1 bg-stone-800 text-stone-300 rounded-md font-medium hover:bg-stone-700 transition-all cursor-pointer"
-                          >
-                            Non
-                          </button>
+                      {/* Right: Progress filter */}
+                      <div className="flex items-center space-x-2">
+                        <span className="text-[10px] uppercase font-mono text-stone-500 font-extrabold flex items-center gap-1">
+                          <Clock className="w-3 h-3" />
+                          État :
+                        </span>
+                        <div className="flex gap-1">
+                          {(['all', 'notStarted', 'inProgress', 'completed'] as const).map((prog) => {
+                            const labels: Record<string, string> = {
+                              all: 'Tous',
+                              notStarted: 'Non commencés',
+                              inProgress: 'En cours',
+                              completed: 'Terminés'
+                            };
+                            return (
+                              <button
+                                key={prog}
+                                type="button"
+                                onClick={() => setProgressFilter(prog)}
+                                className={`px-2.5 py-1 rounded-lg text-[10px] font-extrabold transition-all cursor-pointer ${
+                                  progressFilter === prog
+                                    ? 'bg-[#646cff] text-white'
+                                    : 'bg-stone-950 text-stone-400 hover:text-white hover:bg-stone-900 border border-stone-900'
+                                }`}
+                              >
+                                {labels[prog]}
+                              </button>
+                            );
+                          })}
                         </div>
-                      ) : (
+                      </div>
+                    </div>
+
+                    {/* Active Filters Summary Banner */}
+                    {(searchQuery || typeFilter !== 'all' || progressFilter !== 'all') && (
+                      <div className="flex items-center justify-between bg-stone-950/40 p-2 px-3 border border-stone-900/40 rounded-xl text-[10px] text-stone-400 font-medium">
+                        <div className="flex items-center space-x-1">
+                          <span>Filtres actifs —</span>
+                          <strong className="text-white">{filteredAndSortedBooks.length}</strong>
+                          <span>document{filteredAndSortedBooks.length > 1 ? 's' : ''} trouvé{filteredAndSortedBooks.length > 1 ? 's' : ''} sur</span>
+                          <strong className="text-stone-300">{recentBooks.length}</strong>
+                        </div>
                         <button
-                          onClick={(e) => {
-                            e.stopPropagation();
-                            setConfirmDeleteId(book.id);
+                          type="button"
+                          onClick={() => {
+                            setSearchQuery('');
+                            setTypeFilter('all');
+                            setProgressFilter('all');
                           }}
-                          className="absolute top-3 right-3 p-1.5 rounded-lg text-stone-500 hover:text-red-400 hover:bg-stone-950 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100 z-10 cursor-pointer"
-                          title="Supprimer ce document de ma bibliothèque"
+                          className="text-[#767fff] hover:text-[#646cff] font-bold font-mono uppercase cursor-pointer text-[9px] tracking-wide"
                         >
-                          <Trash2 className="w-3.5 h-3.5" />
+                          Réinitialiser tous les filtres
                         </button>
-                      )}
-                    </motion.div>
-                  ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Main Grid for Filtered Books */}
+                  {filteredAndSortedBooks.length > 0 ? (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                      {filteredAndSortedBooks.map((book) => {
+                        const isPdfState = book.type === 'pdf';
+                        const isEpubState = book.type === 'epub';
+                        const isWebState = book.type === 'web';
+                        const isSampleState = book.type === 'sample' || !book.type;
+
+                        // Beautiful color styling classes based on file type
+                        let blockCardStyles = 'bg-[#111110] border-stone-900 hover:border-[#646cff]/40 hover:bg-stone-900/10';
+                        let visualAccentBg = 'bg-stone-950 border-stone-850 text-[#646cff]';
+                        let typeBadgeStyles = 'text-[#767fff] bg-[#646cff]/10 border-[#646cff]/15';
+
+                        if (isPdfState) {
+                          blockCardStyles = 'bg-[#131010] border-rose-950/40 hover:border-rose-500/30 hover:bg-rose-950/5';
+                          visualAccentBg = 'bg-rose-950/20 border-rose-900/30 text-rose-400';
+                          typeBadgeStyles = 'text-rose-400 bg-rose-500/10 border-rose-500/15';
+                        } else if (isEpubState) {
+                          blockCardStyles = 'bg-[#101215] border-sky-950/40 hover:border-sky-500/30 hover:bg-sky-950/5';
+                          visualAccentBg = 'bg-sky-950/20 border-sky-900/30 text-sky-450';
+                          typeBadgeStyles = 'text-sky-400 bg-sky-500/10 border-sky-500/15';
+                        } else if (isWebState) {
+                          blockCardStyles = 'bg-[#101412] border-emerald-950/40 hover:border-emerald-500/30 hover:bg-emerald-950/5';
+                          visualAccentBg = 'bg-emerald-950/20 border-emerald-900/30 text-emerald-400';
+                          typeBadgeStyles = 'text-emerald-400 bg-emerald-500/10 border-emerald-500/15';
+                        } else if (isSampleState) {
+                          blockCardStyles = 'bg-[#141210] border-amber-950/40 hover:border-amber-500/30 hover:bg-amber-950/5';
+                          visualAccentBg = 'bg-amber-950/20 border-amber-900/30 text-amber-500';
+                          typeBadgeStyles = 'text-amber-400 bg-amber-500/10 border-amber-500/15';
+                        }
+
+                        return (
+                          <motion.div
+                            key={book.id}
+                            whileHover={{ y: -3, scale: 1.005, transition: { duration: 0.12 } }}
+                            onClick={() => onSelectSample(book)}
+                            className={`flex items-start p-4 sm:p-5 border rounded-2xl cursor-pointer transition-all text-left relative group font-sans ${blockCardStyles}`}
+                          >
+                            <div className={`p-3.5 border rounded-xl mr-3.5 mt-0.5 flex-shrink-0 transition-transform group-hover:scale-105 duration-300 ${visualAccentBg}`}>
+                              {isPdfState ? (
+                                <span className="text-xl select-none font-bold">📄</span>
+                              ) : isEpubState ? (
+                                <span className="text-xl select-none font-bold">📖</span>
+                              ) : isWebState ? (
+                                <span className="text-xl select-none font-bold">🌐</span>
+                              ) : (
+                                <span className="text-xl select-none font-bold">✨</span>
+                              )}
+                            </div>
+                            
+                            <div className="flex-grow min-w-0 pr-6 space-y-2">
+                              <div>
+                                <h3 className="font-extrabold text-white text-sm sm:text-base leading-snug truncate group-hover:text-[#646cff] transition-colors tracking-tight">
+                                  {book.title}
+                                </h3>
+                                <p className="text-[11px] sm:text-xs text-stone-400 truncate font-semibold mt-0.5">
+                                  {book.author}
+                                </p>
+                              </div>
+
+                              <div className="flex flex-wrap items-center gap-1.5 mt-1">
+                                <span className={`uppercase font-mono text-[8px] font-bold px-2 py-0.5 rounded border ${typeBadgeStyles}`}>
+                                  {book.type === 'web' ? 'SITEPAGE' : book.type || 'CLASSIQUE'}
+                                </span>
+                                {book.fileSize && (
+                                  <span className="text-[9px] font-mono text-stone-500 dark:text-stone-400 bg-[#111] dark:bg-stone-950/80 px-1.5 py-0.5 rounded border border-stone-900">
+                                    {book.fileSize}
+                                  </span>
+                                )}
+                                <span className="text-[9px] font-mono text-stone-500 dark:text-stone-400 bg-[#111] dark:bg-stone-950/80 px-1.5 py-0.5 rounded border border-stone-900">
+                                  {book.chapters?.length || 1} {book.chapters?.length > 1 ? 'chapitres' : 'chapitre'}
+                                </span>
+                              </div>
+                              
+                              {book.currentChapterIndex !== undefined && (
+                                <div className="p-2 py-1.5 bg-[#111110] dark:bg-stone-950/40 rounded-xl border border-stone-900 text-[10px] text-stone-400 leading-normal flex items-center justify-between gap-1.5 font-sans">
+                                  <span className="truncate max-w-[140px] sm:max-w-[200px] text-stone-300 font-bold block">
+                                    🔖 {book.chapters && book.chapters[book.currentChapterIndex]
+                                      ? book.chapters[book.currentChapterIndex].title
+                                      : `Section ${book.currentChapterIndex + 1}`}
+                                  </span>
+                                  <span className="text-[9px] text-[#767fff] font-bold font-mono">REPRENDRE &rarr;</span>
+                                </div>
+                              )}
+                              
+                              {/* Progress Tracker */}
+                              <div className="space-y-1">
+                                <div className="flex items-center justify-between text-[10px] font-semibold text-stone-400 font-sans">
+                                  <div className="flex items-center gap-1">
+                                    <CheckCircle2 className={`w-3.5 h-3.5 ${book.progressPercent >= 99 ? 'text-emerald-500' : 'text-stone-600'}`} />
+                                    <span>
+                                      {book.progressPercent >= 99 
+                                        ? 'Terminé' 
+                                        : book.progressPercent > 0 
+                                          ? 'En cours de lecture' 
+                                          : 'Non commencé'
+                                      }
+                                    </span>
+                                  </div>
+                                  <span className="font-mono text-stone-350">{Math.round(book.progressPercent || 0)}%</span>
+                                </div>
+                                <div className="bg-stone-950 rounded-full h-1.5 overflow-hidden border border-stone-900">
+                                  <motion.div
+                                    initial={{ width: 0 }}
+                                    animate={{ width: `${book.progressPercent || 0}%` }}
+                                    transition={{ duration: 0.5, ease: 'easeOut' }}
+                                    className={`h-1.5 rounded-full ${
+                                      book.progressPercent >= 99 
+                                        ? 'bg-gradient-to-r from-emerald-500 to-teal-400' 
+                                        : 'bg-gradient-to-r from-[#646cff] to-[#7b83f8]'
+                                    }`}
+                                  />
+                                </div>
+                              </div>
+                            </div>
+
+                            {/* Delete actions */}
+                            {confirmDeleteId === book.id ? (
+                              <div 
+                                onClick={(e) => e.stopPropagation()}
+                                className="absolute top-2 right-2 flex items-center space-x-2 z-20 bg-stone-950 border border-red-500/30 p-1.5 rounded-xl text-[10px]"
+                              >
+                                <span className="font-extrabold text-red-400 uppercase tracking-tight text-[9px] px-1">Effacer ?</span>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    onDeleteBook(book.id);
+                                    setConfirmDeleteId(null);
+                                  }}
+                                  className="px-2 py-1 bg-red-650 hover:bg-red-750 text-white rounded-lg font-bold transition-all cursor-pointer"
+                                >
+                                  Oui
+                                </button>
+                                <button
+                                  type="button"
+                                  onClick={(e) => {
+                                    e.stopPropagation();
+                                    setConfirmDeleteId(null);
+                                  }}
+                                  className="px-2 py-1 bg-stone-800 hover:bg-stone-700 text-stone-300 rounded-lg font-medium transition-all cursor-pointer"
+                                >
+                                  Non
+                                </button>
+                              </div>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={(e) => {
+                                  e.stopPropagation();
+                                  setConfirmDeleteId(book.id);
+                                }}
+                                className="absolute top-3 right-3 p-1.5 rounded-lg text-stone-500 hover:text-red-400 hover:bg-stone-950 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100 z-10 cursor-pointer"
+                                title="Supprimer ce document de ma bibliothèque"
+                              >
+                                <Trash2 className="w-3.5 h-3.5" />
+                              </button>
+                            )}
+                          </motion.div>
+                        );
+                      })}
+                    </div>
+                  ) : (
+                    /* Search filter returned 0 results */
+                    <div className="p-10 border border-stone-900 rounded-2xl bg-[#111110]/50 text-center flex flex-col items-center justify-center space-y-3">
+                      <Search className="w-8 h-8 text-stone-600" />
+                      <div>
+                        <h4 className="font-black text-sm text-white font-sans">Aucun résultat trouvé</h4>
+                        <p className="text-xs text-stone-400 mt-1 max-w-sm leading-relaxed font-sans">
+                          Aucun de vos livres ou articles importés ne correspond à la recherche "{searchQuery}" ou aux filtres actifs.
+                        </p>
+                      </div>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setSearchQuery('');
+                          setTypeFilter('all');
+                          setProgressFilter('all');
+                        }}
+                        className="px-4 py-1.5 bg-[#646cff] text-white hover:bg-[#525aff] font-mono text-[10px] font-bold rounded-xl transition-all cursor-pointer"
+                      >
+                        REINITIALISER LES RECHERCHES
+                      </button>
+                    </div>
+                  )}
                 </div>
               ) : (
                 <div className="p-8 border border-stone-900 rounded-2xl bg-[#111110] text-center flex flex-col items-center justify-center">
                   <FileText className="w-10 h-10 text-stone-700 mb-3" />
-                  <h3 className="font-black text-sm text-white font-sans">Votre bibliothèque est vide</h3>
-                  <p className="text-xs text-stone-400 mt-1 max-w-sm leading-relaxed font-sans">
+                  <h3 className="font-black text-sm text-white font-sans font-sans">Votre bibliothèque est vide</h3>
+                  <p className="text-xs text-stone-400 mt-1 max-w-sm leading-relaxed font-sans font-sans">
                     Glissez-déposez ou parcourez des documents électroniques PDF ou ePUB pour les ajouter à votre bibliothèque de lecture audio !
                   </p>
                   <div className="flex gap-3 mt-4">
