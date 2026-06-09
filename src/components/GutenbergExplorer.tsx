@@ -3,6 +3,23 @@ import { Search, Download, BookOpen, Sparkles, Globe, RefreshCw, AlertCircle, Ch
 import { motion, AnimatePresence } from 'motion/react';
 import { DocumentBook, Chapter } from '../types';
 
+// Helper : décoder un ArrayBuffer en détectant l'encodage (UTF-8 ou Latin-1/ISO-8859-1)
+function decodeBuffer(buffer: ArrayBuffer): string {
+  const bytes = new Uint8Array(buffer);
+  // Détecter BOM UTF-8 (EF BB BF)
+  if (bytes[0] === 0xEF && bytes[1] === 0xBB && bytes[2] === 0xBF) {
+    return new TextDecoder('utf-8').decode(buffer);
+  }
+  // Tenter UTF-8 strict
+  try {
+    const decoded = new TextDecoder('utf-8', { fatal: true }).decode(buffer);
+    return decoded;
+  } catch {
+    // Fallback Latin-1 (ISO-8859-1) pour les vieux fichiers Gutenberg
+    return new TextDecoder('iso-8859-1').decode(buffer);
+  }
+}
+
 // Helper function to detect if the downloaded contents are actually HTML code/error pages/API errors
 function isHtmlOrError(str: string): boolean {
   if (!str) return true;
@@ -554,7 +571,8 @@ export default function GutenbergExplorer({
         async (url: string) => {
           const res = await fetch(`https://corsproxy.io/?${encodeURIComponent(url)}`);
           if (res.ok) {
-            const body = await res.text();
+            const buf = await res.arrayBuffer();
+            const body = decodeBuffer(buf);
             if (body && body.length > 500 && !isHtmlOrError(body)) return body;
           }
           throw new Error('corsproxy.io vide, non-valide ou bloqué');
@@ -563,7 +581,8 @@ export default function GutenbergExplorer({
         async (url: string) => {
           const res = await fetch(`https://api.codetabs.com/v1/proxy?quest=${encodeURIComponent(url)}`);
           if (res.ok) {
-            const body = await res.text();
+            const buf = await res.arrayBuffer();
+            const body = decodeBuffer(buf);
             if (body && body.length > 500 && !isHtmlOrError(body)) return body;
           }
           throw new Error('codetabs vide, non-valide ou bloqué');
@@ -583,7 +602,8 @@ export default function GutenbergExplorer({
         async (url: string) => {
           const res = await fetch(`https://api.allorigins.win/raw?url=${encodeURIComponent(url)}`);
           if (res.ok) {
-            const body = await res.text();
+            const buf = await res.arrayBuffer();
+            const body = decodeBuffer(buf);
             if (body && body.length > 550 && !isHtmlOrError(body)) return body;
           }
           throw new Error('allorigins raw vide ou bloqué');
@@ -592,7 +612,8 @@ export default function GutenbergExplorer({
         async (url: string) => {
           const res = await fetch(`https://thingproxy.freeboard.io/fetch/${url}`);
           if (res.ok) {
-            const body = await res.text();
+            const buf = await res.arrayBuffer();
+            const body = decodeBuffer(buf);
             if (body && body.length > 500 && !isHtmlOrError(body)) return body;
           }
           throw new Error('thingproxy vide ou bloqué');
