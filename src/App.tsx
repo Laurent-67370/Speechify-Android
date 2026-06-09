@@ -1242,23 +1242,23 @@ export default function App() {
                 <div className="space-y-3">
                   <div className="flex items-start space-x-2.5">
                     <span className="h-5 w-5 rounded bg-[#646cff] text-white font-extrabold flex items-center justify-center flex-shrink-0 text-[10px]">1</span>
-                    <p><strong>Domaine public et imports :</strong> Rendez-vous sur l'onglet <strong>Librairie</strong> pour rechercher, explorer et importer instantanément en 1 clic plus de 70 000 livres du **Projet Gutenberg** ! Ou importez vos propres fichiers sous l'onglet <strong>Importer</strong>.</p>
+                    <p><strong>Imports Locaux & URL :</strong> Sous l'onglet <strong>Importer</strong>, déposez un fichier local (PDF, ePUB) ou entrez simplement le <strong>lien URL d'un article ou site internet</strong> (Wikipédia, blogs, actualités) pour l'écouter instantanément et sans distractions.</p>
                   </div>
                   <div className="flex items-start space-x-2.5">
                     <span className="h-5 w-5 rounded bg-[#646cff] text-white font-extrabold flex items-center justify-center flex-shrink-0 text-[10px]">2</span>
+                    <p><strong>Domaine public illimité :</strong> Explorez l'onglet <strong>Librairie</strong> pour rechercher et télécharger en 1 clic plus de 70 000 œuvres classiques libres de droits du **Projet Gutenberg**.</p>
+                  </div>
+                  <div className="flex items-start space-x-2.5">
+                    <span className="h-5 w-5 rounded bg-[#646cff] text-white font-extrabold flex items-center justify-center flex-shrink-0 text-[10px]">3</span>
                     <p><strong>Lecture d'arrière-plan globale :</strong> Écoutez vos documents tout en configurant votre liseuse ou en naviguant sur l'accueil ! Un mini-lecteur flottant persistera au bas de l'écran.</p>
                   </div>
                   <div className="flex items-start space-x-2.5">
-                    <span className="h-5 w-5 rounded bg-[#646cff] text-white font-extrabold flex items-center justify-center flex-shrink-0 text-[10px]/[10px]">3</span>
-                    <p><strong>Geste intelligent "Clic-pour-lire" :</strong> En mode lecture, cliquez directement sur <strong>n'importe quelle phrase du texte</strong> pour y positionner instantanément la synthèse vocale.</p>
-                  </div>
-                  <div className="flex items-start space-x-2.5">
-                    <span className="h-5 w-5 rounded bg-[#646cff] text-white font-extrabold flex items-center justify-center flex-shrink-0 text-[10px]">4</span>
-                    <p><strong>Objectifs et Motivation :</strong> Suivez vos minutes écoutées chaque jour en temps réel et réglez vos objectifs pour acquérir un rituel de lecture quotidien.</p>
+                    <span className="h-5 w-5 rounded bg-[#646cff] text-white font-extrabold flex items-center justify-center flex-shrink-0 text-[10px]/[10px]">4</span>
+                    <p><strong>Geste "Clic-pour-lire" :</strong> En cours de lecture, cliquez directement sur <strong>n'importe quelle phrase du texte</strong> pour y positionner instantanément la synthèse vocale.</p>
                   </div>
                   <div className="flex items-start space-x-2.5">
                     <span className="h-5 w-5 rounded bg-[#646cff] text-white font-extrabold flex items-center justify-center flex-shrink-0 text-[10px]">5</span>
-                    <p><strong>Mode Sombre & Clair :</strong> Basculez à tout moment entre le mode sombre de nuit et le mode clair/crème en haut à droite de l'écran d'accueil pour soulager vos yeux.</p>
+                    <p><strong>Objectifs & Thèmes :</strong> Suivez vos minutes écoutées par jour et basculez en 1 clic entre le mode sombre de nuit et le mode clair/crème en haut à droite pour votre confort visuel.</p>
                   </div>
                 </div>
 

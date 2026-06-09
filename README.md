@@ -17,11 +17,14 @@ SpeechifyPro est une application web de lecture de livres électroniques (e-read
   - **Mode Jour Raffiné (Crème) :** Un affichage haute clarté, doux sur fond crème sablé pour la lecture diurne.
 - **Visualiseur Actif (Jumping Equalizer) :** Barre de son animée réactive à l'écoute sur l'écran d'accueil pour refléter l'activité audio en temps réel.
 
-### 3. Explorateur & Importateur Projet Gutenberg Intégré (Nouveauté)
-- **Recherche en temps réel :** Recherchez à tout moment des œuvres classiques parmi plus de 70 000 livres du domaine public grâce à l'API Gutendex.
+### 3. Explorateur & Importateurs Multimodes (Fichiers, Gutenberg & URL Web)
+- **NOUVEAU — Lecteur de Sites Internet & Articles (URL) :** Collez simplement un lien URL (Wikipédia, articles de blog, presse) pour extraire l'essentiel du texte.
+  - *Proxy Serveur Ultra-robuste :* Utilise un proxy Node.js/Express (`/api/proxy`) côté serveur pour récupérer le contenu de manière fiable, contournant les restrictions CORS du navigateur.
+  - *Nettoyage Automatique Intuitif :* Élimine les scripts, menus, publicités, en-têtes et pieds de page pour isoler uniquement le corps de texte principal.
+- **Explorateur Projet Gutenberg :** Recherchez à tout moment des œuvres classiques parmi plus de 70 000 livres du domaine public grâce à l'API Gutendex.
 - **Sélection Multilingue Curatée :** Importez instantanément des chefs-d'œuvre célèbres en Français, Anglais ou Espagnol (Arsène Lupin, Le Tour du Monde en 80 Jours, Sherlock Holmes, Don Quijote...) en format textuel optimisé.
 - **Filtrage Intelligent des En-têtes :** Supprime automatiquement les longues mentions légales et licences Gutenberg pour garantir une écoute confortable immédiate.
-- **Uploader Local Drag-&-Drop :** Glissez-déposez ou sélectionnez manuellement des livres électroniques personnels au format **PDF** et **ePUB**.
+- **Uploader Local Drag-&-Drop :** Glissez-déposez ou sélectionnez manuellement des livres électroniques personnels au format **PDF** et **ePUB** (avec détection automatique de la langue).
 
 ### 4. Statistiques de Consommation & Gamification
 - **Suivi d'Objectifs Quotidiens :** Visualisez votre temps d'écoute quotidien en minutes par rapport à votre objectif modifiable personnalisé (ex: 30 minutes de lecture active par jour).
