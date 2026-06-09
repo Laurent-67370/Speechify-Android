@@ -86,6 +86,7 @@ export default function DictionaryModal({
     } catch (err: any) {
       console.warn("Gemini define failed, doing alternative public fallback lookup", err);
       // Fallback: try public dictionary API
+      try {
         const cleanWord = targetWord.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?"'']/g, "").trim();
         // Fallback Wiktionnaire (API officielle, supporte le français nativement)
         const isFr = language.startsWith('fr');
