@@ -15,6 +15,7 @@ import HomeDashboard from './components/HomeDashboard';
 import GutenbergExplorer from './components/GutenbergExplorer';
 import InteractiveHelpGuide from './components/InteractiveHelpGuide';
 import StatsPage from './components/StatsPage';
+import { useGoogleTTS } from './utils/useGoogleTTS';
 
 
 const DEFAULT_SETTINGS: UserSettings = {
@@ -67,6 +68,9 @@ export default function App() {
   });
 
   const speechTimeoutRef = useRef<any>(null);
+
+  // ── Google Cloud TTS premium ──
+  const { isEnabled: gttsEnabled, synthesize: gttsSynthesize, audioRef: gttsAudioRef } = useGoogleTTS();
 
   const clearSpeechTimeout = () => {
     if (speechTimeoutRef.current) {
@@ -329,7 +333,42 @@ export default function App() {
       }
     };
 
-    window.speechSynthesis.speak(utterance);
+    // Si Google TTS premium activé → appel API, sinon voix système
+    if (gttsEnabled) {
+      (async () => {
+        try {
+          const blobUrl = await gttsSynthesize(
+            preprocessedText,
+            voiceConfig.rate,
+            state.settings.speechPitch
+          );
+          if (!speechStateRef.current.isPlaying) return;
+          if (gttsAudioRef.current) { gttsAudioRef.current.pause(); }
+          const audio = new Audio(blobUrl);
+          gttsAudioRef.current = audio;
+          audio.onended = () => {
+            clearSpeechTimeout();
+            if (speechStateRef.current.isPlaying) {
+              const isParagraphEnd = state.sentenceIdx === splitIntoSentences(
+                speechStateRef.current.activeBook?.chapters[state.chapterIdx]?.paragraphs[state.paragraphIdx] || ''
+              ).length - 1;
+              const scaledDelay = Math.max(80, isParagraphEnd ? Math.round(950 / state.settings.speechRate) : 300);
+              speechTimeoutRef.current = setTimeout(() => {
+                speechTimeoutRef.current = null;
+                if (speechStateRef.current.isPlaying) handleNextSentence();
+              }, scaledDelay);
+            }
+          };
+          audio.onerror = () => { if (speechStateRef.current.isPlaying) handleNextSentence(); };
+          await audio.play();
+        } catch (e) {
+          console.warn('[GTTS] Erreur, fallback voix système:', e);
+          window.speechSynthesis.speak(utterance);
+        }
+      })();
+    } else {
+      window.speechSynthesis.speak(utterance);
+    }
   };
 
   // Cancel synthesis on component unmount
@@ -371,6 +410,7 @@ export default function App() {
     if (typeof window !== 'undefined' && window.speechSynthesis) {
       window.speechSynthesis.cancel();
     }
+    if (gttsAudioRef.current) { gttsAudioRef.current.pause(); gttsAudioRef.current = null; }
   };
 
   // Playback Navigation skips
