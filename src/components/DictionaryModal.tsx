@@ -86,32 +86,49 @@ export default function DictionaryModal({
     } catch (err: any) {
       console.warn("Gemini define failed, doing alternative public fallback lookup", err);
       // Fallback: try public dictionary API
-      try {
-        const cleanWord = targetWord.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?"'’]/g, "").trim();
-        const fallbackLang = language.startsWith('fr') ? 'fr' : 'en';
-        const fallbackRes = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/${fallbackLang}/${encodeURIComponent(cleanWord)}`);
-        
-        if (fallbackRes.ok) {
-          const fallbackData = await fallbackRes.json();
-          const entry = fallbackData[0];
-          const partOfSpeech = entry.meanings?.[0]?.partOfSpeech || 'Mot';
-          const definition = entry.meanings?.[0]?.definitions?.[0]?.definition || "Définition non disponible.";
-          const synonyms = entry.meanings?.[0]?.synonyms?.slice(0, 4) || [];
-          const example = entry.meanings?.[0]?.definitions?.[0]?.example || "Pas d'exemple disponible.";
-          
+        const cleanWord = targetWord.replace(/[.,\/#!$%\^&\*;:{}=\-_`~()?"'']/g, "").trim();
+        // Fallback Wiktionnaire (API officielle, supporte le français nativement)
+        const isFr = language.startsWith('fr');
+        const wikiLang = isFr ? 'fr' : 'en';
+        const wikiRes = await fetch(
+          `https://${wikiLang}.wiktionary.org/api/rest_v1/page/definition/${encodeURIComponent(cleanWord)}`
+        );
+        if (wikiRes.ok) {
+          const wikiData = await wikiRes.json();
+          const entries = wikiData[wikiLang] || wikiData['en'] || Object.values(wikiData)[0] as any[] || [];
+          const firstEntry = (entries as any[])[0] || {};
+          const definitions = firstEntry.definitions || [];
+          const firstDef = definitions[0] || {};
+          const stripHtml = (html: string) => (html || '').replace(/<[^>]*>/g, ' ').replace(/\s+/g, ' ').trim();
+          const definition = stripHtml(firstDef.definition || '') || 'Définition non disponible.';
+          const example = stripHtml(firstDef.examples?.[0] || '');
           setResult({
-            word: entry.word || targetWord,
-            partOfSpeech,
+            word: cleanWord,
+            partOfSpeech: firstEntry.partOfSpeech || 'Mot',
             definition,
-            etymology: "Origine du dictionnaire standard.",
-            contextualExplanation: sentenceContext 
-              ? `Mot repéré dans la phrase : "${sentenceContext}".`
-              : "Aucune phrase de contexte fournie.",
-            synonyms,
+            etymology: isFr ? 'Source : Wiktionnaire français.' : 'Source: Wiktionary.',
+            contextualExplanation: sentenceContext ? `Mot repéré dans : "${sentenceContext}".` : '',
+            synonyms: [],
             example,
           });
         } else {
-          throw new Error("Mot introuvable dans le dictionnaire public.");
+          // Fallback 2 : dictionaryapi.dev (anglais uniquement)
+          const fallbackRes = await fetch(`https://api.dictionaryapi.dev/api/v2/entries/en/${encodeURIComponent(cleanWord)}`);
+          if (fallbackRes.ok) {
+            const fallbackData = await fallbackRes.json();
+            const entry = fallbackData[0];
+            setResult({
+              word: entry.word || cleanWord,
+              partOfSpeech: entry.meanings?.[0]?.partOfSpeech || 'Mot',
+              definition: entry.meanings?.[0]?.definitions?.[0]?.definition || 'Définition non disponible.',
+              etymology: 'Source: Dictionary API.',
+              contextualExplanation: '',
+              synonyms: entry.meanings?.[0]?.synonyms?.slice(0, 4) || [],
+              example: entry.meanings?.[0]?.definitions?.[0]?.example || '',
+            });
+          } else {
+            throw new Error('Mot introuvable dans les dictionnaires disponibles.');
+          }
         }
       } catch (fallbackErr: any) {
         setError(err.message || "Impossible d'obtenir une définition.");
@@ -420,4 +437,5 @@ export default function DictionaryModal({
     </div>
   );
 }
+
 
