@@ -6,146 +6,139 @@ Que ce soit pour reposer vos yeux fatigués, réviser des concepts clés, ou vou
 
 ---
 
-## 🌟 Ce qui rend l'expérience Unique & Didactique
+## 🌟 Fonctionnalités
 
 ### 🤖 1. Charly, votre Guide Interactif & Didactique
-- **Parcours d'Apprentissage Vivant :** Un assistant virtuel jovial vous explique le fonctionnement en 6 étapes animées (sélectionnable en haut à droite !).
-- **Le Laboratoire Acoustique :** Entraînez-vous à façonner la voix de synthèse en temps réel. Sélectionnez vos préférences de vitesse ($0.5x$ à $2.5x$) et de tessiture (grave/aigu).
-- **Entraînement "Clic-pour-Lire" :** Simulez des clics de lecture directement dans le guide pour comprendre l'immédiateté du geste.
-- **Le Grand Quiz des Lecteurs :** Validez vos connaissances avec un mini-quiz interactif amusant et décrochez votre brevet officiel de *Lecteur Intelligent* !
+- **Parcours d'Apprentissage Vivant :** Un assistant virtuel jovial vous explique le fonctionnement en 6 étapes animées.
+- **Le Laboratoire Acoustique :** Entraînez-vous à façonner la voix de synthèse en temps réel.
+- **Entraînement "Clic-pour-Lire" :** Simulez des clics de lecture directement dans le guide.
+- **Le Grand Quiz des Lecteurs :** Validez vos connaissances et décrochez votre brevet de *Lecteur Intelligent* !
 
-### 🔮 2. Les Résumés Extraordinaires par l'IA (Gemini Flash)
-- **Synthèse à la Carte :** En panne de temps ? Notre onglet dédié **Résumé IA** condense tout chapitre ou livre entier grâce au modèle Gemini Flash côté serveur.
-- **4 Styles Uniques de Résumés :**
-  - ⚖️ **Équilibré :** Un paragraphe introductif clair, suivi d'une liste structurée d'idées fortes.
-  - 📌 **Points Clés :** Les notions capitales décortiquées sous forme de puces agrémentées d'émojis gais.
-  - 🎓 **Pédagogique :** Idéal pour l'apprentissage, vulgarisant les termes techniques avec beaucoup de bienveillance.
-  - ⚡ **Court :** Un condensé percutant de 3 à 5 phrases captivantes, idéal pour un mémo express.
-- **Vocalisation Directe du Résumé :** Écoutez votre résumé intelligent en un clic grâce à la synthèse vocale intégrée, pour une mémorisation auditive maximale !
+### 🔮 2. Résumés Intelligents par l'IA (Gemini Flash)
+- **4 Styles de Résumés :** Équilibré, Points Clés, Pédagogique, Court.
+- **Vocalisation Directe :** Écoutez votre résumé en un clic via la synthèse vocale intégrée.
+- **Dictionnaire Contextuel IA :** Sélectionnez un mot pour obtenir définition, étymologie, synonymes et exemple.
 
-### ⛵ 3. Navigation Ultragranulaire & Transitions de Chapitres Fluides
-- **Contrôles Ultra-Intelligents en Tête de Lecture :** Une barre de navigation redessinée, s'adaptant parfaitement aux écrans mobiles compacts, avec de grands boutons faciles d'accès pour sauter de chapitre en chapitre.
-- **Butoir de Fin sans Zone Vide :** Élimination complète des espaces vides inutiles après le dernier paragraphe. À la place, une zone de complétion magnifique et engageante se présente en fin de lecture.
-- **Boîte à Outils de Fin de Chapitre :** Un jalon interactif vous félicite en fin de lecture et propose immédiatement des raccourcis précieux :
-  - ⚡ **Passer au chapitre suivant** d'un clic (avec rembobinage et défilement fluide vers le haut de la page).
-  - 🔄 **Relire le chapitre** instantanément.
-  - ✨ **Générer le résumé par l'IA** ou marquer la page.
-- **Geste Naturel "Click-to-Read" :** Cliquez simplement sur n'importe quel paragraphe pour déplacer instantanément le flux de lecture vocale à cet endroit précis.
+### ⛵ 3. Navigation Ultragranulaire
+- **Geste "Click-to-Read" :** Cliquez sur un paragraphe pour déplacer instantanément la lecture.
+- **Boîte à Outils de Fin de Chapitre :** Passer au chapitre suivant, relire, générer un résumé IA.
+- **Skip ±15s :** Navigation temporelle dans le flux audio.
 
-### 🌌 4. Confort d'Affichage & Design de Pointe
-- **Thème Sombre Cosmique (Night Mode) :** Un canevas noir profond, apaisant et mystique pour vos écoutes nocturnes.
-- **Thème Jour Raffiné (Sable) :** Un rendu crème de style littéraire, ménageant la rétine même en plein soleil.
-- **Égaliseur Virtuel Réactif :** Une onde audio en mouvement qui vibre et ondule en temps réel au rythme de la voix.
-- **Mini-Lecteur Flottant Global :** Naviguez librement dans la bibliothèque ou les synthèses pendant que le lecteur continue l'expérience audio en arrière-plan !
+### 🌌 4. Confort d'Affichage & Design
+- **3 Thèmes :** Sombre (cosmique), Jour (sable), Sépia.
+- **Égaliseur Virtuel Réactif :** Onde audio animée en temps réel.
+- **Mini-Lecteur Flottant Global :** Naviguez librement pendant la lecture en arrière-plan.
+- **Défilement automatique :** Le texte suit la lecture en douceur.
 
-### 📚 5. Bibliothèque Immense de Classiques & Support de 5 Langues
-La sélection Gutenberg de départ offre un éventail captivant de classiques préconfigurés ou à rechercher à la volée parmi plus de 70 000 ouvrages :
-- 🇫🇷 **Français :** *Madame Bovary* (Flaubert), *Candide* (Voltaire), *Le Horla* (Maupassant)...
-- 🇬🇧 **Anglais :** *The Picture of Dorian Gray* (Wilde), *Moby Dick* (Melville)...
-- 🇪🇸 **Espagnol :** *La Celestina* (Fernando de Rojas), *Marianela* (Pérez Galdós)...
-- 🇩🇪 **Allemand :** Support complet pour la lecture et la navigation d'ouvrages germaniques de la bibliothèque Gutenberg.
-- 🇮🇹 **Italien :** Chargement et exploration de classiques de la littérature italienne.
-- **Importation Personnalisée :** Glissez-déposez vos fichiers ePUB et PDF locaux, ou collez une URL web pour lire un article de presse en un instant.
+### 📚 5. Bibliothèque & Import Multi-Source
+- **Projet Gutenberg :** 70 000+ ouvrages classiques en 🇫🇷 🇬🇧 🇪🇸 🇩🇪 🇮🇹.
+- **Import de fichiers :** Glissez-déposez vos ePUB et PDF locaux.
+- **Import URL :** Collez une URL web pour lire un article en un instant.
+- **Encodage auto :** Détection UTF-8 / Latin-1 pour les classiques Gutenberg (accents corrects).
 
-### 🎙️ 6. Voix de Studio Premium Personnalisées
-L'application intègre deux moteurs vocaux complémentaires :
+### 🎙️ 6. Voix de Studio Premium
 
-**Voix Studio système** (sans clé API) — améliore les voix du navigateur via pitch/rate :
-- 🇫🇷 **Français :** *Charly* (Studio Chaleureux), *Clara* (Doux & Lumineux), *Victor* (Théâtral & Classique).
-- 🇬🇧 **Anglais :** *Arthur* (Profond), *Emily* (Brillant), *Winston* (Noblesse Oxford).
-- 🇩🇪 **Allemand :** *Hans* (Sérieux & Posé), *Lena* (Clair & Détaillé).
-- 🇪🇸 **Espagnol :** *Mateo* (Naturel), *Isabella* (Mélodique & Expressif).
-- 🇮🇹 **Italien :** *Giovanni* (Profond & Chaleureux), *Sofia* (Vivace & Solaire).
+**Voix Studio système** (sans clé API) — profils optimisés par langue :
+- 🇫🇷 *Charly* (Chaleureux), *Clara* (Lumineux), *Victor* (Théâtral)
+- 🇬🇧 *Arthur* (Profond), *Emily* (Brillant), *Winston* (Oxford)
+- 🇩🇪 *Hans* (Posé), *Lena* (Détaillé)
+- 🇪🇸 *Mateo* (Naturel), *Isabella* (Mélodique)
+- 🇮🇹 *Giovanni* (Chaleureux), *Sofia* (Vivace)
 
-**✨ Google Cloud TTS Premium** (avec clé API) — voix neurales de qualité studio :
-- 🇫🇷 *Denise, Henri, Claire, Lucas* — Neural2 & WaveNet
-- 🇺🇸 *Jenny, Guy* — Neural2 EN-US | 🇬🇧 *Sophie* — Neural2 EN-GB
-- 🇪🇸 Espagnol Neural2 | 🇩🇪 Allemand Neural2 | 🇮🇹 Italien Neural2
-- Qualité identique sur tous les navigateurs/OS (Firefox Linux, Chrome, Android)
+**✨ Google Cloud TTS Premium** (avec clé API Google Cloud) :
+- Voix neurales **Neural2 & WaveNet** — qualité studio
+- 🇫🇷 Denise, Henri, Claire, Lucas · 🇺🇸 Jenny, Guy · 🇬🇧 Sophie
+- 🇪🇸 Neural2 · 🇩🇪 Neural2 · 🇮🇹 Neural2
+- Fonctionne sur **tous les navigateurs et OS** (Firefox Linux, Chrome, Android)
 - 1M caractères/mois gratuits sur Google Cloud
 
-### 📊 7. Page Statistiques & Suivi de Progression
-Suivez votre activité d'écoute au quotidien :
-- **⏱ Aujourd'hui :** minutes écoutées, barre de progression vers l'objectif journalier (modifiable).
-- **📅 Cette semaine :** graphique à barres animé sur 7 jours, jour courant mis en valeur.
-- **📚 Totaux :** nombre de documents en bibliothèque, durée totale estimée.
-- **📄 Par document :** progression individuelle de chaque livre avec mini-barre et pourcentage.
-- Données persistées en localStorage, compatibles avec la PWA SpeechifyPro.
+### 📊 7. Page Statistiques
+- **Objectif journalier** avec cercle de progression animé (modifiable).
+- **3 KPIs :** minutes cette semaine, série de jours consécutifs (streak), nb de livres.
+- **Graphique 7 jours** avec barres animées, jour courant mis en valeur.
+- **Progression par livre** avec mini-barres gradient et durée estimée.
+- Données persistées en `localStorage` (clé `speechify_day_YYYY-MM-DD`).
 
 ### 🖱️ 8. Popup de Sélection de Texte
-Sélectionnez n'importe quel passage dans le lecteur pour accéder instantanément à :
 - **▶ Lire depuis ici** — positionne la lecture exactement à la phrase sélectionnée.
-- **📋 Copier** — copie la sélection dans le presse-papier avec feedback visuel.
-- Fonctionne au **tap** (mobile) et à la **souris** (desktop), avec positionnement intelligent au-dessus de la sélection.
+- **📋 Copier** — copie la sélection avec feedback visuel.
+- Fonctionne au **tap** (mobile) et à la **souris** (desktop).
 
-### 📱 9. Application Web Progressive (PWA) & Mode Hors Ligne
-Transformez votre navigateur en un véritable lecteur de livres audio autonome :
-- **Installable en un clic :** Totalement conforme aux critères PWA avec un beau manifeste enrichi (`manifest.json`) et deux icônes vectorielles personnalisées de haute tenue esthétique.
-- **Technologie Workbox & Service Worker :** Mise en cache automatique du code de l'application, des polices littéraires de Google Fonts, et des illustrations clés.
-- **Fonctionnement Hors Ligne :** Même sans réseau au fond d'un train ou en forêt, votre bibliothèque existante et le lecteur de synthèse vocale restent 100% opérationnels !
+### 💾 9. Stockage Persistant Multi-Navigateur (SQLite VPS)
+- Les livres et marque-pages sont sauvegardés dans une base **SQLite** côté serveur.
+- Accessible depuis **n'importe quel navigateur ou appareil** via `speechify.lhusser.fr`.
+- Fallback automatique sur **IndexedDB** local si le serveur est inaccessible.
+- Migration automatique depuis `localStorage` legacy.
+
+### 📱 10. Application Web Progressive (PWA)
+- **Installable en un clic** sur mobile et desktop.
+- **Service Worker** : cache automatique, fonctionnement hors ligne.
+- **Manifest PWA** avec icônes haute résolution.
 
 ---
 
-## 🛠️ Stack Technique & Technologies
+## 🛠️ Stack Technique
 
 | Couche | Technologie |
 |---|---|
 | **Frontend** | React 19 + TypeScript + Vite 6 |
-| **Animations** | Motion (`motion/react`) — transitions fluides |
+| **Animations** | Motion (`motion/react`) |
 | **Design** | Tailwind CSS 4 |
 | **PWA** | Service Worker + manifest.json |
-| **IA Résumés** | Google GenAI SDK (`@google/genai`) — Gemini Flash côté serveur |
-| **Voix Premium** | Google Cloud Text-to-Speech REST API (Neural2 / WaveNet) |
-| **Parseurs** | PDF.js 3.4, JSZip (EPUB) |
-| **Stockage** | IndexedDB (livres) + localStorage (préférences, stats) |
-| **Serveur** | Node.js / Express — proxy CORS + endpoint Gemini |
+| **IA Résumés** | Google GenAI SDK — Gemini Flash (côté serveur) |
+| **Voix Premium** | Google Cloud TTS REST API (Neural2 / WaveNet) |
+| **Stockage livres** | SQLite (`better-sqlite3`) côté serveur + IndexedDB local |
+| **Parseurs** | PDF.js 3.4 (PDF) · JSZip (ePUB) |
+| **Encodage** | Détection auto UTF-8 / Latin-1 (TextDecoder + Buffer Node.js) |
+| **Serveur** | Node.js / Express — proxy CORS, Gutenberg, Gemini, SQLite |
+| **Déploiement** | PM2 + Nginx + Let's Encrypt (HTTPS) |
 
 ---
 
-## 🚀 Guide de Démarrage Rapide
+## 🚀 Guide de Démarrage
 
-### 1. Cloner et installer les paquets
+### 1. Cloner et installer
+
 ```bash
 git clone https://github.com/Laurent-67370/Speechify-Android.git
 cd Speechify-Android
 npm install
 ```
 
-### 2. Configurer les clés API (Optionnel)
+### 2. Variables d'environnement (optionnel)
 
-#### Résumés IA — Gemini
 ```env
 # .env
-GEMINI_API_KEY=votre_cle_gemini_ici
+GEMINI_API_KEY=votre_cle_gemini
 ```
 
-#### Voix Premium — Google Cloud TTS
-Aucune variable d'environnement requise — la clé est saisie directement dans l'app :
-1. Activez l'API **Cloud Text-to-Speech** sur [console.cloud.google.com](https://console.cloud.google.com)
-2. Créez une clé API → *APIs & Services → Credentials → Create API Key*
-3. Dans l'app : onglet **Lire** → **Options** → **Voix premium** → saisir la clé → Enregistrer
+> La clé Google Cloud TTS se configure directement dans l'app : **Lire → Options → Voix premium**.
 
-### 3. Lancer l'application
+### 3. Lancer en développement
 
 ```bash
-# Développement local
+# Local
 npm run dev
 
 # Exposé sur le réseau (VPS, test mobile)
 npm run dev -- --host 0.0.0.0
 ```
 
-*L'application s'ouvre sur `http://localhost:3000`.*
-
 ### 4. Build de production
+
 ```bash
 npm run build
-npm run start
+pm2 start "node dist/server.cjs" --name speechify --cwd /chemin/vers/app
+pm2 save
 ```
 
-### 5. Vérification TypeScript
+### 5. Mise à jour (workflow VPS)
+
 ```bash
-npm run lint
+cd ~/Speechify-Android
+git pull --rebase
+npm run build
+pm2 restart speechify
 ```
 
 ---
@@ -155,46 +148,77 @@ npm run lint
 ```
 src/
 ├── components/
-│   ├── App.tsx                  # Composant racine, moteur de lecture
-│   ├── HomeDashboard.tsx        # Accueil : carousel, objectif, égaliseur
-│   ├── TextViewer.tsx           # Lecteur de texte avec surlignage phrase
-│   ├── ReaderControls.tsx       # Barre de contrôles audio (play/pause/skip)
-│   ├── ReaderSettings.tsx       # Panneau paramètres (voix, thème, taille)
-│   ├── GoogleTTSSettings.tsx    # Config Google Cloud TTS premium ✨
-│   ├── StatsPage.tsx            # Page statistiques & graphe semaine 📊
-│   ├── SelectionPopup.tsx       # Popup sélection texte (lire/copier) 🖱️
+│   ├── TextViewer.tsx           # Lecteur avec surlignage phrase par phrase
+│   ├── ReaderControls.tsx       # Barre audio (play/pause/skip/vitesse)
+│   ├── ReaderSettings.tsx       # Paramètres (voix, thème, taille)
+│   ├── GoogleTTSSettings.tsx    # Config Google Cloud TTS ✨
+│   ├── StatsPage.tsx            # Statistiques (cercle, streak, graphe) 📊
+│   ├── SelectionPopup.tsx       # Popup sélection texte 🖱️
+│   ├── HomeDashboard.tsx        # Accueil (carousel, objectif, égaliseur)
 │   ├── Sidebar.tsx              # Table des matières + marque-pages
-│   ├── GutenbergExplorer.tsx    # Recherche Projet Gutenberg (70k+ livres)
-│   ├── DocumentUpload.tsx       # Import PDF/EPUB/URL
-│   ├── InteractiveHelpGuide.tsx # Guide interactif Charly (6 étapes + quiz)
+│   ├── GutenbergExplorer.tsx    # Recherche + import Gutenberg (70k livres)
+│   ├── DocumentUpload.tsx       # Import PDF/ePUB/URL
+│   ├── InteractiveHelpGuide.tsx # Guide Charly (6 étapes + quiz)
 │   └── DictionaryModal.tsx      # Définition mot sélectionné
 ├── utils/
-│   ├── useGoogleTTS.ts          # Hook React Google Cloud TTS ✨
-│   ├── customVoices.ts          # Voix studio système (12 personnages)
+│   ├── useGoogleTTS.ts          # Hook Google Cloud TTS ✨
+│   ├── useServerSync.ts         # Hook synchronisation SQLite VPS 💾
+│   ├── customVoices.ts          # Profils voix studio système
 │   ├── textUtils.ts             # Découpage phrases, préprocesseur TTS
-│   ├── indexedDB.ts             # Persistance livres (IndexedDB)
-│   └── webParser.ts             # Extraction texte depuis URL web
+│   ├── indexedDB.ts             # Cache local IndexedDB
+│   └── webParser.ts             # Extraction texte depuis URL
 ├── lib/
-│   ├── pdfParser.ts             # Parser PDF (PDF.js)
-│   └── epubParser.ts            # Parser EPUB (JSZip)
+│   ├── pdfParser.ts             # Parser PDF (PDF.js) avec décodage UTF-8
+│   └── epubParser.ts            # Parser ePUB (JSZip) avec décodage UTF-8
 ├── data/
 │   └── samples.ts               # Extraits de démonstration
 └── types.ts                     # Types TypeScript partagés
+
+server.ts                        # Serveur Express
+├── /api/gutenberg/:bookId       # Proxy Gutenberg (UTF-8/Latin-1 auto) 🔤
+├── /api/books                   # CRUD livres SQLite 💾
+├── /api/bookmarks               # CRUD marque-pages SQLite 💾
+├── /api/proxy                   # Proxy web (import URL)
+├── /api/gemini/summarize        # Résumés IA Gemini
+└── /api/gemini/define           # Dictionnaire IA Gemini
+
+data/
+└── speechify.db                 # Base SQLite (livres + marque-pages) 💾
 ```
 
 ---
 
 ## 🗓️ Historique des versions
 
-| Version | Nouveautés |
-|---|---|
-| v1.0 | Version initiale — lecteur React/TypeScript, voix système, Gutenberg |
-| v1.1 | **StatsPage** — graphique semaine, objectif journalier, progression par document |
-| v1.1 | **SelectionPopup** — "Lire depuis ici" + "Copier" au tap/clic sur texte |
-| v1.2 | **Google Cloud TTS Premium** — Neural2/WaveNet, hook `useGoogleTTS`, cache session |
+| Version | Date | Nouveautés |
+|---|---|---|
+| v1.0 | Juin 2026 | Version initiale — lecteur React/TS, voix système, Gutenberg |
+| v1.1 | Juin 2026 | **StatsPage** — graphique semaine, objectif, progression par document |
+| v1.1 | Juin 2026 | **SelectionPopup** — "Lire depuis ici" + "Copier" |
+| v1.2 | Juin 2026 | **Google Cloud TTS Premium** — Neural2/WaveNet, hook `useGoogleTTS` |
+| v1.3 | Juin 2026 | **SQLite VPS** — stockage persistant multi-navigateur |
+| v1.3 | Juin 2026 | **Fix encodage** — UTF-8/Latin-1 auto (accents Gutenberg) |
+| v1.4 | Juin 2026 | **StatsPage v2** — cercle animé, streak, KPIs, redesign complet |
+| v1.4 | Juin 2026 | **HTTPS** — `speechify.lhusser.fr` via Nginx + Let's Encrypt + PM2 |
 
 ---
 
-## 🎯 Rejoignez l'aventure didactique !
+## 🔒 Production
 
-Cliquez sur l'icône de point d'interrogation **`?`** sur le bord supérieur droit de l'application pour déclencher Charly et commencer votre premier voyage littéraire dès aujourd'hui ! Bonne écoute ! 🎧
+L'application est déployée sur :
+
+```
+https://speechify.lhusser.fr
+```
+
+- Serveur : VPS Ubuntu 24.04 (IP 76.13.43.193)
+- Process manager : PM2 (redémarrage auto au boot)
+- Reverse proxy : Nginx
+- SSL : Let's Encrypt (renouvellement auto)
+- Base de données : SQLite (`/root/Speechify-Android/data/speechify.db`)
+
+---
+
+## 🎯 Commencer !
+
+Cliquez sur **`?`** en haut à droite pour déclencher Charly et commencer votre premier voyage littéraire. Bonne écoute ! 🎧
