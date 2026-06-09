@@ -5,6 +5,7 @@ import { DocumentBook, UserSettings, Bookmark, Chapter } from './types';
 import { splitIntoSentences, preprocessTextForSpeech } from './utils/textUtils';
 import { resolveSpeechConfig } from './utils/customVoices';
 import { getAllBooksFromDB, saveAllBooksToDB } from './utils/indexedDB';
+import { useServerSync } from './utils/useServerSync';
 import { SAMPLES } from './data/samples';
 import DocumentUpload from './components/DocumentUpload';
 import Sidebar from './components/Sidebar';
@@ -69,6 +70,14 @@ export default function App() {
 
   const speechTimeoutRef = useRef<any>(null);
 
+  // ── Synchronisation serveur SQLite ──
+  const {
+    loadBooksFromServer,
+    saveBookToServer,
+    deleteBookFromServer,
+    saveBooksToServerBatch,
+  } = useServerSync();
+
   // ── Google Cloud TTS premium ──
   const { isEnabled: gttsEnabled, synthesize: gttsSynthesize, audioRef: gttsAudioRef } = useGoogleTTS();
 
@@ -107,21 +116,35 @@ export default function App() {
       console.error('Failed to parse localStorage caches.', e);
     }
 
-    // Load books from IndexedDB with automated legacy localStorage migration fallback
+    // Load books : serveur SQLite en priorité, IndexedDB en fallback
     const loadBooksData = async () => {
       try {
+        // 1. Essayer le serveur VPS en priorité
+        const serverBooks = await loadBooksFromServer();
+        if (serverBooks.length > 0) {
+          setRecentBooks(serverBooks);
+          // Mettre à jour IndexedDB en arrière-plan
+          saveAllBooksToDB(serverBooks).catch(() => {});
+          console.log(`[App] ${serverBooks.length} livre(s) chargé(s) depuis le serveur`);
+          return;
+        }
+
+        // 2. Fallback : IndexedDB local
         const dbBooks = await getAllBooksFromDB();
         if (dbBooks && dbBooks.length > 0) {
           setRecentBooks(dbBooks);
+          // Migrer vers le serveur en arrière-plan
+          saveBooksToServerBatch(dbBooks).catch(() => {});
+          console.log(`[App] ${dbBooks.length} livre(s) chargé(s) depuis IndexedDB (migration serveur en cours)`);
         } else {
+          // 3. Fallback legacy localStorage
           const legacySaved = localStorage.getItem('liseuse_recent_books_v1');
           if (legacySaved) {
             const parsedLegacy = JSON.parse(legacySaved);
             if (parsedLegacy && parsedLegacy.length > 0) {
               setRecentBooks(parsedLegacy);
-              // Background migration
               await saveAllBooksToDB(parsedLegacy);
-              // Prune legacy to clear up localStorage space immediately
+              saveBooksToServerBatch(parsedLegacy).catch(() => {});
               localStorage.removeItem('liseuse_recent_books_v1');
             }
           }
@@ -197,9 +220,14 @@ export default function App() {
     // A. Update in-memory state instantly for snappy navigation
     setRecentBooks(books);
 
-    // B. Save asynchronously to IndexedDB (unlimited quota, background speed!)
+    // B. Save asynchronously to IndexedDB (local cache)
     saveAllBooksToDB(books).catch((err) => {
       console.error('[Storage] Save to IndexedDB failed:', err);
+    });
+
+    // C. Sync avec le serveur SQLite VPS (batch)
+    saveBooksToServerBatch(books).catch((err) => {
+      console.warn('[ServerSync] Batch save failed:', err);
     });
   };
 
@@ -602,12 +630,18 @@ export default function App() {
   const handleDeleteBook = (id: string) => {
     saveRecentBooks(recentBooks.filter(b => b.id !== id));
     saveBookmarks(bookmarks.filter(b => b.documentId !== id));
+    // Supprimer du serveur SQLite
+    deleteBookFromServer(id).catch((err) => {
+      console.warn('[ServerSync] Delete failed:', err);
+    });
   };
 
   const handleUpdateBook = (updatedBook: DocumentBook) => {
     setActiveBook(updatedBook);
     const updatedList = recentBooks.map(b => b.id === updatedBook.id ? updatedBook : b);
     saveRecentBooks(updatedList);
+    // Sauvegarder immédiatement sur le serveur (progression lecture)
+    saveBookToServer(updatedBook);
   };
 
   // Launch a book (sample or upload)
