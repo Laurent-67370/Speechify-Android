@@ -1292,25 +1292,7 @@ export default function App() {
           >
             <Headphones className={`w-5 h-5 transition-all duration-300 ${currentTab === 'lire' ? 'text-[#646cff] drop-shadow-[0_0_10px_rgba(100,108,255,0.4)] animate-pulse' : ''}`} />
             <span className="text-[10px] mt-1 font-semibold tracking-tight">Lire</span>
-            {currentTab === 'stats' && (
-            <motion.div
-              key="stats-tab"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="w-full h-full overflow-hidden"
-            >
-              <StatsPage
-                recentBooks={recentBooks}
-                listeningMinutesToday={listeningMinutesToday}
-                dailyGoalMinutes={dailyGoalMinutes}
-                onUpdateDailyGoal={handleUpdateDailyGoal}
-                theme={settings.theme}
-              />
-            </motion.div>
-          )}
-
-          {currentTab === 'lire' && (
+            {currentTab === 'lire' && (
               <motion.div className="absolute top-[-7px] w-5 h-[2px] bg-[#646cff] rounded-full" layoutId="purple-active-tab" />
             )}
           </button>
