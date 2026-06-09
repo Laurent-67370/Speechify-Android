@@ -155,8 +155,8 @@ async function startServer() {
   // ── CORS (origines autorisées uniquement) ───────────────────────────────
   app.use(corsHandler);
 
-  // ── Rate limiting global (60 req/min par IP) ───────────────────────────
-  app.use(rateLimiter(60));
+  // ── Rate limiting global (200 req/min par IP) — APIs uniquement ──────────
+  app.use('/api', rateLimiter(200));
 
   // ════════════════════════════════════════════════════════════════════════
   // ── API LIVRES (SQLite) ──────────────────────────────────────────────────
@@ -537,5 +537,6 @@ async function startServer() {
 }
 
 startServer();
+
 
 
