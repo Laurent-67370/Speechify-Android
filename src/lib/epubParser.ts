@@ -4,6 +4,41 @@ import { DocumentBook, Chapter } from '../types';
 /**
  * Clean HTML and convert to text while preserving paragraph structure
  */
+function decodeHtmlEntities(text: string): string {
+  return text
+    .replace(/&amp;/g, '&')
+    .replace(/&lt;/g, '<')
+    .replace(/&gt;/g, '>')
+    .replace(/&quot;/g, '"')
+    .replace(/&apos;/g, "'")
+    .replace(/&#(\d+);/g, (_, code) => String.fromCharCode(parseInt(code, 10)))
+    .replace(/&#x([0-9a-fA-F]+);/g, (_, code) => String.fromCharCode(parseInt(code, 16)))
+    .replace(/&nbsp;/g, ' ')
+    .replace(/&rsquo;/g, '’')
+    .replace(/&lsquo;/g, '‘')
+    .replace(/&rdquo;/g, '”')
+    .replace(/&ldquo;/g, '“')
+    .replace(/&eacute;/g, 'é')
+    .replace(/&egrave;/g, 'è')
+    .replace(/&ecirc;/g, 'ê')
+    .replace(/&euml;/g, 'ë')
+    .replace(/&agrave;/g, 'à')
+    .replace(/&acirc;/g, 'â')
+    .replace(/&icirc;/g, 'î')
+    .replace(/&iuml;/g, 'ï')
+    .replace(/&ocirc;/g, 'ô')
+    .replace(/&ucirc;/g, 'û')
+    .replace(/&ugrave;/g, 'ù')
+    .replace(/&uuml;/g, 'ü')
+    .replace(/&ccedil;/g, 'ç')
+    .replace(/&ntilde;/g, 'ñ')
+    .replace(/&mdash;/g, '—')
+    .replace(/&ndash;/g, '–')
+    .replace(/&hellip;/g, '…')
+    .replace(/&laquo;/g, '«')
+    .replace(/&raquo;/g, '»');
+}
+
 function extractParagraphs(htmlContent: string): { paragraphs: string[]; cleanText: string } {
   const parser = new DOMParser();
   const doc = parser.parseFromString(htmlContent, 'text/html');
@@ -14,7 +49,7 @@ function extractParagraphs(htmlContent: string): { paragraphs: string[]; cleanTe
   
   if (pElements.length > 0) {
     pElements.forEach((el) => {
-      const text = (el.textContent || '').trim();
+      const text = decodeHtmlEntities((el.textContent || '').trim());
       // Skip very short or empty lines
       if (text.length > 1) {
         paragraphs.push(text);
@@ -85,7 +120,8 @@ export async function parseEpub(file: File): Promise<Omit<DocumentBook, 'progres
   const zip = await JSZip.loadAsync(arrayBuffer);
   
   // 1. Read container.xml to locate the OPF document
-  const containerXmlStr = await zip.file('META-INF/container.xml')?.async('string');
+  const containerXmlRaw = await zip.file('META-INF/container.xml')?.async('uint8array');
+  const containerXmlStr = containerXmlRaw ? new TextDecoder('utf-8').decode(containerXmlRaw) : undefined;
   if (!containerXmlStr) {
     throw new Error('Fichier META-INF/container.xml manquant.');
   }
@@ -106,7 +142,8 @@ export async function parseEpub(file: File): Promise<Omit<DocumentBook, 'progres
     opfDir = opfPath.substring(0, lastSlash + 1);
   }
   
-  const opfStr = await zip.file(opfPath)?.async('string');
+  const opfRaw = await zip.file(opfPath)?.async('uint8array');
+  const opfStr = opfRaw ? new TextDecoder('utf-8').decode(opfRaw) : undefined;
   if (!opfStr) {
     throw new Error('Fichier OPF manquant ou illisible.');
   }
@@ -162,7 +199,9 @@ export async function parseEpub(file: File): Promise<Omit<DocumentBook, 'progres
       }
       
       if (fileEntry) {
-        const xhtmlContent = await fileEntry.async('string');
+        // Forcer UTF-8 pour éviter la corruption des accents (Gutenberg, Latin-1)
+        const rawBytes = await fileEntry.async('uint8array');
+        const xhtmlContent = new TextDecoder('utf-8').decode(rawBytes);
         const fallbackTitle = `Chapitre ${chapters.length + 1}`;
         const chapterTitle = extractChapterTitle(xhtmlContent, fallbackTitle);
         const { paragraphs, cleanText } = extractParagraphs(xhtmlContent);
