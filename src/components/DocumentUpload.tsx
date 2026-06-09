@@ -1,4 +1,4 @@
-import { useState, useRef, DragEvent, ChangeEvent } from 'react';
+import { useState, useRef, DragEvent, ChangeEvent, useEffect } from 'react';
 import { Upload, BookOpen, AlertCircle, Loader2, Sparkles, FileText, Bookmark as BookmarkIcon, Trash2 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { DocumentBook, Bookmark } from '../types';
@@ -13,9 +13,18 @@ interface DocumentUploadProps {
   bookmarks: Bookmark[];
   onSelectBookmark: (bookmark: Bookmark) => void;
   onDeleteBook: (bookId: string) => void;
+  initialTab?: 'library' | 'samples' | 'bookmarks';
 }
 
-export default function DocumentUpload({ onDocumentAdded, onSelectSample, recentBooks, bookmarks, onSelectBookmark, onDeleteBook }: DocumentUploadProps) {
+export default function DocumentUpload({ 
+  onDocumentAdded, 
+  onSelectSample, 
+  recentBooks, 
+  bookmarks, 
+  onSelectBookmark, 
+  onDeleteBook,
+  initialTab
+}: DocumentUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [loading, setLoading] = useState(false);
   const [progressMessage, setProgressMessage] = useState('');
@@ -23,8 +32,15 @@ export default function DocumentUpload({ onDocumentAdded, onSelectSample, recent
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
   const [activeTab, setActiveTab] = useState<'library' | 'samples' | 'bookmarks'>(
-    recentBooks.length > 0 ? 'library' : 'samples'
+    initialTab || (recentBooks.length > 0 ? 'library' : 'samples')
   );
+
+  useEffect(() => {
+    if (initialTab) {
+      setActiveTab(initialTab);
+    }
+  }, [initialTab]);
+
 
   const processFile = async (file: File) => {
     setLoading(true);

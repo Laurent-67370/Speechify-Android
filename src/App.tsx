@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { BookOpen, HelpCircle, X, ChevronLeft, VolumeX, Library } from 'lucide-react';
+import { BookOpen, HelpCircle, X, ChevronLeft, VolumeX, Library, Home, Headphones, Upload, Play, Pause } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { DocumentBook, UserSettings, Bookmark, Chapter } from './types';
 import { splitIntoSentences } from './utils/textUtils';
@@ -9,6 +9,8 @@ import Sidebar from './components/Sidebar';
 import TextViewer from './components/TextViewer';
 import ReaderControls from './components/ReaderControls';
 import ReaderSettings from './components/ReaderSettings';
+import HomeDashboard from './components/HomeDashboard';
+
 
 const DEFAULT_SETTINGS: UserSettings = {
   theme: 'sepia',
@@ -29,10 +31,18 @@ export default function App() {
   const [settings, setSettings] = useState<UserSettings>(DEFAULT_SETTINGS);
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
   
+  // Tabbed Navigation
+  const [currentTab, setCurrentTab] = useState<'accueil' | 'lire' | 'biblio' | 'librairie' | 'importer'>('accueil');
+
+  // Daily Stats trackers
+  const [listeningMinutesToday, setListeningMinutesToday] = useState(0.0);
+  const [dailyGoalMinutes, setDailyGoalMinutes] = useState(30);
+
   // UI states
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [showWelcomeHelp, setShowWelcomeHelp] = useState(false);
+
 
   // Speech tracker states
   const [currentChapterIdx, setCurrentChapterIdx] = useState(0);
@@ -87,7 +97,49 @@ export default function App() {
     if (typeof window !== 'undefined' && window.innerWidth >= 1024) {
       setSidebarOpen(true);
     }
+
+    try {
+      const todayStr = new Date().toISOString().split('T')[0];
+      const savedMinutes = localStorage.getItem(`vox_listened_m_${todayStr}`);
+      if (savedMinutes) {
+        setListeningMinutesToday(parseFloat(savedMinutes));
+      }
+      const savedGoal = localStorage.getItem('vox_daily_goal_m');
+      if (savedGoal) {
+        setDailyGoalMinutes(parseInt(savedGoal, 10));
+      }
+    } catch (err) {
+      console.error(err);
+    }
   }, []);
+
+  // Track actual audio listening elapsed time
+  useEffect(() => {
+    if (!isPlaying) return;
+    const interval = setInterval(() => {
+      setListeningMinutesToday(prev => {
+        const next = Math.round((prev + 1/60) * 100) / 100;
+        try {
+          const todayStr = new Date().toISOString().split('T')[0];
+          localStorage.setItem(`vox_listened_m_${todayStr}`, next.toFixed(2));
+        } catch (e) {
+          console.error(e);
+        }
+        return next;
+      });
+    }, 1000);
+    return () => clearInterval(interval);
+  }, [isPlaying]);
+
+  const handleUpdateDailyGoal = (goal: number) => {
+    setDailyGoalMinutes(goal);
+    try {
+      localStorage.setItem('vox_daily_goal_m', goal.toString());
+    } catch (e) {
+      console.error(e);
+    }
+  };
+
 
   // 2. Persist recent books and bookmarks whenever updated
   const saveRecentBooks = (books: DocumentBook[]) => {
@@ -436,6 +488,9 @@ export default function App() {
     setCurrentSentenceIdx(0);
     setIsPlaying(false);
     setSettingsOpen(false);
+    
+    // Auto shift to 'lire' tab
+    setCurrentTab('lire');
 
     // Close the sidebar on mobile and tablets when launching a book so they can see the text
     if (typeof window !== 'undefined' && window.innerWidth < 1024) {
@@ -474,10 +529,14 @@ export default function App() {
       setIsPlaying(false);
       setSettingsOpen(false);
 
+      // Auto shift to 'lire' tab
+      setCurrentTab('lire');
+
       // Close the sidebar on mobile and tablets when launching a bookmark so they can see the text
       if (typeof window !== 'undefined' && window.innerWidth < 1024) {
         setSidebarOpen(false);
       }
+
 
       // Apply document-specific voice overrides
       if (settings.saveVoicePerDocument) {
@@ -523,49 +582,55 @@ export default function App() {
     return `${chapterLabel}${current} sur ${total} : ${activeChapter?.title || ''}`;
   };
 
+  const handleToggleThemeGlobal = () => {
+    handleSettingsChange({ theme: settings.theme === 'dark' ? 'light' : 'dark' });
+  };
+
   return (
-    <div className={`min-h-screen flex flex-col transition-all duration-300 select-none ${
-      settings.theme === 'dark' ? 'bg-[#0f0e0d] text-stone-100' : 'bg-[#F9F8F6] text-[#2D2926]'
+    <div className={`min-h-screen flex flex-col transition-all duration-300 select-none pb-12 ${
+      currentTab === 'accueil' ? 'bg-[#0a0a09] text-stone-100' : (
+        settings.theme === 'dark' ? 'bg-[#0f0e0d] text-stone-100' : 'bg-[#F9F8F6] text-[#2D2926]'
+      )
     }`}>
-      {/* 1. Global Navigation Navbar */}
-      <header className="flex-shrink-0 flex justify-between items-center py-4 px-6 md:px-8 border-b border-stone-800 bg-[#1C1917] text-stone-200 transition-colors">
-        <div className="flex items-center space-x-3 cursor-pointer select-none" onClick={logoutCurrentBook}>
-          <div className="w-8 h-8 bg-amber-500 rounded flex items-center justify-center text-stone-900 font-extrabold shadow-md shadow-amber-500/20">
-            <span>V</span>
+      {/* 1. Global Navigation Navbar (Only shown on 'lire' tab when activeBook is loaded) */}
+      {currentTab === 'lire' && activeBook && (
+        <header className="flex-shrink-0 flex justify-between items-center py-4 px-6 md:px-8 border-b border-stone-800 bg-[#1C1917] text-stone-200 transition-colors">
+          <div className="flex items-center space-x-3 cursor-pointer select-none" onClick={() => setCurrentTab('accueil')}>
+            <div className="w-8 h-8 bg-[#646cff] rounded flex items-center justify-center text-white font-extrabold shadow-md shadow-indigo-500/20">
+              <span>S</span>
+            </div>
+            <div>
+              <span className="font-extrabold text-white text-base font-sans tracking-tight">
+                SpeechifyPro
+              </span>
+              <p className="text-[9px] font-bold text-[#767fff] uppercase font-mono tracking-widest">
+                Liseuse Active
+              </p>
+            </div>
           </div>
-          <div>
-            <span className="font-extrabold text-white text-base font-sans tracking-tight">
-              VoxRead Pro
-            </span>
-            <p className="text-[9px] font-bold text-amber-500 uppercase font-mono tracking-widest">
-              Liseuse Multilingue
-            </p>
-          </div>
-        </div>
 
-        <div className="flex items-center space-x-3">
-          {activeBook && (
+          <div className="flex items-center space-x-3">
             <button
-              onClick={logoutCurrentBook}
-              className="flex items-center space-x-1.5 px-3 py-1.5 border border-stone-800 rounded-xl bg-stone-900 text-stone-300 hover:text-white hover:bg-stone-800 text-xs font-semibold transition-colors cursor-pointer"
+              onClick={() => setCurrentTab('accueil')}
+              className="flex items-center space-x-1.5 px-3 py-1.5 border border-stone-880 rounded-xl bg-stone-900 text-stone-300 hover:text-white hover:bg-stone-800 text-xs font-semibold transition-all cursor-pointer"
             >
-              <Library className="w-4 h-4" />
-              <span>Ma Bibliothèque</span>
+              <Home className="w-4 h-4" />
+              <span>Accueil</span>
             </button>
-          )}
-          <button
-            onClick={() => setShowWelcomeHelp(true)}
-            className="p-2 text-stone-400 hover:text-amber-500 rounded-xl transition-colors cursor-pointer"
-            title="Aide d'utilisation"
-          >
-            <HelpCircle className="w-5 h-5" />
-          </button>
-        </div>
-      </header>
+            <button
+              onClick={() => setShowWelcomeHelp(true)}
+              className="p-2 text-stone-400 hover:text-indigo-400 rounded-xl transition-colors cursor-pointer"
+              title="Aide d'utilisation"
+            >
+              <HelpCircle className="w-5 h-5" />
+            </button>
+          </div>
+        </header>
+      )}
 
-      {/* Persistent global progress bar under the navigation bar when a document is active */}
+      {/* Persistent global progress bar under the navigation bar when inside 'lire' tab and activeBook is present */}
       <AnimatePresence>
-        {activeBook && (
+        {currentTab === 'lire' && activeBook && (
           <motion.div
             initial={{ height: 0, opacity: 0 }}
             animate={{ height: 'auto', opacity: 1 }}
@@ -577,7 +642,7 @@ export default function App() {
               <span className="font-serif font-extrabold text-[#2D2926] dark:text-stone-100 truncate text-[13px]">
                 📖 {activeBook.title}
               </span>
-              <span className="text-[10px] bg-amber-500/15 text-amber-800 dark:text-amber-300 px-2 py-0.5 rounded-md font-mono font-bold uppercase tracking-wide flex-shrink-0">
+              <span className="text-[10px] bg-indigo-500/15 text-[#646cff] dark:text-[#767fff] px-2 py-0.5 rounded-md font-mono font-bold uppercase tracking-wide flex-shrink-0">
                 Section {currentChapterIdx + 1}/{activeBook.chapters.length}
               </span>
             </div>
@@ -586,13 +651,13 @@ export default function App() {
               {/* Progress track */}
               <div className="flex-grow bg-stone-200 dark:bg-stone-800 h-2 rounded-full overflow-hidden relative shadow-inner">
                 <motion.div
-                  className="absolute top-0 left-0 bg-amber-500 h-full rounded-full"
+                  className="absolute top-0 left-0 bg-[#646cff] h-full rounded-full"
                   initial={{ width: 0 }}
                   animate={{ width: `${activeBook.progressPercent || 0}%` }}
                   transition={{ duration: 0.3, ease: 'easeOut' }}
                 />
               </div>
-              <span className="text-[11px] font-mono font-black text-amber-600 dark:text-amber-400 min-w-[40px] text-right">
+              <span className="text-[11px] font-mono font-black text-[#646cff] dark:text-[#767fff] min-w-[40px] text-right">
                 {Math.round(activeBook.progressPercent || 0)}%
               </span>
             </div>
@@ -600,157 +665,328 @@ export default function App() {
         )}
       </AnimatePresence>
 
-      {/* 2. Main Reader Space */}
+      {/* 2. Main Reader Space / Conditional Views */}
       <div className="flex-grow flex overflow-hidden min-h-0 relative">
         <AnimatePresence mode="wait">
-          {!activeBook ? (
-            /* Upload Screen Selection */
+          {currentTab === 'accueil' && (
             <motion.div
-              key="library"
+              key="accueil-tab"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="w-full overflow-y-auto"
+              className="w-full h-full overflow-hidden"
             >
-              <DocumentUpload
-                onDocumentAdded={handleDocumentAdded}
-                onSelectSample={handleSelectBook}
+              <HomeDashboard
                 recentBooks={recentBooks}
-                bookmarks={bookmarks}
-                onSelectBookmark={handleSelectBookmark}
-                onDeleteBook={handleDeleteBook}
+                activeBook={activeBook}
+                isPlaying={isPlaying}
+                onPlayPause={(p) => {
+                  if (p !== undefined) {
+                    if (p) speakCurrentSegment();
+                    setIsPlaying(p);
+                  } else {
+                    handlePlayPause();
+                  }
+                }}
+                onSelectBook={handleSelectBook}
+                listeningMinutesToday={listeningMinutesToday}
+                dailyGoalMinutes={dailyGoalMinutes}
+                onUpdateDailyGoal={handleUpdateDailyGoal}
+                onNavigateToTab={setCurrentTab}
+                onHelpClick={() => setShowWelcomeHelp(true)}
+                theme={settings.theme}
+                onThemeToggle={handleToggleThemeGlobal}
               />
             </motion.div>
-          ) : (
-            /* Active Reader Interface */
+          )}
+
+          {currentTab === 'biblio' && (
             <motion.div
-              key="reader"
+              key="biblio-tab"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="w-full overflow-y-auto bg-[#0a0a09] dark:bg-[#0a0a09] text-stone-100 p-4 sm:p-6 pb-24"
+            >
+              <div className="max-w-xl mx-auto py-2 space-y-6">
+                <div>
+                  <h2 className="text-3xl font-black text-white font-sans tracking-tight">Ma Bibliothèque</h2>
+                  <p className="text-stone-400 text-xs mt-1 font-sans font-medium">Tous vos documents importés ({recentBooks.length})</p>
+                </div>
+                <DocumentUpload
+                  onDocumentAdded={(book) => { handleDocumentAdded(book); setCurrentTab('lire'); }}
+                  onSelectSample={handleSelectBook}
+                  recentBooks={recentBooks}
+                  bookmarks={bookmarks}
+                  onSelectBookmark={handleSelectBookmark}
+                  onDeleteBook={handleDeleteBook}
+                  initialTab="library"
+                />
+              </div>
+            </motion.div>
+          )}
+
+          {currentTab === 'librairie' && (
+            <motion.div
+              key="librairie-tab"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="w-full overflow-y-auto bg-[#0a0a09] dark:bg-[#0a0a09] text-stone-100 p-4 sm:p-6 pb-24"
+            >
+              <div className="max-w-xl mx-auto py-2 space-y-6">
+                <div>
+                  <h2 className="text-3xl font-black text-white font-sans tracking-tight">Librairie</h2>
+                  <p className="text-stone-400 text-xs mt-1 font-sans font-medium">Suggestions classiques de chefs-d'œuvre multilingues ({SAMPLES.length})</p>
+                </div>
+                <DocumentUpload
+                  onDocumentAdded={(book) => { handleDocumentAdded(book); setCurrentTab('lire'); }}
+                  onSelectSample={handleSelectBook}
+                  recentBooks={recentBooks}
+                  bookmarks={bookmarks}
+                  onSelectBookmark={handleSelectBookmark}
+                  onDeleteBook={handleDeleteBook}
+                  initialTab="samples"
+                />
+              </div>
+            </motion.div>
+          )}
+
+          {currentTab === 'importer' && (
+            <motion.div
+              key="importer-tab"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="w-full overflow-y-auto bg-[#0a0a09] dark:bg-[#0a0a09] text-stone-100 p-4 sm:p-6 pb-24"
+            >
+              <div className="max-w-xl mx-auto py-2 space-y-6">
+                <div>
+                  <h2 className="text-3xl font-black text-white font-sans tracking-tight">Importer</h2>
+                  <p className="text-stone-400 text-xs mt-1 font-sans font-medium">Glissez un document PDF ou ePUB pour l'écouter instantanément</p>
+                </div>
+                <DocumentUpload
+                  onDocumentAdded={(book) => { handleDocumentAdded(book); setCurrentTab('lire'); }}
+                  onSelectSample={handleSelectBook}
+                  recentBooks={recentBooks}
+                  bookmarks={bookmarks}
+                  onSelectBookmark={handleSelectBookmark}
+                  onDeleteBook={handleDeleteBook}
+                />
+              </div>
+            </motion.div>
+          )}
+
+          {currentTab === 'lire' && (
+            <motion.div
+              key="reader-view"
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
               className="w-full flex h-full overflow-hidden"
             >
-              {/* Collapsible Left navigation Sidebar */}
-              <AnimatePresence initial={false}>
-                {sidebarOpen && (
-                  <>
-                    {/* Backdrop cover for mobile devices and tablets */}
-                    <div
-                      className="absolute inset-0 bg-black/45 backdrop-blur-sm z-40 lg:hidden"
-                      onClick={() => setSidebarOpen(false)}
-                    ></div>
-                    
-                    <motion.div
-                      initial={{ x: '-100%' }}
-                      animate={{ x: 0 }}
-                      exit={{ x: '-100%' }}
-                      transition={{ type: 'spring', bounce: 0, duration: 0.3 }}
-                      className="absolute lg:static left-0 top-0 bottom-0 w-[310px] h-full bg-[#F9F8F6] dark:bg-[#0f0e0d] border-r border-stone-200 dark:border-stone-900 z-50 flex flex-col shadow-2xl lg:shadow-none"
-                    >
-                      {/* Close Header for Mobile and Tablets */}
-                      <div className="lg:hidden flex justify-between items-center p-3.5 border-b border-stone-200 dark:border-stone-850 bg-[#F5F2ED] dark:bg-[#151312]">
-                        <span className="font-serif font-bold text-xs uppercase tracking-wider text-amber-600 dark:text-amber-400">Sommaire & Outils</span>
-                        <button
-                          onClick={() => setSidebarOpen(false)}
-                          className="p-1 px-2.5 bg-stone-150 hover:bg-stone-200 dark:bg-stone-850 dark:hover:bg-stone-800 text-stone-700 dark:text-stone-300 rounded-lg text-[10px] font-black tracking-wide font-sans transition-all cursor-pointer"
-                        >
-                          FERMER
-                        </button>
-                      </div>
-                      <div className="flex-grow overflow-hidden">
-                        <Sidebar
-                          documentBook={activeBook}
-                          currentChapterIndex={currentChapterIdx}
-                          currentParagraphIndex={currentParagraphIdx}
-                          onChapterSelect={(idx) => {
-                            handleJumpToLocation(idx, 0);
-                            if (window.innerWidth < 1024) {
-                              setSidebarOpen(false);
-                            }
-                          }}
-                          bookmarks={activeBookBookmarks}
-                          onAddBookmark={handleAddBookmark}
-                          onDeleteBookmark={handleDeleteBookmark}
-                          onJumpToLocation={(cIdx, pIdx) => {
-                            handleJumpToLocation(cIdx, pIdx);
-                            if (window.innerWidth < 1024) {
-                              setSidebarOpen(false);
-                            }
-                          }}
-                        />
-                      </div>
-                    </motion.div>
-                  </>
-                )}
-              </AnimatePresence>
-
-              {/* Central Reading document sheet */}
-              <div className="flex-grow h-full overflow-y-auto flex flex-col relative">
-                {activeChapter ? (
-                  <TextViewer
-                    chapter={activeChapter}
-                    currentParagraphIndex={currentParagraphIdx}
-                    currentSentenceIndex={currentSentenceIdx}
-                    isPlaying={isPlaying}
-                    settings={settings}
-                    onSettingsChange={handleSettingsChange}
-                    onLocationSelect={(pIdx, sIdx) => handleJumpToLocation(currentChapterIdx, pIdx, sIdx)}
-                    onQuickBookmark={handleQuickBookmarkToggle}
-                    isParagraphBookmarked={isParagraphBookmarked}
-                  />
-                ) : (
-                  <div className="flex flex-col items-center justify-center h-full text-slate-400">
-                    <VolumeX className="w-12 h-12 stroke-1 text-red-400 animate-bounce" />
-                    <p className="mt-4 text-sm">Aucun texte lisible dans cette section.</p>
+              {!activeBook ? (
+                /* Beautiful empty reading slate */
+                <div className="w-full flex items-center justify-center p-6 text-center select-none bg-[#0a0a09] h-full" id="empty-reader-view">
+                  <div className="max-w-sm mx-auto space-y-5 p-6 bg-[#131212] border border-stone-900 rounded-[24px]">
+                    <div className="p-4 bg-stone-950 rounded-full border border-stone-850 text-stone-450 w-16 h-16 flex items-center justify-center mx-auto animate-pulse">
+                      <Headphones className="w-8 h-8 text-[#646cff]" />
+                    </div>
+                    <div>
+                      <h3 className="font-extrabold text-white text-base">Aucun document actif</h3>
+                      <p className="text-stone-400 text-xs mt-1.5 leading-relaxed prose">
+                        Veuillez charger un livre électronique dans l'onglet Importer ou sélectionner un chef-d'œuvre littéraire de la Librairie pour lancer le lecteur intelligent.
+                      </p>
+                    </div>
+                    <div className="space-y-2 pt-2">
+                      <button
+                        onClick={() => setCurrentTab('librairie')}
+                        className="w-full py-2.5 bg-[#646cff] text-white hover:bg-[#525aff] text-xs font-black rounded-full cursor-pointer transition-colors shadow-md animate-pulse"
+                        id="empty-action-explore"
+                      >
+                        Parcourir la librairie
+                      </button>
+                      <button
+                        onClick={() => setCurrentTab('accueil')}
+                        className="w-full py-2.5 bg-transparent text-stone-300 hover:text-white border border-stone-800 text-xs font-bold rounded-full cursor-pointer transition-colors"
+                        id="empty-action-home"
+                      >
+                        Retour à l'accueil
+                      </button>
+                    </div>
                   </div>
-                )}
-              </div>
-
-              {/* Collapsible Right visual Settings panel */}
-              <AnimatePresence>
-                {settingsOpen && (
-                  <>
-                    {/* Backdrop cover for mobile devices and tablets */}
-                    <div
-                      className="absolute inset-0 bg-black/45 backdrop-blur-sm z-45 lg:hidden"
-                      onClick={() => setSettingsOpen(false)}
-                    ></div>
-                    
-                    <motion.div
-                      initial={{ x: '100%' }}
-                      animate={{ x: 0 }}
-                      exit={{ x: '100%' }}
-                      transition={{ type: 'spring', bounce: 0, duration: 0.3 }}
-                      className="absolute lg:static right-0 top-0 bottom-0 w-[290px] h-full bg-[#F9F8F6] dark:bg-[#0f0e0d] border-l border-stone-200 dark:border-stone-900 p-5 overflow-y-auto z-50 shadow-xl lg:shadow-none"
-                    >
-                      <div className="flex justify-between items-center mb-5 pb-3 border-b border-stone-200 dark:border-stone-800">
-                        <h3 className="font-black text-sm text-stone-900 dark:text-stone-100 uppercase tracking-tight font-serif">
-                          Options de mise en page
-                        </h3>
-                        <button
-                          onClick={() => setSettingsOpen(false)}
-                          className="p-1.5 text-stone-400 hover:text-stone-650 rounded-lg cursor-pointer transition-colors"
+                </div>
+              ) : (
+                /* Active Reader Interface */
+                <div className="w-full h-full flex overflow-hidden">
+                  {/* Collapsible Left navigation Sidebar */}
+                  <AnimatePresence initial={false}>
+                    {sidebarOpen && (
+                      <>
+                        {/* Backdrop cover for mobile devices and tablets */}
+                        <div
+                          className="absolute inset-0 bg-black/45 backdrop-blur-sm z-40 lg:hidden"
+                          onClick={() => setSidebarOpen(false)}
+                        ></div>
+                        
+                        <motion.div
+                          initial={{ x: '-100%' }}
+                          animate={{ x: 0 }}
+                          exit={{ x: '-100%' }}
+                          transition={{ type: 'spring', bounce: 0, duration: 0.3 }}
+                          className="absolute lg:static left-0 top-0 bottom-0 w-[310px] h-full bg-[#F9F8F6] dark:bg-[#0f0e0d] border-r border-stone-200 dark:border-stone-900 z-50 flex flex-col shadow-2xl lg:shadow-none"
                         >
-                          <X className="w-4 h-4" />
-                        </button>
-                      </div>
-                      <ReaderSettings
+                          {/* Close Header for Mobile and Tablets */}
+                          <div className="lg:hidden flex justify-between items-center p-3.5 border-b border-stone-200 dark:border-stone-850 bg-[#F5F2ED] dark:bg-[#151312]">
+                            <span className="font-serif font-bold text-xs uppercase tracking-wider text-[#646cff] dark:text-[#767fff]">Sommaire & Outils</span>
+                            <button
+                              onClick={() => setSidebarOpen(false)}
+                              className="p-1 px-2.5 bg-stone-150 hover:bg-stone-200 dark:bg-stone-850 dark:hover:bg-stone-800 text-stone-700 dark:text-stone-300 rounded-lg text-[10px] font-black tracking-wide font-sans transition-all cursor-pointer"
+                            >
+                              FERMER
+                            </button>
+                          </div>
+                          <div className="flex-grow overflow-hidden">
+                            <Sidebar
+                              documentBook={activeBook}
+                              currentChapterIndex={currentChapterIdx}
+                              currentParagraphIndex={currentParagraphIdx}
+                              onChapterSelect={(idx) => {
+                                handleJumpToLocation(idx, 0);
+                                if (window.innerWidth < 1024) {
+                                  setSidebarOpen(false);
+                                }
+                              }}
+                              bookmarks={activeBookBookmarks}
+                              onAddBookmark={handleAddBookmark}
+                              onDeleteBookmark={handleDeleteBookmark}
+                              onJumpToLocation={(cIdx, pIdx) => {
+                                handleJumpToLocation(cIdx, pIdx);
+                                if (window.innerWidth < 1024) {
+                                  setSidebarOpen(false);
+                                }
+                              }}
+                            />
+                          </div>
+                        </motion.div>
+                      </>
+                    )}
+                  </AnimatePresence>
+
+                  {/* Central Reading document sheet */}
+                  <div className="flex-grow h-full overflow-y-auto flex flex-col relative pb-32">
+                    {activeChapter ? (
+                      <TextViewer
+                        chapter={activeChapter}
+                        currentParagraphIndex={currentParagraphIdx}
+                        currentSentenceIndex={currentSentenceIdx}
+                        isPlaying={isPlaying}
                         settings={settings}
                         onSettingsChange={handleSettingsChange}
-                        documentLanguage={activeBook.language || 'fr'}
+                        onLocationSelect={(pIdx, sIdx) => handleJumpToLocation(currentChapterIdx, pIdx, sIdx)}
+                        onQuickBookmark={handleQuickBookmarkToggle}
+                        isParagraphBookmarked={isParagraphBookmarked}
                       />
-                    </motion.div>
-                  </>
-                )}
-              </AnimatePresence>
+                    ) : (
+                      <div className="flex flex-col items-center justify-center h-full text-stone-400 bg-stone-950">
+                        <VolumeX className="w-12 h-12 stroke-1 text-red-500 animate-bounce" />
+                        <p className="mt-4 text-sm">Aucun texte lisible dans cette section.</p>
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Collapsible Right visual Settings panel */}
+                  <AnimatePresence>
+                    {settingsOpen && (
+                      <>
+                        {/* Backdrop cover for mobile devices and tablets */}
+                        <div
+                          className="absolute inset-0 bg-black/45 backdrop-blur-sm z-45 lg:hidden"
+                          onClick={() => setSettingsOpen(false)}
+                        ></div>
+                        
+                        <motion.div
+                          initial={{ x: '100%' }}
+                          animate={{ x: 0 }}
+                          exit={{ x: '100%' }}
+                          transition={{ type: 'spring', bounce: 0, duration: 0.3 }}
+                          className="absolute lg:static right-0 top-0 bottom-0 w-[290px] h-full bg-[#F9F8F6] dark:bg-[#0f0e0d] border-l border-stone-200 dark:border-stone-900 p-5 overflow-y-auto z-50 shadow-xl lg:shadow-none"
+                        >
+                          <div className="flex justify-between items-center mb-5 pb-3 border-b border-stone-200 dark:border-stone-800">
+                            <h3 className="font-black text-sm text-stone-900 dark:text-stone-100 uppercase tracking-tight font-serif">
+                              Options de mise en page
+                            </h3>
+                            <button
+                              onClick={() => setSettingsOpen(false)}
+                              className="p-1.5 text-stone-400 hover:text-stone-650 rounded-lg cursor-pointer transition-colors"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </div>
+                          <ReaderSettings
+                            settings={settings}
+                            onSettingsChange={handleSettingsChange}
+                            documentLanguage={activeBook.language || 'fr'}
+                          />
+                        </motion.div>
+                      </>
+                    )}
+                  </AnimatePresence>
+                </div>
+              )}
             </motion.div>
           )}
         </AnimatePresence>
       </div>
 
-      {/* 3. Global Speech Ribbon Controls (floating if book is active) */}
-      {activeBook && (
-        <div className="flex-shrink-0 z-30">
+      {/* Floating / Sticky background Audio Player overlay widget (active in background tabs) */}
+      {activeBook && currentTab !== 'lire' && (
+        <motion.div 
+          className="fixed bottom-[68px] left-4 right-4 z-40 bg-[#141313]/95 border border-stone-850 rounded-2xl p-3 flex items-center justify-between shadow-[0_8px_32px_rgba(0,0,0,0.5)] max-w-md mx-auto backdrop-blur-md"
+          initial={{ y: 20, opacity: 0 }}
+          animate={{ y: 0, opacity: 1 }}
+          exit={{ y: 20, opacity: 0 }}
+          id="background-player"
+        >
+          <div className="flex items-center space-x-3 truncate cursor-pointer flex-grow min-w-0" onClick={() => setCurrentTab('lire')}>
+            <div className="p-2 bg-stone-950 border border-stone-800 text-[#646cff] rounded-xl flex-shrink-0 animate-pulse">
+              <Headphones className="w-4.5 h-4.5" />
+            </div>
+            <div className="text-left truncate min-w-0">
+              <p className="text-xs font-extrabold text-white truncate font-sans tracking-tight">{activeBook.title}</p>
+              <div className="flex items-center gap-1.5 mt-0.5">
+                <span className="text-[9px] text-[#767fff] font-extrabold uppercase bg-[#646cff]/10 px-1.5 py-0.5 rounded border border-[#646cff]/15">
+                  Section {currentChapterIdx + 1}
+                </span>
+                <span className="text-[9px] text-stone-400 font-medium whitespace-nowrap">
+                  Arrière-plan • {Math.round(activeBook.progressPercent || 0)}%
+                </span>
+              </div>
+            </div>
+          </div>
+          <div className="flex items-center space-x-2 flex-shrink-0 ml-3">
+            <button 
+              onClick={() => handlePlayPause()}
+              className="p-2.5 bg-[#646cff] hover:bg-[#525aff] rounded-full text-white cursor-pointer transition-colors"
+              title={isPlaying ? 'Pause' : 'Lecture'}
+              id="bg-play-pause-btn"
+            >
+              {isPlaying ? <Pause className="w-3.5 h-3.5 fill-current" /> : <Play className="w-3.5 h-3.5 fill-current ml-0.5" />}
+            </button>
+            <button 
+              onClick={() => setCurrentTab('lire')}
+              className="text-[9px] font-black text-stone-300 hover:text-white px-2.5 py-2 bg-stone-900 border border-stone-800 rounded-xl transition-all cursor-pointer uppercase font-sans tracking-wider hover:border-stone-700"
+              id="bg-open-btn"
+            >
+              Ouvrir
+            </button>
+          </div>
+        </motion.div>
+      )}
+
+      {/* 3. Global Speech Ribbon Controls (floating only when inside 'lire' active tab and activeBook is present) */}
+      {currentTab === 'lire' && activeBook && (
+        <div className="fixed bottom-[56px] left-0 right-0 z-30 bg-[#1c1a19] shadow-lg">
           <ReaderControls
             isPlaying={isPlaying}
             onPlayPause={handlePlayPause}
@@ -767,7 +1003,92 @@ export default function App() {
         </div>
       )}
 
-      {/* 4. Overlay Welcome help guide */}
+      {/* 4. Permanently Sticky bottom tab navigation bar matching the classic SpeechifyPro design exactly */}
+      <footer className="fixed bottom-0 left-0 right-0 z-50 bg-[#111110] border-t border-stone-900/80 shadow-[0_-4px_16px_rgba(0,0,0,0.6)] py-1.5 px-3">
+        <div className="max-w-xl mx-auto flex items-center justify-between text-stone-400 font-sans">
+          {/* Tab 1: Accueil */}
+          <button 
+            onClick={() => setCurrentTab('accueil')}
+            className={`flex flex-col items-center justify-center p-1 cursor-pointer transition-all duration-200 flex-1 relative ${
+              currentTab === 'accueil' ? 'text-white' : 'hover:text-stone-200 text-stone-500'
+            }`}
+            title="Accueil"
+            id="tab-accueil"
+          >
+            <Home className={`w-5 h-5 transition-all duration-300 ${currentTab === 'accueil' ? 'text-[#646cff] drop-shadow-[0_0_10px_rgba(100,108,255,0.4)]' : ''}`} />
+            <span className="text-[10px] mt-1 font-semibold tracking-tight">Accueil</span>
+            {currentTab === 'accueil' && (
+              <motion.div className="absolute top-[-7px] w-5 h-[2px] bg-[#646cff] rounded-full" layoutId="purple-active-tab" />
+            )}
+          </button>
+
+          {/* Tab 2: Lire */}
+          <button 
+            onClick={() => setCurrentTab('lire')}
+            className={`flex flex-col items-center justify-center p-1 cursor-pointer transition-all duration-200 flex-1 relative ${
+              currentTab === 'lire' ? 'text-white' : 'hover:text-stone-200 text-stone-500'
+            }`}
+            title="Lecteur Vocal"
+            id="tab-lire"
+          >
+            <Headphones className={`w-5 h-5 transition-all duration-300 ${currentTab === 'lire' ? 'text-[#646cff] drop-shadow-[0_0_10px_rgba(100,108,255,0.4)] animate-pulse' : ''}`} />
+            <span className="text-[10px] mt-1 font-semibold tracking-tight">Lire</span>
+            {currentTab === 'lire' && (
+              <motion.div className="absolute top-[-7px] w-5 h-[2px] bg-[#646cff] rounded-full" layoutId="purple-active-tab" />
+            )}
+          </button>
+
+          {/* Tab 3: Biblio */}
+          <button 
+            onClick={() => setCurrentTab('biblio')}
+            className={`flex flex-col items-center justify-center p-1 cursor-pointer transition-all duration-200 flex-1 relative ${
+              currentTab === 'biblio' ? 'text-white' : 'hover:text-stone-200 text-stone-500'
+            }`}
+            title="Bibliothèque"
+            id="tab-biblio"
+          >
+            <Library className={`w-5 h-5 transition-all duration-300 ${currentTab === 'biblio' ? 'text-[#646cff] drop-shadow-[0_0_10px_rgba(100,108,255,0.4)]' : ''}`} />
+            <span className="text-[10px] mt-1 font-semibold tracking-tight">Biblio</span>
+            {currentTab === 'biblio' && (
+              <motion.div className="absolute top-[-7px] w-5 h-[2px] bg-[#646cff] rounded-full" layoutId="purple-active-tab" />
+            )}
+          </button>
+
+          {/* Tab 4: Librairie */}
+          <button 
+            onClick={() => setCurrentTab('librairie')}
+            className={`flex flex-col items-center justify-center p-1 cursor-pointer transition-all duration-200 flex-1 relative ${
+              currentTab === 'librairie' ? 'text-white' : 'hover:text-stone-200 text-stone-500'
+            }`}
+            title="Librairie"
+            id="tab-librairie"
+          >
+            <BookOpen className={`w-5 h-5 transition-all duration-300 ${currentTab === 'librairie' ? 'text-[#646cff] drop-shadow-[0_0_10px_rgba(100,108,255,0.4)]' : ''}`} />
+            <span className="text-[10px] mt-1 font-semibold tracking-tight">Librairie</span>
+            {currentTab === 'librairie' && (
+              <motion.div className="absolute top-[-7px] w-5 h-[2px] bg-[#646cff] rounded-full" layoutId="purple-active-tab" />
+            )}
+          </button>
+
+          {/* Tab 5: Importer */}
+          <button 
+            onClick={() => setCurrentTab('importer')}
+            className={`flex flex-col items-center justify-center p-1 cursor-pointer transition-all duration-200 flex-1 relative ${
+              currentTab === 'importer' ? 'text-white' : 'hover:text-stone-200 text-stone-500'
+            }`}
+            title="Importer"
+            id="tab-importer"
+          >
+            <Upload className={`w-5 h-5 transition-all duration-300 ${currentTab === 'importer' ? 'text-[#646cff] drop-shadow-[0_0_10px_rgba(100,108,255,0.4)]' : ''}`} />
+            <span className="text-[10px] mt-1 font-semibold tracking-tight">Importer</span>
+            {currentTab === 'importer' && (
+              <motion.div className="absolute top-[-7px] w-5 h-[2px] bg-[#646cff] rounded-full" layoutId="purple-active-tab" />
+            )}
+          </button>
+        </div>
+      </footer>
+
+      {/* 5. Overlay Welcome help guide */}
       <AnimatePresence>
         {showWelcomeHelp && (
           <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
@@ -775,54 +1096,54 @@ export default function App() {
               initial={{ scale: 0.95, opacity: 0 }}
               animate={{ scale: 1, opacity: 1 }}
               exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-[#F9F8F6] dark:bg-[#0f0e0d] rounded-2xl max-w-lg w-full p-6 shadow-2xl relative text-left border border-stone-200 dark:border-stone-850"
+              className="bg-[#121111]/95 text-stone-100 rounded-[28px] max-w-lg w-full p-6 shadow-2xl relative text-left border border-stone-900"
             >
               <button
                 onClick={() => setShowWelcomeHelp(false)}
-                className="absolute right-4 top-4 text-stone-400 hover:text-stone-650 dark:hover:text-stone-200 p-1.5 rounded-lg cursor-pointer"
+                className="absolute right-4 top-4 text-stone-400 hover:text-white p-1.5 rounded-lg cursor-pointer"
               >
                 <X className="w-5 h-5" />
               </button>
 
-              <div className="flex items-center space-x-2.5 text-amber-600 dark:text-amber-400 mb-4">
+              <div className="flex items-center space-x-2.5 text-[#646cff] mb-4">
                 <BookOpen className="w-6 h-6" />
-                <h3 className="text-xl font-bold tracking-tight font-serif">
+                <h3 className="text-xl font-black tracking-tight font-sans">
                   Guide de démarrage
                 </h3>
               </div>
 
-              <div className="space-y-4 text-xs leading-relaxed text-stone-600 dark:text-stone-300">
+              <div className="space-y-4 text-xs leading-relaxed text-stone-300">
                 <p>
-                  Bienvenue dans l'univers de la lecture audio naturelle. Cette application lit vos documents de manière intelligente et fluide, sans aucune connexion nécessaire.
+                  Bienvenue dans l'univers de la lecture audio naturelle de <strong>SpeechifyPro</strong>. Cette liseuse intelligente convertit vos textes en fichiers de synthèse vocale vivants.
                 </p>
 
                 <div className="space-y-3">
                   <div className="flex items-start space-x-2.5">
-                    <span className="h-5 w-5 rounded bg-amber-500 text-stone-900 font-extrabold flex items-center justify-center flex-shrink-0 text-[10px] dark:bg-amber-950/45 dark:text-amber-305">1</span>
-                    <p><strong>Chargement facile :</strong> Glissez n'importe quel fichier <strong>PDF</strong> ou <strong>ePUB</strong> (sans verrous DRM) dans le cadre, ou sélectionnez l'un des trois classiques d'exemple.</p>
+                    <span className="h-5 w-5 rounded bg-[#646cff] text-white font-extrabold flex items-center justify-center flex-shrink-0 text-[10px]">1</span>
+                    <p><strong>Chargement multiformat :</strong> Rendez-vous sur l'onglet <strong>Importer</strong> pour charger vos livres <strong>PDF</strong> ou <strong>ePUB</strong> ou écoutez l'un des livres préchargés de la <strong>Librairie</strong>.</p>
                   </div>
                   <div className="flex items-start space-x-2.5">
-                    <span className="h-5 w-5 rounded bg-amber-500 text-stone-900 font-extrabold flex items-center justify-center flex-shrink-0 text-[10px] dark:bg-amber-950/45 dark:text-amber-305">2</span>
-                    <p><strong>Synthèse naturelle hors ligne :</strong> L'application extrait le texte et utilise les voix de votre appareil mobile ou ordinateur. Sélectionnez des voix enrichies dans la liste en bas de l'écran.</p>
+                    <span className="h-5 w-5 rounded bg-[#646cff] text-white font-extrabold flex items-center justify-center flex-shrink-0 text-[10px]">2</span>
+                    <p><strong>Lecture d'arrière-plan globale :</strong> Écoutez vos documents tout en configurant votre liseuse ou en naviguant sur l'accueil ! Un mini-lecteur flottant persistera au bas de l'écran.</p>
                   </div>
                   <div className="flex items-start space-x-2.5">
-                    <span className="h-5 w-5 rounded bg-amber-500 text-stone-900 font-extrabold flex items-center justify-center flex-shrink-0 text-[10px] dark:bg-amber-950/45 dark:text-amber-305">3</span>
-                    <p><strong>Clic pour lire :</strong> Pendant que vous lisez, vous pouvez cliquer sur <strong>n'importe quelle phrase dans le texte</strong> pour y déplacer instantanément le curseur de lecture vocale.</p>
+                    <span className="h-5 w-5 rounded bg-[#646cff] text-white font-extrabold flex items-center justify-center flex-shrink-0 text-[10px]">3</span>
+                    <p><strong>Geste intelligent "Clic-pour-lire" :</strong> En mode lecture, cliquez directement sur <strong>n'importe quelle phrase du texte</strong> pour y positionner instantanément la synthèse vocale.</p>
                   </div>
                   <div className="flex items-start space-x-2.5">
-                    <span className="h-5 w-5 rounded bg-amber-500 text-stone-900 font-extrabold flex items-center justify-center flex-shrink-0 text-[10px] dark:bg-amber-950/45 dark:text-amber-305">4</span>
-                    <p><strong>Notes & Signets :</strong> Enregistrez des passages importants ou prenez des notes de cours. Tout est sauvegardé au sein de votre navigateur d'une session sur l'autre !</p>
+                    <span className="h-5 w-5 rounded bg-[#646cff] text-white font-extrabold flex items-center justify-center flex-shrink-0 text-[10px]">4</span>
+                    <p><strong>Objectifs et Motivation :</strong> Suivez vos minutes écoutées chaque jour en temps réel et réglez vos objectifs pour acquérir un rituel de lecture quotidien.</p>
                   </div>
                 </div>
 
-                <div className="bg-[#F2EFE9] border border-stone-200 p-3 rounded-xl mt-4 dark:bg-stone-900 dark:border-stone-850 text-[11px] text-stone-550 dark:text-stone-400 font-mono">
-                  <p>💡 <em>Note : Certains systèmes d'exploitation (comme iOS et MacOS) demandent un premier geste de clic (Play) avant de charger la totalité des voix système.</em></p>
+                <div className="bg-stone-900 border border-stone-850 p-3 rounded-xl mt-4 text-[11px] text-stone-400 font-mono">
+                  <p>💡 <em>Note : Toutes vos voix système de haute qualité sont chargées nativement. Ajustez la vitesse et le pas de voix à tout moment depuis les options de lecture !</em></p>
                 </div>
               </div>
 
               <button
                 onClick={() => setShowWelcomeHelp(false)}
-                className="w-full mt-6 py-2.5 bg-amber-500 text-stone-950 font-black rounded-xl hover:bg-amber-600 transition-all text-xs cursor-pointer shadow-sm text-center"
+                className="w-full mt-6 py-2.5 bg-[#646cff] text-white font-black rounded-full hover:bg-[#525aff] transition-all text-xs cursor-pointer shadow-sm text-center"
               >
                 C'est compris, bonne lecture !
               </button>

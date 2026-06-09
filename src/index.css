@@ -7,3 +7,39 @@
   --font-mono: "JetBrains Mono", monospace;
 }
 
+@keyframes music-bounce-1 {
+  0%, 100% { transform: scaleY(0.15); }
+  50% { transform: scaleY(0.9); }
+}
+@keyframes music-bounce-2 {
+  0%, 100% { transform: scaleY(0.25); }
+  50% { transform: scaleY(1); }
+}
+@keyframes music-bounce-3 {
+  0%, 100% { transform: scaleY(0.1); }
+  50% { transform: scaleY(0.75); }
+}
+
+.animate-music-1 {
+  animation: music-bounce-1 1.0s ease-in-out infinite;
+  transform-origin: bottom;
+}
+.animate-music-2 {
+  animation: music-bounce-2 0.7s ease-in-out infinite;
+  transform-origin: bottom;
+}
+.animate-music-3 {
+  animation: music-bounce-3 1.3s ease-in-out infinite;
+  transform-origin: bottom;
+}
+
+/* Hide scrollbar on tabs */
+.scrollbar-none::-webkit-scrollbar {
+  display: none;
+}
+.scrollbar-none {
+  -ms-overflow-style: none;
+  scrollbar-width: none;
+}
+
+
