@@ -8,36 +8,69 @@ Que ce soit pour reposer vos yeux fatigués, réviser des concepts clés, ou vou
 
 ## 🌟 Fonctionnalités
 
-### 🤖 1. Charly, votre Guide Interactif & Didactique
+### 🤖 1. Charly — Guide Interactif & Coach IA
+
 - **Parcours d'Apprentissage Vivant :** Un assistant virtuel jovial vous explique le fonctionnement en 6 étapes animées.
 - **Le Laboratoire Acoustique :** Entraînez-vous à façonner la voix de synthèse en temps réel.
 - **Entraînement "Clic-pour-Lire" :** Simulez des clics de lecture directement dans le guide.
 - **Le Grand Quiz des Lecteurs :** Validez vos connaissances et décrochez votre brevet de *Lecteur Intelligent* !
+- **Coach IA contextuel :** Posez des questions sur votre lecture en cours — résumé, quiz, contexte historique, vocabulaire, analyse des personnages — directement depuis l'interface.
 
 ### 🔮 2. Résumés Intelligents par l'IA (Gemini Flash)
+
 - **4 Styles de Résumés :** Équilibré, Points Clés, Pédagogique, Court.
 - **Vocalisation Directe :** Écoutez votre résumé en un clic via la synthèse vocale intégrée.
 - **Dictionnaire Contextuel IA :** Sélectionnez un mot pour obtenir définition, étymologie, synonymes et exemple.
+- **Sauvegarde en Flashcard :** Depuis le dictionnaire, enregistrez n'importe quel mot dans votre deck personnel en un clic.
 
 ### ⛵ 3. Navigation Ultragranulaire
+
 - **Geste "Click-to-Read" :** Cliquez sur un paragraphe pour déplacer instantanément la lecture.
 - **Boîte à Outils de Fin de Chapitre :** Passer au chapitre suivant, relire, générer un résumé IA.
 - **Skip ±15s :** Navigation temporelle dans le flux audio.
 
-### 🌌 4. Confort d'Affichage & Design
+### 🖱️ 4. Popup de Sélection de Texte
+
+Sélectionnez n'importe quel passage et accédez instantanément à 4 actions :
+
+- **▶ Lire depuis ici** — positionne la lecture exactement à la phrase sélectionnée.
+- **🖊 Annoter** — surligne le passage avec une couleur et une note personnelle.
+- **📖 Définir** — ouvre le dictionnaire IA sur le mot sélectionné.
+- **📋 Copier** — copie la sélection avec feedback visuel.
+
+Fonctionne au **tap** (mobile) et à la **souris** (desktop).
+
+### 🖊️ 5. Annotations & Surlignage
+
+- Surlignez des passages en **4 couleurs** (jaune, vert, bleu, rose).
+- Ajoutez une **note textuelle** à chaque annotation.
+- Annotations **persistées en SQLite VPS** — retrouvez-les sur tous vos appareils.
+
+### 🧠 6. Flashcards & Révision Vocabulaire
+
+- Sauvegardez les mots découverts pendant la lecture dans un **deck personnel**.
+- **Mode révision** avec cartes retournables (flip recto/verso).
+- Marquage **"Maîtrisée"** / **"À revoir"** avec suivi de progression.
+- Prononciation des mots via synthèse vocale.
+- Accessible depuis l'onglet **Cartes** (navbar), avec badge compteur.
+- Deck **persisté en SQLite VPS**.
+
+### 🌌 7. Confort d'Affichage & Design
+
 - **3 Thèmes :** Sombre (cosmique), Jour (sable), Sépia.
 - **Égaliseur Virtuel Réactif :** Onde audio animée en temps réel.
 - **Mini-Lecteur Flottant Global :** Naviguez librement pendant la lecture en arrière-plan.
 - **Défilement automatique :** Le texte suit la lecture en douceur.
 
-### 📚 5. Bibliothèque & Import Multi-Source
+### 📚 8. Bibliothèque & Import Multi-Source
+
 - **Projet Gutenberg :** 70 000+ ouvrages classiques en 🇫🇷 🇬🇧 🇪🇸 🇩🇪 🇮🇹.
 - **Import de fichiers :** Glissez-déposez vos **ePUB, PDF, TXT et Markdown** (.md, .markdown) locaux.
 - **Import URL :** Collez une URL web pour lire un article en un instant.
 - **Encodage auto :** Détection UTF-8 / Latin-1 pour les classiques Gutenberg et les fichiers TXT (accents corrects).
-- **Chapitrage intelligent :** Les fichiers TXT et Markdown sont découpés automatiquement en chapitres (titres `#`, `##`, doubles sauts de ligne).
+- **Chapitrage intelligent :** Les fichiers TXT et Markdown sont découpés automatiquement en chapitres.
 
-### 🎙️ 6. Voix de Studio Premium
+### 🎙️ 9. Voix de Studio Premium
 
 **Voix Studio système** (sans clé API) — profils optimisés par langue :
 - 🇫🇷 *Charly* (Chaleureux), *Clara* (Lumineux), *Victor* (Théâtral)
@@ -53,27 +86,24 @@ Que ce soit pour reposer vos yeux fatigués, réviser des concepts clés, ou vou
 - Fonctionne sur **tous les navigateurs et OS** (Firefox Linux, Chrome, Android)
 - 1M caractères/mois gratuits sur Google Cloud
 
-### 📊 7. Page Statistiques
+### 📊 10. Page Statistiques
+
 - **Objectif journalier** avec cercle de progression animé (modifiable).
 - **3 KPIs :** minutes cette semaine, série de jours consécutifs (streak), nb de livres.
 - **Graphique 7 jours** avec barres animées, jour courant mis en valeur.
 - **Progression par livre** avec mini-barres gradient et durée estimée.
-- Données persistées en `localStorage` (clé `speechify_day_YYYY-MM-DD`).
 
-### 🖱️ 8. Popup de Sélection de Texte
-- **▶ Lire depuis ici** — positionne la lecture exactement à la phrase sélectionnée.
-- **📋 Copier** — copie la sélection avec feedback visuel.
-- Fonctionne au **tap** (mobile) et à la **souris** (desktop).
+### 💾 11. Stockage Persistant Multi-Navigateur (SQLite VPS)
 
-### 💾 9. Stockage Persistant Multi-Navigateur (SQLite VPS)
-- Les livres et marque-pages sont sauvegardés dans une base **SQLite** côté serveur.
+- Livres, marque-pages, annotations et flashcards sauvegardés en **SQLite** côté serveur.
 - Accessible depuis **n'importe quel navigateur ou appareil** via `speechify.lhusser.fr`.
 - Fallback automatique sur **IndexedDB** local si le serveur est inaccessible.
 - Migration automatique depuis `localStorage` legacy.
 
-### 📱 10. Application Web Progressive (PWA)
+### 📱 12. Application Web Progressive (PWA)
+
 - **Installable en un clic** sur mobile et desktop.
-- **Service Worker** : cache automatique, fonctionnement hors ligne.
+- **Service Worker v2** : NetworkFirst pour JS/CSS (toujours la dernière version), cache auto, fonctionnement hors ligne.
 - **Manifest PWA** avec icônes haute résolution.
 
 ---
@@ -85,14 +115,16 @@ Que ce soit pour reposer vos yeux fatigués, réviser des concepts clés, ou vou
 | **Frontend** | React 19 + TypeScript + Vite 6 |
 | **Animations** | Motion (`motion/react`) |
 | **Design** | Tailwind CSS 4 |
-| **PWA** | Service Worker + manifest.json |
-| **IA Résumés** | Google GenAI SDK — Gemini Flash (côté serveur) |
+| **PWA** | Service Worker v2 (NetworkFirst) + manifest.json |
+| **IA Résumés** | Google GenAI SDK — Gemini 2.5 Flash (côté serveur) |
+| **IA Chat** | Gemini 2.5 Flash — Charly Coach contextuel |
 | **Voix Premium** | Google Cloud TTS REST API (Neural2 / WaveNet) |
-| **Stockage livres** | SQLite (`better-sqlite3`) côté serveur + IndexedDB local |
+| **Stockage** | SQLite (`better-sqlite3`) — livres, marque-pages, annotations, flashcards |
+| **Cache local** | IndexedDB (fallback offline) |
 | **Parseurs** | PDF.js 3.4 (PDF) · JSZip (ePUB) · Custom (TXT / Markdown) |
-| **Encodage** | Détection auto UTF-8 / Latin-1 (TextDecoder + Buffer Node.js) |
+| **Encodage** | Détection auto UTF-8 / Latin-1 + normalisation apostrophes typographiques |
 | **Serveur** | Node.js / Express — proxy CORS, Gutenberg, Gemini, SQLite |
-| **Sécurité** | CORS restrictif (whitelist) · Rate limiting (60/min global, 10/min Gemini) |
+| **Sécurité** | CORS restrictif (whitelist) · Rate limiting (200/min API, 10/min Gemini) |
 | **Résilience** | Error Boundary React · Code splitting (`React.lazy`) |
 | **Déploiement** | PM2 + Nginx + Let's Encrypt (HTTPS) |
 
@@ -156,19 +188,22 @@ src/
 │   ├── ReaderSettings.tsx       # Paramètres (voix, thème, taille)
 │   ├── GoogleTTSSettings.tsx    # Config Google Cloud TTS ✨
 │   ├── StatsPage.tsx            # Statistiques (cercle, streak, graphe) 📊 ⚡ lazy
-│   ├── SelectionPopup.tsx       # Popup sélection texte 🖱️
+│   ├── SelectionPopup.tsx       # Popup sélection (Lire / Annoter / Définir / Copier) 🖱️
+│   ├── AnnotationModal.tsx      # Création annotation avec couleur + note 🖊️
+│   ├── DictionaryModal.tsx      # Dictionnaire IA + sauvegarde flashcard 📖
+│   ├── FlashcardsPage.tsx       # Deck vocabulaire + mode révision flip 🧠 ⚡ lazy
+│   ├── CharlyChatModal.tsx      # Coach IA contextuel sur le livre en cours 🤖 ⚡ lazy
 │   ├── HomeDashboard.tsx        # Accueil (carousel, objectif, égaliseur)
-│   ├── Sidebar.tsx              # Table des matières + marque-pages
+│   ├── Sidebar.tsx              # Table des matières + marque-pages + résumés IA
 │   ├── GutenbergExplorer.tsx    # Recherche + import Gutenberg (70k livres) ⚡ lazy
 │   ├── DocumentUpload.tsx       # Import PDF/ePUB/TXT/MD/URL
 │   ├── InteractiveHelpGuide.tsx # Guide Charly (6 étapes + quiz) ⚡ lazy
-│   ├── ErrorBoundary.tsx        # Capture erreurs React + fallback UI 🛡️
-│   └── DictionaryModal.tsx      # Définition mot sélectionné
+│   └── ErrorBoundary.tsx        # Capture erreurs React + fallback UI 🛡️
 ├── utils/
 │   ├── useGoogleTTS.ts          # Hook Google Cloud TTS ✨
 │   ├── useServerSync.ts         # Hook synchronisation SQLite VPS 💾
 │   ├── customVoices.ts          # Profils voix studio système
-│   ├── textUtils.ts             # Découpage phrases, préprocesseur TTS
+│   ├── textUtils.ts             # Découpage phrases, préprocesseur TTS (apostrophes normalisées)
 │   ├── indexedDB.ts             # Cache local IndexedDB
 │   └── webParser.ts             # Extraction texte depuis URL
 ├── lib/
@@ -177,18 +212,21 @@ src/
 │   └── textParser.ts            # Parser TXT/Markdown avec chapitrage auto et UTF-8/Latin-1
 ├── data/
 │   └── samples.ts               # Extraits de démonstration
-└── types.ts                     # Types TypeScript partagés
+└── types.ts                     # Types TypeScript (DocumentBook, Annotation, Flashcard...)
 
 server.ts                        # Serveur Express + CORS restrictif + Rate limiting 🛡️
 ├── /api/gutenberg/:bookId       # Proxy Gutenberg (UTF-8/Latin-1 auto) 🔤
 ├── /api/books                   # CRUD livres SQLite 💾
 ├── /api/bookmarks               # CRUD marque-pages SQLite 💾
+├── /api/annotations             # CRUD annotations SQLite 🖊️
+├── /api/flashcards              # CRUD flashcards SQLite 🧠
 ├── /api/proxy                   # Proxy web (import URL)
 ├── /api/gemini/summarize        # Résumés IA Gemini (10 req/min) 🧠
-└── /api/gemini/define           # Dictionnaire IA Gemini (15 req/min)
+├── /api/gemini/define           # Dictionnaire IA Gemini (15 req/min)
+└── /api/gemini/chat             # Coach Charly IA (20 req/min) 🤖
 
 data/
-└── speechify.db                 # Base SQLite (livres + marque-pages) 💾
+└── speechify.db                 # Base SQLite (livres, marque-pages, annotations, flashcards) 💾
 ```
 
 ---
@@ -207,7 +245,15 @@ data/
 | v1.4 | Juin 2026 | **HTTPS** — `speechify.lhusser.fr` via Nginx + Let's Encrypt + PM2 |
 | v1.5 | Juin 2026 | **Import TXT & Markdown** — parser avec chapitrage auto, détection UTF-8/Latin-1 |
 | v1.6 | Juin 2026 | **Sécurité** — CORS restrictif, rate limiting, Error Boundary React |
-| v1.6 | Juin 2026 | **Perf** — code splitting (708→641 KB), `React.lazy` sur 3 composants |
+| v1.6 | Juin 2026 | **Perf** — code splitting (708→641 KB), `React.lazy` sur 3 composants ⚡ |
+| v2.0 | Juin 2026 | **Annotations** — surlignage 4 couleurs + notes textuelles, persisté SQLite |
+| v2.0 | Juin 2026 | **Flashcards** — deck vocabulaire + mode révision flip, persisté SQLite 🧠 |
+| v2.0 | Juin 2026 | **Charly Coach IA** — chat contextuel sur le livre (résumé, quiz, analyse...) 🤖 |
+| v2.0 | Juin 2026 | **SelectionPopup v2** — ajout boutons Annoter + Définir |
+| v2.0 | Juin 2026 | **DictionaryModal** — bouton "Sauvegarder en flashcard" |
+| v2.0 | Juin 2026 | **Fix TTS** — apostrophes typographiques normalisées (d'Amérique, l'homme...) |
+| v2.0 | Juin 2026 | **SW v2** — NetworkFirst JS/CSS, nettoyage auto anciens caches |
+| v2.0 | Juin 2026 | **Rate limiter** — 200 req/min sur `/api` uniquement (plus de blocage chargement) |
 
 ---
 
