@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { BookOpen, HelpCircle, X, ChevronLeft, VolumeX, Library, Home, Headphones, Upload, Play, Pause } from 'lucide-react';
+import { BookOpen, HelpCircle, X, ChevronLeft, VolumeX, Library, Home, Headphones, Upload, Play, Pause, Globe } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { DocumentBook, UserSettings, Bookmark, Chapter } from './types';
 import { splitIntoSentences } from './utils/textUtils';
@@ -10,6 +10,7 @@ import TextViewer from './components/TextViewer';
 import ReaderControls from './components/ReaderControls';
 import ReaderSettings from './components/ReaderSettings';
 import HomeDashboard from './components/HomeDashboard';
+import GutenbergExplorer from './components/GutenbergExplorer';
 
 
 const DEFAULT_SETTINGS: UserSettings = {
@@ -33,6 +34,7 @@ export default function App() {
   
   // Tabbed Navigation
   const [currentTab, setCurrentTab] = useState<'accueil' | 'lire' | 'biblio' | 'librairie' | 'importer'>('accueil');
+  const [libSubTab, setLibSubTab] = useState<'gutenberg' | 'samples'>('gutenberg');
 
   // Daily Stats trackers
   const [listeningMinutesToday, setListeningMinutesToday] = useState(0.0);
@@ -748,20 +750,76 @@ export default function App() {
               }`}
             >
               <div className="max-w-3xl mx-auto py-2 space-y-6">
-                <div>
-                  <h2 className="text-3xl font-black text-stone-900 dark:text-white font-sans tracking-tight">Librairie</h2>
-                  <p className="text-stone-400 text-xs mt-1 font-sans font-medium">Suggestions classiques de chefs-d'œuvre multilingues ({SAMPLES.length})</p>
+                <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                  <div>
+                    <h2 className="text-3xl font-black text-stone-900 dark:text-white font-sans tracking-tight">Librairie Universelle</h2>
+                    <p className="text-stone-400 text-xs mt-1 font-sans font-medium">Parcourez le domaine public ou écoutez nos chefs-d'œuvre sélectionnés</p>
+                  </div>
+                  
+                  {/* Select inner library tab */}
+                  <div className="flex p-1 bg-stone-150 dark:bg-stone-950 rounded-xl border border-stone-200 dark:border-stone-900 select-none gap-1 focus:outline-none w-fit self-start md:self-auto font-sans font-bold text-xs">
+                    <button
+                      onClick={() => setLibSubTab('gutenberg')}
+                      className={`flex items-center space-x-1.5 px-3.5 py-2 rounded-lg cursor-pointer transition-all ${
+                        libSubTab === 'gutenberg'
+                          ? 'bg-[#646cff] text-white shadow-sm font-black'
+                          : 'text-stone-500 hover:text-stone-900 dark:hover:text-white'
+                      }`}
+                    >
+                      <Globe className="w-3.5 h-3.5" />
+                      <span>Gutenberg</span>
+                    </button>
+                    <button
+                      onClick={() => setLibSubTab('samples')}
+                      className={`flex items-center space-x-1.5 px-3.5 py-2 rounded-lg cursor-pointer transition-all ${
+                        libSubTab === 'samples'
+                          ? 'bg-[#646cff] text-white shadow-sm font-black'
+                          : 'text-stone-500 hover:text-stone-900 dark:hover:text-white'
+                      }`}
+                    >
+                      <BookOpen className="w-3.5 h-3.5" />
+                      <span>Extraits de Démo ({SAMPLES.length})</span>
+                    </button>
+                  </div>
                 </div>
-                <DocumentUpload
-                  onDocumentAdded={(book) => { handleDocumentAdded(book); setCurrentTab('lire'); }}
-                  onSelectSample={handleSelectBook}
-                  recentBooks={recentBooks}
-                  bookmarks={bookmarks}
-                  onSelectBookmark={handleSelectBookmark}
-                  onDeleteBook={handleDeleteBook}
-                  onlyShowSamples={true}
-                  hideHeader={true}
-                />
+
+                <AnimatePresence mode="wait">
+                  {libSubTab === 'gutenberg' ? (
+                    <motion.div
+                      key="gutenberg-sub"
+                      initial={{ opacity: 0, y: 5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -5 }}
+                      transition={{ duration: 0.15 }}
+                    >
+                      <GutenbergExplorer
+                        onDocumentAdded={handleDocumentAdded}
+                        recentBooks={recentBooks}
+                        onSelectSample={handleSelectBook}
+                        onNavigateToTab={setCurrentTab}
+                      />
+                    </motion.div>
+                  ) : (
+                    <motion.div
+                      key="samples-sub"
+                      initial={{ opacity: 0, y: 5 }}
+                      animate={{ opacity: 1, y: 0 }}
+                      exit={{ opacity: 0, y: -5 }}
+                      transition={{ duration: 0.15 }}
+                    >
+                      <DocumentUpload
+                        onDocumentAdded={(book) => { handleDocumentAdded(book); setCurrentTab('lire'); }}
+                        onSelectSample={handleSelectBook}
+                        recentBooks={recentBooks}
+                        bookmarks={bookmarks}
+                        onSelectBookmark={handleSelectBookmark}
+                        onDeleteBook={handleDeleteBook}
+                        onlyShowSamples={true}
+                        hideHeader={true}
+                      />
+                    </motion.div>
+                  )}
+                </AnimatePresence>
               </div>
             </motion.div>
           )}
@@ -1138,7 +1196,7 @@ export default function App() {
                 <div className="space-y-3">
                   <div className="flex items-start space-x-2.5">
                     <span className="h-5 w-5 rounded bg-[#646cff] text-white font-extrabold flex items-center justify-center flex-shrink-0 text-[10px]">1</span>
-                    <p><strong>Chargement multiformat :</strong> Rendez-vous sur l'onglet <strong>Importer</strong> pour charger vos livres <strong>PDF</strong> ou <strong>ePUB</strong> ou écoutez l'un des livres préchargés de la <strong>Librairie</strong>.</p>
+                    <p><strong>Domaine public et imports :</strong> Rendez-vous sur l'onglet <strong>Librairie</strong> pour rechercher, explorer et importer instantanément en 1 clic plus de 70 000 livres du **Projet Gutenberg** ! Ou importez vos propres fichiers sous l'onglet <strong>Importer</strong>.</p>
                   </div>
                   <div className="flex items-start space-x-2.5">
                     <span className="h-5 w-5 rounded bg-[#646cff] text-white font-extrabold flex items-center justify-center flex-shrink-0 text-[10px]">2</span>

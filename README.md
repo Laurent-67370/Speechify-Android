@@ -17,9 +17,11 @@ SpeechifyPro est une application web de lecture de livres électroniques (e-read
   - **Mode Jour Raffiné (Crème) :** Un affichage haute clarté, doux sur fond crème sablé pour la lecture diurne.
 - **Visualiseur Actif (Jumping Equalizer) :** Barre de son animée réactive à l'écoute sur l'écran d'accueil pour refléter l'activité audio en temps réel.
 
-### 3. Importation Multi-formats & Librairie intégrée
-- **Uploader Drag-&-Drop :** Glissez-déposez ou sélectionnez manuellement des livres électroniques au format **PDF** et **ePUB**, ou importez du texte brut (.txt).
-- **Librairie Classique Universelle :** Accédez directement à des œuvres renommées pré-intégrées (Le Corbeau d'Edgar Allan Poe, Alice au Pays des Merveilles, Don Quichotte) pour commencer l'expérience sans attendre.
+### 3. Explorateur & Importateur Projet Gutenberg Intégré (Nouveauté)
+- **Recherche en temps réel :** Recherchez à tout moment des œuvres classiques parmi plus de 70 000 livres du domaine public grâce à l'API Gutendex.
+- **Sélection Multilingue Curatée :** Importez instantanément des chefs-d'œuvre célèbres en Français, Anglais ou Espagnol (Arsène Lupin, Le Tour du Monde en 80 Jours, Sherlock Holmes, Don Quijote...) en format textuel optimisé.
+- **Filtrage Intelligent des En-têtes :** Supprime automatiquement les longues mentions légales et licences Gutenberg pour garantir une écoute confortable immédiate.
+- **Uploader Local Drag-&-Drop :** Glissez-déposez ou sélectionnez manuellement des livres électroniques personnels au format **PDF** et **ePUB**.
 
 ### 4. Statistiques de Consommation & Gamification
 - **Suivi d'Objectifs Quotidiens :** Visualisez votre temps d'écoute quotidien en minutes par rapport à votre objectif modifiable personnalisé (ex: 30 minutes de lecture active par jour).

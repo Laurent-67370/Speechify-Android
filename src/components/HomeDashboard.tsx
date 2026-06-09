@@ -36,11 +36,18 @@ export default function HomeDashboard({
   theme,
   onThemeToggle
 }: HomeDashboardProps) {
-  const allBooks = [...recentBooks, ...SAMPLES];
+  const allBooks = recentBooks.length > 0 ? recentBooks : SAMPLES;
   const [carouselIdx, setCarouselIdx] = useState(0);
   const [isEditingGoal, setIsEditingGoal] = useState(false);
   const [tempGoal, setTempGoal] = useState(dailyGoalMinutes);
   const [sharedMessage, setSharedMessage] = useState(false);
+
+  // Guarantee carouselIdx remains in proper boundaries when book list length shifts
+  useEffect(() => {
+    if (carouselIdx >= allBooks.length) {
+      setCarouselIdx(0);
+    }
+  }, [allBooks.length, carouselIdx]);
 
   // Auto select correct active book in carousel if loaded
   useEffect(() => {
@@ -50,7 +57,7 @@ export default function HomeDashboard({
         setCarouselIdx(idx);
       }
     }
-  }, [activeBook]);
+  }, [activeBook, allBooks]);
 
   const activeCarouselBook = allBooks[carouselIdx] || SAMPLES[0];
 
@@ -70,9 +77,9 @@ export default function HomeDashboard({
     return Math.max(5, Math.ceil(totalWords / 200));
   };
 
-  // Compute stats
-  const totalDocuments = allBooks.length;
-  const totalLibraryMinutes = allBooks.reduce((sum, b) => sum + getBookDurationMinutes(b), 0);
+  // Compute stats based strictly on imported/visible documents for perfect synchronization
+  const totalDocuments = recentBooks.length;
+  const totalLibraryMinutes = recentBooks.reduce((sum, b) => sum + getBookDurationMinutes(b), 0);
   
   // Daily objective percentage
   const goalPercentage = Math.min(100, Math.round((listeningMinutesToday / dailyGoalMinutes) * 100));
