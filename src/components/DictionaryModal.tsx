@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'motion/react';
-import { X, Volume2, BookOpen, Sparkles, HelpCircle, ArrowRight, ExternalLink, RefreshCw } from 'lucide-react';
+import { X, Volume2, BookOpen, Sparkles, HelpCircle, ArrowRight, ExternalLink, RefreshCw, BookmarkPlus, Check } from 'lucide-react';
+import { Flashcard } from '../types';
 
 interface DictionaryResult {
   word: string;
@@ -18,6 +19,8 @@ interface DictionaryModalProps {
   language?: string;
   onClose: () => void;
   onDefineWord?: (word: string) => void; // Support recursive lookups
+  onSaveFlashcard?: (card: Flashcard) => void;
+  sourceBookTitle?: string;
 }
 
 export default function DictionaryModal({
@@ -25,12 +28,36 @@ export default function DictionaryModal({
   sentenceContext = '',
   language = 'fr',
   onClose,
+  onSaveFlashcard,
+  sourceBookTitle,
 }: DictionaryModalProps) {
   const [word, setWord] = useState(initialWord);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [result, setResult] = useState<DictionaryResult | null>(null);
   const [history, setHistory] = useState<string[]>([]);
+  const [savedAsFlashcard, setSavedAsFlashcard] = useState(false);
+
+  const handleSaveFlashcard = () => {
+    if (!result || !onSaveFlashcard) return;
+    const card: Flashcard = {
+      id: `fc_${Date.now()}_${Math.random().toString(36).slice(2, 7)}`,
+      word: result.word,
+      partOfSpeech: result.partOfSpeech,
+      definition: result.definition,
+      etymology: result.etymology,
+      example: result.example,
+      synonyms: result.synonyms || [],
+      language,
+      sourceBookTitle,
+      createdAt: Date.now(),
+      reviewCount: 0,
+      mastered: false,
+    };
+    onSaveFlashcard(card);
+    setSavedAsFlashcard(true);
+    setTimeout(() => setSavedAsFlashcard(false), 2500);
+  };
 
   // Function to load the word definition
   const loadDefinition = async (targetWord: string) => {
@@ -368,6 +395,24 @@ export default function DictionaryModal({
         </div>
 
         {/* Footer info tip */}
+        {/* Bouton Flashcard */}
+        {result && onSaveFlashcard && (
+          <button
+            onClick={handleSaveFlashcard}
+            className={`w-full mt-3 flex items-center justify-center gap-2 py-2.5 text-xs font-black rounded-2xl transition-all cursor-pointer ${
+              savedAsFlashcard
+                ? 'bg-green-700/30 border border-green-700/50 text-green-300'
+                : 'bg-indigo-700/20 border border-indigo-700/40 text-indigo-300 hover:bg-indigo-700/30'
+            }`}
+          >
+            {savedAsFlashcard ? (
+              <><Check className="w-4 h-4" />Ajoutée à vos flashcards !</>
+            ) : (
+              <><BookmarkPlus className="w-4 h-4" />Sauvegarder en flashcard</>
+            )}
+          </button>
+        )}
+
         <div className="bg-stone-950/40 p-3 rounded-2xl text-[10px] text-stone-500 text-center border border-stone-950 leading-normal flex-shrink-0 mt-4 font-mono">
           💡 En lecture, <strong>double-cliquez</strong> sur un mot ou faites une <strong>sélection de texte</strong> pour déclencher cette aide instantanée.
         </div>
@@ -375,3 +420,4 @@ export default function DictionaryModal({
     </div>
   );
 }
+
