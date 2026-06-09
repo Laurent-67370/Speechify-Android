@@ -1,6 +1,6 @@
 # 🎧 SpeechifyPro — Votre Liseuse Audio Intelligente & Interactive
 
-Bienvenue sur **SpeechifyPro** ! Une expérience de lecture sonore immersive, conçue pour transformer n'importe quel ouvrage, fichier ePUB/PDF, ou article de presse web en une écoute fluide, captivante et animée. 
+Bienvenue sur **SpeechifyPro** ! Une expérience de lecture sonore immersive, conçue pour transformer n'importe quel ouvrage, fichier ePUB/PDF, ou article de presse web en une écoute fluide, captivante et animée.
 
 Que ce soit pour reposer vos yeux fatigués, réviser des concepts clés, ou vous instruire tout en cuisinant, laissez **Charly, votre compagnon de l'IA**, vous accompagner pas à pas !
 
@@ -14,8 +14,8 @@ Que ce soit pour reposer vos yeux fatigués, réviser des concepts clés, ou vou
 - **Entraînement "Clic-pour-Lire" :** Simulez des clics de lecture directement dans le guide pour comprendre l'immédiateté du geste.
 - **Le Grand Quiz des Lecteurs :** Validez vos connaissances avec un mini-quiz interactif amusant et décrochez votre brevet officiel de *Lecteur Intelligent* !
 
-### 🔮 2. Les Résumés Extraordinaires par l'IA (Gemini 3.5 Flash)
-- **Synthèse à la Carte :** En panne de temps ? Notre onglet dédié **Résumé IA** condense tout chapitre ou livre entier grâce au modèle Gemini 3.5 Flash.
+### 🔮 2. Les Résumés Extraordinaires par l'IA (Gemini Flash)
+- **Synthèse à la Carte :** En panne de temps ? Notre onglet dédié **Résumé IA** condense tout chapitre ou livre entier grâce au modèle Gemini Flash côté serveur.
 - **4 Styles Uniques de Résumés :**
   - ⚖️ **Équilibré :** Un paragraphe introductif clair, suivi d'une liste structurée d'idées fortes.
   - 📌 **Points Clés :** Les notions capitales décortiquées sous forme de puces agrémentées d'émojis gais.
@@ -48,14 +48,37 @@ La sélection Gutenberg de départ offre un éventail captivant de classiques pr
 - **Importation Personnalisée :** Glissez-déposez vos fichiers ePUB et PDF locaux, ou collez une URL web pour lire un article de presse en un instant.
 
 ### 🎙️ 6. Voix de Studio Premium Personnalisées
-L'application intègre un moteur intelligent qui améliore les voix de synthèse du système en modifiant finement la tessiture, le débit et le timbre pour un rendu plus humain et chaleureux :
+L'application intègre deux moteurs vocaux complémentaires :
+
+**Voix Studio système** (sans clé API) — améliore les voix du navigateur via pitch/rate :
 - 🇫🇷 **Français :** *Charly* (Studio Chaleureux), *Clara* (Doux & Lumineux), *Victor* (Théâtral & Classique).
 - 🇬🇧 **Anglais :** *Arthur* (Profond), *Emily* (Brillant), *Winston* (Noblesse Oxford).
 - 🇩🇪 **Allemand :** *Hans* (Sérieux & Posé), *Lena* (Clair & Détaillé).
 - 🇪🇸 **Espagnol :** *Mateo* (Naturel), *Isabella* (Mélodique & Expressif).
 - 🇮🇹 **Italien :** *Giovanni* (Profond & Chaleureux), *Sofia* (Vivace & Solaire).
 
-### 📱 7. Application Web Progressive (PWA) & Mode Hors Ligne
+**✨ Google Cloud TTS Premium** (avec clé API) — voix neurales de qualité studio :
+- 🇫🇷 *Denise, Henri, Claire, Lucas* — Neural2 & WaveNet
+- 🇺🇸 *Jenny, Guy* — Neural2 EN-US | 🇬🇧 *Sophie* — Neural2 EN-GB
+- 🇪🇸 Espagnol Neural2 | 🇩🇪 Allemand Neural2 | 🇮🇹 Italien Neural2
+- Qualité identique sur tous les navigateurs/OS (Firefox Linux, Chrome, Android)
+- 1M caractères/mois gratuits sur Google Cloud
+
+### 📊 7. Page Statistiques & Suivi de Progression
+Suivez votre activité d'écoute au quotidien :
+- **⏱ Aujourd'hui :** minutes écoutées, barre de progression vers l'objectif journalier (modifiable).
+- **📅 Cette semaine :** graphique à barres animé sur 7 jours, jour courant mis en valeur.
+- **📚 Totaux :** nombre de documents en bibliothèque, durée totale estimée.
+- **📄 Par document :** progression individuelle de chaque livre avec mini-barre et pourcentage.
+- Données persistées en localStorage, compatibles avec la PWA SpeechifyPro.
+
+### 🖱️ 8. Popup de Sélection de Texte
+Sélectionnez n'importe quel passage dans le lecteur pour accéder instantanément à :
+- **▶ Lire depuis ici** — positionne la lecture exactement à la phrase sélectionnée.
+- **📋 Copier** — copie la sélection dans le presse-papier avec feedback visuel.
+- Fonctionne au **tap** (mobile) et à la **souris** (desktop), avec positionnement intelligent au-dessus de la sélection.
+
+### 📱 9. Application Web Progressive (PWA) & Mode Hors Ligne
 Transformez votre navigateur en un véritable lecteur de livres audio autonome :
 - **Installable en un clic :** Totalement conforme aux critères PWA avec un beau manifeste enrichi (`manifest.json`) et deux icônes vectorielles personnalisées de haute tenue esthétique.
 - **Technologie Workbox & Service Worker :** Mise en cache automatique du code de l'application, des polices littéraires de Google Fonts, et des illustrations clés.
@@ -65,12 +88,17 @@ Transformez votre navigateur en un véritable lecteur de livres audio autonome :
 
 ## 🛠️ Stack Technique & Technologies
 
-- **Frontend :** ⚡ React 18+ (avec TypeScript) et Vite pour une réactivité instantanée.
-- **Moteur d'Animations :** 🚀 Motion (`motion/react`) assurant des micro-animations et des transitions d'onglets hautement fluides.
-- **Design & Styles :** 🎨 Tailwind CSS configuré avec des palettes d'excellence littéraire.
-- **Caching & PWA :** 📦 Service Worker personnalisé piloté par Google Workbox CDN pour un fonctionnement autonome hors ligne.
-- **Moteur d'IA :** 🤖 SDK officiel Google GenAI (`@google/genai`) exécutant les requêtes Gemini 3.5 Flash côté serveur.
-- **Serveur & Proxy robuste :** 💻 Serveur Node/Express pour le proxy d'extraction web et l'appel sécurisé des API sans blocage CORS.
+| Couche | Technologie |
+|---|---|
+| **Frontend** | React 19 + TypeScript + Vite 6 |
+| **Animations** | Motion (`motion/react`) — transitions fluides |
+| **Design** | Tailwind CSS 4 |
+| **PWA** | Service Worker + manifest.json |
+| **IA Résumés** | Google GenAI SDK (`@google/genai`) — Gemini Flash côté serveur |
+| **Voix Premium** | Google Cloud Text-to-Speech REST API (Neural2 / WaveNet) |
+| **Parseurs** | PDF.js 3.4, JSZip (EPUB) |
+| **Stockage** | IndexedDB (livres) + localStorage (préférences, stats) |
+| **Serveur** | Node.js / Express — proxy CORS + endpoint Gemini |
 
 ---
 
@@ -78,27 +106,95 @@ Transformez votre navigateur en un véritable lecteur de livres audio autonome :
 
 ### 1. Cloner et installer les paquets
 ```bash
+git clone https://github.com/Laurent-67370/Speechify-Android.git
+cd Speechify-Android
 npm install
 ```
 
-### 2. Configurer le secret d'IA Gemini (Optionnel)
-Pour pouvoir demander des résumés intelligents à l'IA, créez un fichier `.env` à la racine de votre environnement ou renseignez-y vote clé :
+### 2. Configurer les clés API (Optionnel)
+
+#### Résumés IA — Gemini
 ```env
-GEMINI_API_KEY=votre_cle_api_ici
+# .env
+GEMINI_API_KEY=votre_cle_gemini_ici
 ```
 
-### 3. Lancer l'application de développement
+#### Voix Premium — Google Cloud TTS
+Aucune variable d'environnement requise — la clé est saisie directement dans l'app :
+1. Activez l'API **Cloud Text-to-Speech** sur [console.cloud.google.com](https://console.cloud.google.com)
+2. Créez une clé API → *APIs & Services → Credentials → Create API Key*
+3. Dans l'app : onglet **Lire** → **Options** → **Voix premium** → saisir la clé → Enregistrer
+
+### 3. Lancer l'application
+
 ```bash
+# Développement local
 npm run dev
-```
-*L'application s'ouvre sur le port réservé http://localhost:3000.*
 
-### 4. Linter la structure de code pour préserver la qualité
+# Exposé sur le réseau (VPS, test mobile)
+npm run dev -- --host 0.0.0.0
+```
+
+*L'application s'ouvre sur `http://localhost:3000`.*
+
+### 4. Build de production
+```bash
+npm run build
+npm run start
+```
+
+### 5. Vérification TypeScript
 ```bash
 npm run lint
 ```
 
 ---
 
+## 📁 Architecture du projet
+
+```
+src/
+├── components/
+│   ├── App.tsx                  # Composant racine, moteur de lecture
+│   ├── HomeDashboard.tsx        # Accueil : carousel, objectif, égaliseur
+│   ├── TextViewer.tsx           # Lecteur de texte avec surlignage phrase
+│   ├── ReaderControls.tsx       # Barre de contrôles audio (play/pause/skip)
+│   ├── ReaderSettings.tsx       # Panneau paramètres (voix, thème, taille)
+│   ├── GoogleTTSSettings.tsx    # Config Google Cloud TTS premium ✨
+│   ├── StatsPage.tsx            # Page statistiques & graphe semaine 📊
+│   ├── SelectionPopup.tsx       # Popup sélection texte (lire/copier) 🖱️
+│   ├── Sidebar.tsx              # Table des matières + marque-pages
+│   ├── GutenbergExplorer.tsx    # Recherche Projet Gutenberg (70k+ livres)
+│   ├── DocumentUpload.tsx       # Import PDF/EPUB/URL
+│   ├── InteractiveHelpGuide.tsx # Guide interactif Charly (6 étapes + quiz)
+│   └── DictionaryModal.tsx      # Définition mot sélectionné
+├── utils/
+│   ├── useGoogleTTS.ts          # Hook React Google Cloud TTS ✨
+│   ├── customVoices.ts          # Voix studio système (12 personnages)
+│   ├── textUtils.ts             # Découpage phrases, préprocesseur TTS
+│   ├── indexedDB.ts             # Persistance livres (IndexedDB)
+│   └── webParser.ts             # Extraction texte depuis URL web
+├── lib/
+│   ├── pdfParser.ts             # Parser PDF (PDF.js)
+│   └── epubParser.ts            # Parser EPUB (JSZip)
+├── data/
+│   └── samples.ts               # Extraits de démonstration
+└── types.ts                     # Types TypeScript partagés
+```
+
+---
+
+## 🗓️ Historique des versions
+
+| Version | Nouveautés |
+|---|---|
+| v1.0 | Version initiale — lecteur React/TypeScript, voix système, Gutenberg |
+| v1.1 | **StatsPage** — graphique semaine, objectif journalier, progression par document |
+| v1.1 | **SelectionPopup** — "Lire depuis ici" + "Copier" au tap/clic sur texte |
+| v1.2 | **Google Cloud TTS Premium** — Neural2/WaveNet, hook `useGoogleTTS`, cache session |
+
+---
+
 ## 🎯 Rejoignez l'aventure didactique !
+
 Cliquez sur l'icône de point d'interrogation **`?`** sur le bord supérieur droit de l'application pour déclencher Charly et commencer votre premier voyage littéraire dès aujourd'hui ! Bonne écoute ! 🎧
