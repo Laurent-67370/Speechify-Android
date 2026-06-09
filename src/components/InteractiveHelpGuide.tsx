@@ -18,7 +18,11 @@ import {
   Sliders, 
   Download,
   CheckCircle2,
-  Bookmark
+  Bookmark,
+  Highlighter,
+  Brain,
+  Bot,
+  BookmarkPlus
 } from 'lucide-react';
 
 interface InteractiveHelpGuideProps {
@@ -26,7 +30,7 @@ interface InteractiveHelpGuideProps {
   documentLanguage?: string;
 }
 
-type GuideStep = 'welcome' | 'vocalLab' | 'gestures' | 'aiFeatures' | 'gutenberg' | 'quiz' | 'congrats';
+type GuideStep = 'welcome' | 'vocalLab' | 'gestures' | 'aiFeatures' | 'gutenberg' | 'annotations' | 'flashcardsCoach' | 'quiz' | 'congrats';
 
 export default function InteractiveHelpGuide({ onClose, documentLanguage = 'fr' }: InteractiveHelpGuideProps) {
   const [currentStep, setCurrentStep] = useState<GuideStep>('welcome');
@@ -155,7 +159,7 @@ export default function InteractiveHelpGuide({ onClose, documentLanguage = 'fr' 
   const styleSet = companionColors[selectedCompanionColor];
 
   // Steps Navigator
-  const stepsOrder: GuideStep[] = ['welcome', 'vocalLab', 'gestures', 'aiFeatures', 'gutenberg', 'quiz', 'congrats'];
+  const stepsOrder: GuideStep[] = ['welcome', 'vocalLab', 'gestures', 'aiFeatures', 'gutenberg', 'annotations', 'flashcardsCoach', 'quiz', 'congrats'];
   
   const handleNext = () => {
     const currentIndex = stepsOrder.indexOf(currentStep);
@@ -534,13 +538,103 @@ export default function InteractiveHelpGuide({ onClose, documentLanguage = 'fr' 
                 </div>
               )}
 
-              {/* Step 6: Educational interactive Quiz */}
+
+              {/* Step 6: Annotations & Surlignage */}
+              {currentStep === 'annotations' && (
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-2">
+                    <Highlighter className={`w-5 h-5 ${styleSet.accent}`} />
+                    <h4 className="font-extrabold text-sm uppercase tracking-wide text-stone-900 dark:text-white font-sans">
+                      Étape 6 : Annoter & Surligner
+                    </h4>
+                  </div>
+
+                  <p className="text-xs text-stone-600 dark:text-stone-300 leading-relaxed">
+                    Sélectionnez n'importe quel passage pendant la lecture : un mini-menu apparaît avec <strong className="text-stone-900 dark:text-white font-bold">4 actions instantanées</strong>.
+                  </p>
+
+                  <div className="space-y-2 font-sans">
+                    {[
+                      { icon: '▶', color: 'bg-[#646cff]/10 border-[#646cff]/30 text-[#646cff]', label: 'Lire depuis ici', desc: 'Place le curseur vocal exactement à la phrase sélectionnée.' },
+                      { icon: '🖊', color: 'bg-amber-400/10 border-amber-400/30 text-amber-500', label: 'Annoter', desc: 'Surligne en jaune, vert, bleu ou rose + note textuelle persistée.' },
+                      { icon: '📖', color: 'bg-indigo-400/10 border-indigo-400/30 text-indigo-400', label: 'Définir', desc: 'Ouvre le dictionnaire IA — définition, étymologie, synonymes.' },
+                      { icon: '📋', color: 'bg-stone-400/10 border-stone-400/30 text-stone-500', label: 'Copier', desc: 'Copie le texte sélectionné dans le presse-papiers.' },
+                    ].map((item, i) => (
+                      <div key={i} className={`flex items-start gap-3 p-3 rounded-xl border ${item.color}`}>
+                        <span className="text-base flex-shrink-0 mt-0.5">{item.icon}</span>
+                        <div>
+                          <p className="text-xs font-black text-stone-900 dark:text-white">{item.label}</p>
+                          <p className="text-[11px] text-stone-500 dark:text-stone-400 mt-0.5">{item.desc}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="bg-amber-500/5 border border-amber-500/20 rounded-xl p-3 text-[11px] text-amber-700 dark:text-amber-400 font-sans">
+                    💾 <strong>Vos annotations sont synchronisées</strong> sur tous vos appareils via le serveur SQLite — retrouvez-les même après fermeture du navigateur.
+                  </div>
+                </div>
+              )}
+
+              {/* Step 7: Flashcards & Charly Coach */}
+              {currentStep === 'flashcardsCoach' && (
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-2">
+                    <Brain className={`w-5 h-5 ${styleSet.accent}`} />
+                    <h4 className="font-extrabold text-sm uppercase tracking-wide text-stone-900 dark:text-white font-sans">
+                      Étape 7 : Flashcards & Charly Coach IA
+                    </h4>
+                  </div>
+
+                  <p className="text-xs text-stone-600 dark:text-stone-300 leading-relaxed">
+                    Deux outils puissants pour <strong className="text-stone-900 dark:text-white font-bold">apprendre en lisant</strong>, pas seulement écouter.
+                  </p>
+
+                  <div className="space-y-3 font-sans">
+                    {/* Flashcards */}
+                    <div className="bg-indigo-500/5 border border-indigo-500/20 rounded-2xl p-4 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <BookmarkPlus className="w-4 h-4 text-indigo-400" />
+                        <span className="text-xs font-black text-stone-900 dark:text-white">Deck de Flashcards</span>
+                        <span className="text-[9px] bg-indigo-600 text-white px-2 py-0.5 rounded-full font-bold uppercase">Onglet Cartes</span>
+                      </div>
+                      <p className="text-[11px] text-stone-500 dark:text-stone-400 leading-relaxed">
+                        Double-cliquez sur un mot → Dictionnaire → <strong className="text-indigo-400">Sauvegarder en flashcard</strong>. Retrouvez vos mots dans l'onglet <strong>Cartes</strong> pour les réviser en mode flip (recto : mot, verso : définition + exemple).
+                      </p>
+                      <div className="flex gap-2 text-[10px]">
+                        <span className="bg-stone-800 text-stone-300 px-2 py-1 rounded-lg">📋 Mode liste</span>
+                        <span className="bg-indigo-800/50 text-indigo-300 px-2 py-1 rounded-lg">🔄 Mode révision flip</span>
+                        <span className="bg-green-800/50 text-green-300 px-2 py-1 rounded-lg">🏆 Marquage maîtrisé</span>
+                      </div>
+                    </div>
+
+                    {/* Charly Coach */}
+                    <div className="bg-purple-500/5 border border-purple-500/20 rounded-2xl p-4 space-y-2">
+                      <div className="flex items-center gap-2">
+                        <Bot className="w-4 h-4 text-purple-400" />
+                        <span className="text-xs font-black text-stone-900 dark:text-white">Charly Coach IA</span>
+                        <span className="text-[9px] bg-purple-600 text-white px-2 py-0.5 rounded-full font-bold uppercase">Contextuel</span>
+                      </div>
+                      <p className="text-[11px] text-stone-500 dark:text-stone-400 leading-relaxed">
+                        Posez des questions à Charly sur votre lecture en cours — il connaît le titre, le chapitre et le passage actuel.
+                      </p>
+                      <div className="flex flex-wrap gap-1.5 text-[10px]">
+                        {['📝 Résume ce passage', '❓ Quiz rapide', '🔍 Contexte historique', '💡 Points clés', '📚 Vocabulaire'].map((q, i) => (
+                          <span key={i} className="bg-stone-800 text-stone-400 px-2 py-1 rounded-full">{q}</span>
+                        ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {/* Step 8: Educational interactive Quiz */}
               {currentStep === 'quiz' && (
                 <div className="space-y-4">
                   <div className="flex items-center space-x-2 text-[#646cff]">
                     <Award className={`w-5 h-5 ${styleSet.accent}`} />
                     <h4 className="font-extrabold text-sm uppercase tracking-wide text-stone-900 dark:text-white font-sans">
-                      Étape 6 : Quiz interactif rapide !
+                      Étape 8 : Quiz interactif rapide !
                     </h4>
                   </div>
 
@@ -611,6 +705,49 @@ export default function InteractiveHelpGuide({ onClose, documentLanguage = 'fr' 
                               key={choice.key}
                               type="button"
                               onClick={() => setQuiz2Answer(choice.key)}
+                              className={`p-2 px-3 border rounded-xl text-left text-xs transition-all flex items-center gap-2.5 cursor-pointer ${
+                                isCorrect 
+                                  ? 'bg-emerald-500/15 border-emerald-500 text-emerald-600'
+                                  : isWrong 
+                                    ? 'bg-red-500/10 border-red-500/20 text-red-500'
+                                    : 'bg-stone-50 dark:bg-stone-900 hover:bg-stone-100 dark:hover:bg-stone-850 border-stone-150 dark:border-stone-850'
+                              }`}
+                            >
+                              <span className={`w-4 h-4 rounded-full border text-[9px] font-bold flex items-center justify-center ${
+                                isCorrect 
+                                  ? 'bg-emerald-500 text-white' 
+                                  : isWrong 
+                                    ? 'bg-red-500 text-white' 
+                                    : 'bg-stone-200 dark:bg-stone-800 text-stone-600'
+                              }`}>
+                                {choice.key}
+                              </span>
+                              <span className="font-bold">{choice.text}</span>
+                            </button>
+                          );
+                        })}
+                      </div>
+                    </div>
+
+                    {/* Q3 — Nouvelles fonctionnalités */}
+                    <div className="space-y-2">
+                      <span className="text-[10px] uppercase tracking-wider font-extrabold text-stone-400 dark:text-stone-500 flex items-center gap-1">
+                        <span className="text-[#646cff] font-sans">Q3 •</span> Comment sauvegarder un mot inconnu pour le réviser plus tard ?
+                      </span>
+                      <div className="grid grid-cols-1 gap-2">
+                        {[
+                          { key: 'A', text: "Double-clic sur le mot → Dictionnaire IA → bouton Sauvegarder en flashcard → onglet Cartes." },
+                          { key: 'B', text: "Imprimer la page et surligner au feutre fluo." },
+                          { key: 'C', text: "Demander à Charly de le mémoriser par télépathie." },
+                        ].map((choice) => {
+                          const isSel = (quiz2Answer === ('q3_' + choice.key));
+                          const isWrong = isSel && choice.key !== 'A';
+                          const isCorrect = isSel && choice.key === 'A';
+                          return (
+                            <button
+                              key={choice.key}
+                              type="button"
+                              onClick={() => setQuiz2Answer('q3_' + choice.key)}
                               className={`p-2 px-3 border rounded-xl text-left text-xs transition-all flex items-center gap-2.5 cursor-pointer ${
                                 isCorrect 
                                   ? 'bg-emerald-500/15 border-emerald-500 text-emerald-600'
@@ -739,3 +876,4 @@ export default function InteractiveHelpGuide({ onClose, documentLanguage = 'fr' 
     </div>
   );
 }
+
