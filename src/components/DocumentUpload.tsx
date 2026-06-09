@@ -290,15 +290,18 @@ export default function DocumentUpload({
                     Prend en charge les formats <strong className="text-stone-300">PDF</strong>, <strong className="text-stone-300">ePUB</strong>, <strong className="text-stone-300">TXT</strong> et <strong className="text-stone-300">Markdown</strong>
                   </p>
                 </div>
-                <div className="flex gap-4 pt-2 text-[10px] text-stone-500 font-mono">
+                <div className="flex gap-3 pt-2 flex-wrap text-[10px] text-stone-500 font-mono">
                   <span className="flex items-center gap-1">
-                    <FileText className="w-3.5 h-3.5" /> PDF · ePUB · TXT · MD
+                    <FileText className="w-3.5 h-3.5" /> PDF
                   </span>
                   <span className="flex items-center gap-1">
-                    <BookOpen className="w-3.5 h-3.5" /> ePUB (Chapitré)
-                  </div>
-                  <div className="flex items-center gap-1.5 text-stone-400">
-                    <FileText className="w-3.5 h-3.5" /> TXT · Markdown (.md)
+                    <BookOpen className="w-3.5 h-3.5" /> ePUB
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <FileText className="w-3.5 h-3.5" /> TXT
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <FileText className="w-3.5 h-3.5" /> Markdown
                   </span>
                 </div>
               </div>
