@@ -1,72 +1,79 @@
-# 🎧 SpeechifyPro — Liseuse Audio Intelligente & Interactive
+# 🎧 SpeechifyPro — Votre Liseuse Audio Intelligente & Interactive
 
-SpeechifyPro est une application web de lecture de livres électroniques (e-reader) ultra-moderne, spécialisée dans la conversion de documents textuels en flux vocaux clairs, naturels et dynamiques. Construite avec **React**, **Vite** et **Tailwind CSS**, elle offre une expérience d'écoute fluide d'arrière-plan, des statistiques quotidiennes stimulantes et une polyvalence d'affichage inégalée.
+Bienvenue sur **SpeechifyPro** ! Une expérience de lecture sonore immersive, conçue pour transformer n'importe quel ouvrage, fichier ePUB/PDF, ou article de presse web en une écoute fluide, captivante et animée. 
 
----
-
-## 🌟 Fonctionnalités Majeures
-
-### 1. Synthèse Vocale Premium (Text-to-Speech)
-- **Voix Natives & Multi-langues :** Intégration en temps réel avec l'API Web Speech de votre navigateur, offrant un large catalogue de voix de haute qualité (Français, Anglais, Espagnol).
-- **Contrôles Avancés de Lecture :** Ajustez précisément la vitesse d'élocution (de 0.5x à 3x), la hauteur tonale (pitch) et choisissez de sauvegarder vos préférences vocales spécifiquement par livre.
-- **Interactivité "Click-to-Read" :** Cliquez sur n'importe quel segment de phrase dans le document actif pour y repositionner instantanément la tête de lecture vocale.
-
-### 2. Gestion de Thèmes & Confort de Lecture
-- **Nouveau Theme Toggler Fonctionnel :** Basculez instantanément depuis l'icône de la barre d'outils d'accueil (en haut à droite) entre :
-  - **Mode Sombre Cosmique :** Un thème sombre ultra-élégant et eye-safe pour l'écoute nocturne.
-  - **Mode Jour Raffiné (Crème) :** Un affichage haute clarté, doux sur fond crème sablé pour la lecture diurne.
-- **Visualiseur Actif (Jumping Equalizer) :** Barre de son animée réactive à l'écoute sur l'écran d'accueil pour refléter l'activité audio en temps réel.
-
-### 3. Explorateur & Importateurs Multimodes (Fichiers, Gutenberg & URL Web)
-- **NOUVEAU — Lecteur de Sites Internet & Articles (URL) :** Collez simplement un lien URL (Wikipédia, articles de blog, presse) pour extraire l'essentiel du texte.
-  - *Proxy Serveur Ultra-robuste :* Utilise un proxy Node.js/Express (`/api/proxy`) côté serveur pour récupérer le contenu de manière fiable, contournant les restrictions CORS du navigateur.
-  - *Nettoyage Automatique Intuitif :* Élimine les scripts, menus, publicités, en-têtes et pieds de page pour isoler uniquement le corps de texte principal.
-- **Explorateur Projet Gutenberg :** Recherchez à tout moment des œuvres classiques parmi plus de 70 000 livres du domaine public grâce à l'API Gutendex.
-- **Sélection Multilingue Curatée :** Importez instantanément des chefs-d'œuvre célèbres en Français, Anglais ou Espagnol (Arsène Lupin, Le Tour du Monde en 80 Jours, Sherlock Holmes, Don Quijote...) en format textuel optimisé.
-- **Filtrage Intelligent des En-têtes :** Supprime automatiquement les longues mentions légales et licences Gutenberg pour garantir une écoute confortable immédiate.
-- **Uploader Local Drag-&-Drop :** Glissez-déposez ou sélectionnez manuellement des livres électroniques personnels au format **PDF** et **ePUB** (avec détection automatique de la langue).
-
-### 4. Statistiques de Consommation & Gamification
-- **Suivi d'Objectifs Quotidiens :** Visualisez votre temps d'écoute quotidien en minutes par rapport à votre objectif modifiable personnalisé (ex: 30 minutes de lecture active par jour).
-- **Progrès de Lecture :** Barre d'avancement globale du document et enregistrement persistant en local-storage pour reprendre la lecture exactement là où vous vous êtes arrêté.
-
-### 5. Indexation, Sommaire & Signets (Bookmarks)
-- **Menu Sommaire Réactif :** Accédez au tiroir latéral gauche pour basculer facilement entre les chapitres de l'œuvre.
-- **Signets & Notes Écrites :** Enregistrez des passages clés avec des notes personnalisées pour référence future, triés par livre.
-- **Recherche plein texte :** Localisez rapidement des mots-clés à travers tout le livre avec surbrillance dynamique du texte.
+Que ce soit pour reposer vos yeux fatigués, réviser des concepts clés, ou vous instruire tout en cuisinant, laissez **Charly, votre compagnon de l'IA**, vous accompagner pas à pas !
 
 ---
 
-## 🛠️ Stack Technique
+## 🌟 Ce qui rend l'expérience Unique & Didactique
 
-- **Framework :** React 18+ (TypeScript) avec Vite (compilation ultra-rapide).
-- **Styling :** Tailwind CSS pour un design responsive pixel-perfect.
-- **Animations :** Motion (`motion/react`) pour des transitions fluides et organiques entre les onglets et fenêtres modales.
-- **Iconographie :** Lucide React.
-- **Données / Stockage :** Persistance locale complète (`localStorage`) des préférences utilisateur, statistiques quotidiennes de lecture, signets et historique de livres.
+### 🤖 1. Charly, votre Guide Interactif & Didactique
+- **Parcours d'Apprentissage Vivant :** Un assistant virtuel jovial vous explique le fonctionnement en 6 étapes animées (sélectionnable en haut à droite !).
+- **Le Laboratoire Acoustique :** Entraînez-vous à façonner la voix de synthèse en temps réel. Sélectionnez vos préférences de vitesse ($0.5x$ à $2.5x$) et de tessiture (grave/aigu).
+- **Entraînement "Clic-pour-Lire" :** Simulez des clics de lecture directement dans le guide pour comprendre l'immédiateté du geste.
+- **Le Grand Quiz des Lecteurs :** Validez vos connaissances avec un mini-quiz interactif amusant et décrochez votre brevet officiel de *Lecteur Intelligent* !
+
+### 🔮 2. Les Résumés Extraordinaires par l'IA (Gemini 3.5 Flash)
+- **Synthèse à la Carte :** En panne de temps ? Notre onglet dédié **Résumé IA** condense tout chapitre ou livre entier grâce au modèle Gemini 3.5 Flash.
+- **4 Styles Uniques de Résumés :**
+  - ⚖️ **Équilibré :** Un paragraphe introductif clair, suivi d'une liste structurée d'idées fortes.
+  - 📌 **Points Clés :** Les notions capitales décortiquées sous forme de puces agrémentées d'émojis gais.
+  - 🎓 **Pédagogique :** Idéal pour l'apprentissage, vulgarisant les termes techniques avec beaucoup de bienveillance.
+  - ⚡ **Court :** Un condensé percutant de 3 à 5 phrases captivantes, idéal pour un mémo express.
+- **Vocalisation Directe du Résumé :** Écoutez votre résumé intelligent en un clic grâce à la synthèse vocale intégrée, pour une mémorisation auditive maximale !
+
+### ⚡ 3. Geste Naturel "Click-to-Read"
+- **Navigation au Doigt et à l'Œil :** Cliquez simplement sur n'importe quel paragraphe du livre pour que l'orateur reprenne précisément la lecture à cet endroit. Plus besoin d'avancer ou de reculer à l'aveugle !
+
+### 🌌 4. Confort d'Affichage & Design de Pointe
+- **Thème Sombre Cosmique (Night Mode) :** Un canevas noir profond, apaisant et mystique pour vos écoutes nocturnes.
+- **Thème Jour Raffiné (Sable) :** Un rendu crème ultra-agréable et lumineux, ménageant la rétine en plein soleil.
+- **Égaliseur Virtuel Réactif :** Une onde audio bondissante au design épuré sur l'accueil, qui danse au rythme de la lecture vocale.
+- **Mini-Lecteur Flottant Global :** Naviguez sur votre tableau de bord ou dans la librairie tout en continuant d'écouter votre livre de manière fluide en arrière-plan !
+
+### 📚 5. Bibliothèque Universelle & Importateur Multimodes
+- **Le Projet Gutenberg intégré :** Accédez directement à plus de 70 000 classiques universels gratuits (Jules Verne, Victor Hugo, Jane Austen) et importez-les en un seul clic !
+- **Lecteur Intelligent d'Articles Web (URL) :** Collez le lien internet d'un blog, d'un article de journal ou d'une page Wikipédia. Notre serveur extrait et nettoie instantanément le corps de texte pour l'orner d'une lecture épurée de toute publicité.
+- **Dossiers Personnels :** Choisissez ou glissez-déposez vos fichiers ePUB et PDF locaux avec détection automatique de la langue.
 
 ---
 
-## 🚀 Lancement du Projet en Développement
+## 🛠️ Stack Technique & Technologies
 
-1. **Installation des dépendances :**
-   ```bash
-   npm install
-   ```
-
-2. **Lancement du serveur de développement local :**
-   ```bash
-   npm run dev
-   ```
-   *L'application s'exécute par défaut à l'adresse http://localhost:3000.*
-
-3. **Validation & Qualité :**
-   ```bash
-   npm run lint
-   ```
+- **Frontend :** ⚡ React 18+ (avec TypeScript) et Vite pour une réactivité instantanée.
+- **Moteur d'Animations :** 🚀 Motion (`motion/react`) assurant des micro-animations et des transitions d'onglets particulièrement soignées.
+- **Design & Styles :** 🎨 Tailwind CSS configuré avec des palettes haut de gamme et des typographies lisibles.
+- **Moteur d'IA :** 🤖 SDK officiel Google GenAI (`@google/genai`) exécutant les requêtes Gemini 3.5 Flash en toute sécurité côté serveur.
+- **Serveur & Proxy robuste :** 💻 Serveur Node/Express pour le proxy d'extraction web et l'appel sécurisé des API sans blocage CORS.
 
 ---
 
-## 🗺️ Guide de l'Aide Intégrée
+## 🚀 Guide de Démarrage Rapide
 
-Vous pouvez à tout moment consulter le **Guide de démarrage** interactif directement depuis l'application en cliquant sur le bouton d'aide d'utilisation `?` situé en haut à droite du tableau de bord.
+### 1. Cloner et installer les paquets
+```bash
+npm install
+```
+
+### 2. Configurer le secret d'IA Gemini (Optionnel)
+Pour pouvoir demander des résumés intelligents à l'IA, créez un fichier `.env` à la racine (ou via l'onglet Clés d'API d'AI Studio) et renseignez-y vote clé :
+```env
+GEMINI_API_KEY=votre_cle_api_ici
+```
+
+### 3. Lancer l'application de développement
+```bash
+npm run dev
+```
+*L'application s'ouvre magiquement sur votre port réservé http://localhost:3000.*
+
+### 4. Linter la structure de code pour préserver la qualité
+```bash
+npm run lint
+```
+
+---
+
+## 🎯 Rejoignez l'aventure didactique !
+Cliquez sur l'icône de point d'interrogation **`?`** sur le bord supérieur droit de l'application pour déclencher Charly et commencer votre premier voyage littéraire dès aujourd'hui ! Bonne écoute ! 🎧
