@@ -170,13 +170,15 @@ export default function DictionaryModal({
 
   // Web search triggers
   const getSearchURL = (type: 'larousse' | 'wikipedia' | 'google') => {
-    const cleanWord = encodeURIComponent(word.trim());
+    // Extract first word only, strip punctuation & quotes, lowercase for Larousse
+    const lemme = word.toLowerCase().trim().split(/[\s.,;!?]+/)[0].replace(/['"«»'']/g, '');
+    const encoded = encodeURIComponent(lemme);
     if (type === 'larousse') {
-      return `https://www.larousse.fr/dictionnaires/francais/${cleanWord}`;
+      return `https://www.larousse.fr/dictionnaires/francais/${encoded}`;
     } else if (type === 'wikipedia') {
-      return `https://fr.wikipedia.org/wiki/${cleanWord}`;
+      return `https://fr.wikipedia.org/wiki/${encodeURIComponent(word.trim().split(/\s+/)[0])}`;
     }
-    return `https://www.google.com/search?q=definition+${cleanWord}`;
+    return `https://www.google.com/search?q=d%C3%A9finition+${encodeURIComponent(word.trim())}`;
   };
 
   return (
