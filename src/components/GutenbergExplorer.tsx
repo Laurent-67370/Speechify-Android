@@ -567,6 +567,15 @@ export default function GutenbergExplorer({
 
       // Proxy list function wrapper to guarantee robust retrieval
       const proxyFetchers = [
+        // 0. Notre propre proxy VPS — décodage UTF-8/Latin-1 côté serveur Node.js ✅
+        async (_url: string) => {
+          const res = await fetch(`/api/gutenberg/${bookId}`);
+          if (res.ok) {
+            const body = await res.text(); // déjà décodé côté serveur en UTF-8
+            if (body && body.length > 500 && !isHtmlOrError(body)) return body;
+          }
+          throw new Error('Proxy VPS indisponible');
+        },
         // 1. corsproxy.io (Rapide pour requêtes directes)
         async (url: string) => {
           const res = await fetch(`https://corsproxy.io/?${encodeURIComponent(url)}`);
