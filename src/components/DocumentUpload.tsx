@@ -1,10 +1,11 @@
-import { useState, useRef, DragEvent, ChangeEvent, useEffect } from 'react';
-import { Upload, BookOpen, AlertCircle, Loader2, Sparkles, FileText, Bookmark as BookmarkIcon, Trash2 } from 'lucide-react';
+import { useState, useRef, DragEvent, ChangeEvent, useEffect, FormEvent } from 'react';
+import { Upload, BookOpen, AlertCircle, Loader2, Sparkles, FileText, Bookmark as BookmarkIcon, Trash2, Globe, Link } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { DocumentBook, Bookmark } from '../types';
 import { SAMPLES } from '../data/samples';
 import { parseEpub } from '../lib/epubParser';
 import { parsePdf } from '../lib/pdfParser';
+import { fetchWebpageHtml, parseWebpageHtml } from '../utils/webParser';
 
 interface DocumentUploadProps {
   onDocumentAdded: (doc: DocumentBook) => void;
@@ -43,6 +44,8 @@ export default function DocumentUpload({
   const [errorStatus, setErrorStatus] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [importMode, setImportMode] = useState<'file' | 'url'>('file');
+  const [webUrl, setWebUrl] = useState('');
   
   // Clean default logic for the active sub-tab inside library
   const [activeTab, setActiveTab] = useState<'library' | 'samples' | 'bookmarks'>(() => {
@@ -97,6 +100,55 @@ export default function DocumentUpload({
     }
   };
 
+  const QUICK_URL_SAMPLES = [
+    { name: 'Wikipédia : Léonard de Vinci', url: 'https://fr.wikipedia.org/wiki/L%C3%A9onard_de_Vinci' },
+    { name: 'Wikipédia : Synthèse vocale', url: 'https://fr.wikipedia.org/wiki/Synth%C3%A8se_vocale' },
+    { name: 'Wikipédia : Lecture', url: 'https://fr.wikipedia.org/wiki/Lecture' },
+  ];
+
+  const handleUrlSubmit = async (e?: FormEvent) => {
+    if (e) e.preventDefault();
+    if (!webUrl || !webUrl.trim()) {
+      setErrorStatus('Veuillez spécifier une URL de site internet valide.');
+      return;
+    }
+
+    let targetUrl = webUrl.trim();
+    if (!/^https?:\/\//i.test(targetUrl)) {
+      targetUrl = 'https://' + targetUrl;
+    }
+
+    setLoading(true);
+    setErrorStatus(null);
+    setProgressMessage('Préparation du proxy de connexion...');
+
+    try {
+      const htmlContent = await fetchWebpageHtml(targetUrl, (msg) => {
+        setProgressMessage(msg);
+      });
+
+      setProgressMessage('Extraction et nettoyage de l\'article principal...');
+      const parsedBook = parseWebpageHtml(targetUrl, htmlContent);
+
+      const newBook: DocumentBook = {
+        ...parsedBook,
+        progressPercent: 0,
+        currentChapterIndex: 0,
+        currentParagraphIndex: 0,
+        addedAt: Date.now(),
+      };
+
+      onDocumentAdded(newBook);
+      setWebUrl('');
+    } catch (err: any) {
+      console.error(err);
+      setErrorStatus(err.message || 'Une erreur inconnue est survenue lors de l\'importation de l\'URL.');
+    } finally {
+      setLoading(false);
+      setProgressMessage('');
+    }
+  };
+
   const handleDragOver = (e: DragEvent<HTMLDivElement>) => {
     e.preventDefault();
     setIsDragging(true);
@@ -138,54 +190,78 @@ export default function DocumentUpload({
   if (onlyShowUpload) {
     return (
       <div className="w-full font-sans">
-        <motion.div
-          initial={{ opacity: 0, scale: 0.98 }}
-          animate={{ opacity: 1, scale: 1 }}
-          id="dropzone"
-          onDragOver={handleDragOver}
-          onDragLeave={handleDragLeave}
-          onDrop={handleDrop}
-          onClick={loading ? undefined : selectFileInput}
-          className={`relative overflow-hidden cursor-pointer rounded-2xl border-2 border-dashed p-10 md:p-14 text-center transition-all duration-300 ${
-            isDragging
-              ? 'border-[#646cff] bg-[#646cff]/5 scale-[1.01] shadow-lg dark:bg-[#646cff]/10'
-              : 'border-stone-850 bg-stone-950/40 hover:border-stone-700 hover:bg-stone-950/70'
-          }`}
-        >
-          <input
-            type="file"
-            id="file-pick"
-            ref={fileInputRef}
-            onChange={handleFileChange}
-            accept=".pdf,.epub"
-            className="hidden"
+        {/* Segmented control for file vs webpage import */}
+        <div className="flex p-0.5 bg-stone-950/60 rounded-xl border border-stone-850 select-none gap-0.5 focus:outline-none w-fit mb-6 font-sans font-bold text-xs mx-auto sm:mx-0">
+          <button
+            onClick={() => { setImportMode('file'); setErrorStatus(null); }}
+            className={`flex items-center space-x-1.5 px-4 py-2 rounded-lg cursor-pointer transition-all ${
+              importMode === 'file'
+                ? 'bg-[#646cff] text-white shadow-sm font-black'
+                : 'text-stone-400 hover:text-white hover:bg-stone-900/40'
+            }`}
             disabled={loading}
-          />
+          >
+            <FileText className="w-3.5 h-3.5" />
+            <span>Fichier local</span>
+          </button>
+          <button
+            onClick={() => { setImportMode('url'); setErrorStatus(null); }}
+            className={`flex items-center space-x-1.5 px-4 py-2 rounded-lg cursor-pointer transition-all ${
+              importMode === 'url'
+                ? 'bg-[#646cff] text-white shadow-sm font-black'
+                : 'text-stone-400 hover:text-white hover:bg-stone-900/40'
+            }`}
+            disabled={loading}
+          >
+            <Globe className="w-3.5 h-3.5" />
+            <span>Site Web (URL)</span>
+          </button>
+        </div>
 
-          <AnimatePresence mode="wait">
-            {loading ? (
-              <motion.div
-                key="loading-state"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="flex flex-col items-center justify-center space-y-4 py-6"
-              >
-                <div className="relative">
-                  <Loader2 className="w-12 h-12 text-[#646cff] animate-spin" />
-                  <BookOpen className="w-5 h-5 text-[#767fff] absolute top-3.5 left-3.5 font-bold" />
-                </div>
-                <p className="font-semibold text-white">{progressMessage}</p>
-                <p className="text-xs text-stone-400">Analyse de la structure du fichier en cours, veuillez patienter...</p>
-              </motion.div>
-            ) : (
-              <motion.div
-                key="upload-state"
-                initial={{ opacity: 0 }}
-                animate={{ opacity: 1 }}
-                exit={{ opacity: 0 }}
-                className="flex flex-col items-center space-y-4"
-              >
+        <AnimatePresence mode="wait">
+          {loading ? (
+            <motion.div
+              key="loading-state"
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.98 }}
+              className="relative overflow-hidden rounded-2xl border border-stone-850 p-10 md:p-14 text-center bg-stone-950/40 flex flex-col items-center justify-center space-y-4 py-11"
+            >
+              <div className="relative">
+                <Loader2 className="w-12 h-12 text-[#646cff] animate-spin" />
+                <BookOpen className="w-5 h-5 text-[#767fff] absolute top-3.5 left-3.5 font-bold" />
+              </div>
+              <p className="font-semibold text-white">{progressMessage}</p>
+              <p className="text-xs text-stone-400">Analyse et formatage prosodique autonome en cours...</p>
+            </motion.div>
+          ) : importMode === 'file' ? (
+            <motion.div
+              key="dropzone-state"
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.98 }}
+              id="dropzone"
+              onDragOver={handleDragOver}
+              onDragLeave={handleDragLeave}
+              onDrop={handleDrop}
+              onClick={loading ? undefined : selectFileInput}
+              className={`relative overflow-hidden cursor-pointer rounded-2xl border-2 border-dashed p-10 md:p-14 text-center transition-all duration-300 ${
+                isDragging
+                  ? 'border-[#646cff] bg-[#646cff]/5 scale-[1.01] shadow-lg dark:bg-[#646cff]/10'
+                  : 'border-stone-850 bg-stone-950/40 hover:border-stone-700 hover:bg-stone-950/70'
+              }`}
+            >
+              <input
+                type="file"
+                id="file-pick"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                accept=".pdf,.epub"
+                className="hidden"
+                disabled={loading}
+              />
+
+              <div className="flex flex-col items-center space-y-4">
                 <div className="p-4 bg-stone-900 border border-stone-805 rounded-full text-stone-300">
                   <Upload className="w-10 h-10 text-[#646cff]" />
                 </div>
@@ -205,10 +281,69 @@ export default function DocumentUpload({
                     <BookOpen className="w-3.5 h-3.5" /> ePUB (Chapitré)
                   </span>
                 </div>
-              </motion.div>
-            )}
-          </AnimatePresence>
-        </motion.div>
+              </div>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="url-state"
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.98 }}
+              className="relative overflow-hidden rounded-2xl border border-stone-850 p-6 md:p-10 bg-[#131212] hover:border-stone-700 transition-all text-center"
+            >
+              <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 text-left max-w-2xl mx-auto mb-6">
+                <div className="p-4 bg-stone-900 border border-stone-850 rounded-2xl text-stone-300 flex-shrink-0">
+                  <Globe className="w-8 h-8 text-[#646cff]" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-extrabold text-white">Importer depuis le Web</h3>
+                  <p className="text-xs text-stone-400 mt-1 leading-relaxed leading-relaxed">
+                    Collez l'adresse URL d'un article de presse, d'une page Wikipédia ou d'un blog. Notre liseur extrait et structure automatiquement le texte principal pour le lire sans éléments distrayants.
+                  </p>
+                </div>
+              </div>
+
+              <form onSubmit={handleUrlSubmit} className="flex flex-col sm:flex-row gap-2.5 max-w-2xl mx-auto">
+                <div className="relative flex-grow">
+                  <Link className="absolute left-4 top-3.5 w-4 h-4 text-stone-550" />
+                  <input
+                    type="text"
+                    value={webUrl}
+                    onChange={(e) => setWebUrl(e.target.value)}
+                    placeholder="Saisissez ou collez l'URL de votre choix... (ex: https://fr.wikipedia.org/...)"
+                    className="w-full bg-stone-950/80 border border-stone-850 text-stone-100 placeholder-stone-600 rounded-xl py-3 pl-11 pr-4 text-xs font-medium focus:outline-none focus:border-[#646cff] transition-all"
+                    disabled={loading}
+                    required
+                  />
+                </div>
+                <button
+                  type="submit"
+                  className="bg-[#646cff] hover:bg-[#525aff] text-white text-xs font-black px-6 py-3 rounded-xl transition-all shadow-md cursor-pointer flex items-center justify-center gap-1 whitespace-nowrap"
+                  disabled={loading}
+                >
+                  <span>Lancer l'extraction</span>
+                </button>
+              </form>
+
+              <div className="max-w-2xl mx-auto pt-6 text-left border-t border-stone-900 mt-6">
+                <p className="text-[9px] font-bold text-stone-500 font-mono uppercase tracking-widest mb-3">⚡ Liens de test rapides :</p>
+                <div className="flex flex-wrap gap-2">
+                  {QUICK_URL_SAMPLES.map((sample, idx) => (
+                    <button
+                      key={idx}
+                      type="button"
+                      onClick={() => setWebUrl(sample.url)}
+                      className="text-[10px] font-bold font-mono py-1.5 px-3 bg-stone-900/80 hover:bg-stone-850 border border-stone-850 hover:border-stone-700 text-stone-300 rounded-lg cursor-pointer transition-colors active:scale-95"
+                      title={sample.url}
+                    >
+                      {sample.name}
+                    </button>
+                  ))}
+                </div>
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
         {/* Error Alert */}
         <AnimatePresence>

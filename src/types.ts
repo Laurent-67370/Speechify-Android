@@ -11,7 +11,7 @@ export interface DocumentBook {
   title: string;
   author: string;
   language: string;
-  type: 'pdf' | 'epub' | 'sample';
+  type: 'pdf' | 'epub' | 'sample' | 'web';
   chapters: Chapter[];
   coverUrl?: string;
   progressPercent: number;
