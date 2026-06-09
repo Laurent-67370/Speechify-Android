@@ -331,11 +331,11 @@ async function startServer() {
       return res.json({ reply: response.text || "Je n'ai pas pu répondre." });
     } catch (error: any) {
       console.error("[API CHAT ERROR]", error);
-      return res.status(500).json({ error: \`Erreur Charly : \${error.message}\` });
+      return res.status(500).json({ error: `Erreur Charly : ${error.message}` });
     }
   });
 
-    app.get("/api/gutenberg/:bookId", async (req, res) => {
+  app.get("/api/gutenberg/:bookId", async (req, res) => {
     const bookId = parseInt(req.params.bookId);
     if (!bookId || isNaN(bookId)) {
       return res.status(400).json({ error: "bookId invalide" });
@@ -537,4 +537,5 @@ async function startServer() {
 }
 
 startServer();
+
 
