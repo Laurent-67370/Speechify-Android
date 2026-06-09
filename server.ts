@@ -182,6 +182,85 @@ async function startServer() {
   });
 
   // ════════════════════════════════════════════════════════════════════════
+  // ── API GUTENBERG (texte brut avec décodage UTF-8/Latin-1 côté serveur) ──
+  // ════════════════════════════════════════════════════════════════════════
+
+  app.get("/api/gutenberg/:bookId", async (req, res) => {
+    const bookId = parseInt(req.params.bookId);
+    if (!bookId || isNaN(bookId)) {
+      return res.status(400).json({ error: "bookId invalide" });
+    }
+
+    // URLs candidates dans l'ordre de préférence
+    const candidates = [
+      `https://www.gutenberg.org/files/${bookId}/${bookId}-0.txt`,
+      `https://www.gutenberg.org/files/${bookId}/${bookId}.txt`,
+      `https://www.gutenberg.org/cache/epub/${bookId}/pg${bookId}.txt`,
+      `https://www.gutenberg.org/files/${bookId}/${bookId}-8.txt`,
+      `https://www.gutenberg.org/ebooks/${bookId}.txt.utf-8`,
+    ];
+
+    const headers = {
+      "User-Agent": "Mozilla/5.0 (compatible; SpeechifyPro/1.0)",
+      "Accept": "text/plain, */*",
+    };
+
+    let lastError = "";
+
+    for (const url of candidates) {
+      try {
+        console.log(`[GUTENBERG] Trying: ${url}`);
+        const controller = new AbortController();
+        const timeoutId = setTimeout(() => controller.abort(), 15000);
+
+        const response = await fetch(url, { headers, signal: controller.signal });
+        clearTimeout(timeoutId);
+
+        if (!response.ok) {
+          lastError = `HTTP ${response.status} for ${url}`;
+          continue;
+        }
+
+        // Récupérer en buffer binaire
+        const arrayBuffer = await response.arrayBuffer();
+        const bytes = Buffer.from(arrayBuffer);
+
+        // Détecter l'encodage : BOM UTF-8 ou essai UTF-8 strict, sinon Latin-1
+        let text: string;
+        if (bytes[0] === 0xEF && bytes[1] === 0xBB && bytes[2] === 0xBF) {
+          // BOM UTF-8
+          text = bytes.slice(3).toString('utf-8');
+        } else {
+          // Essayer UTF-8
+          const utf8 = bytes.toString('utf-8');
+          // Si contient des caractères de remplacement UTF-8 cassés (0xFFFD), c'est du Latin-1
+          if (utf8.includes('�')) {
+            text = bytes.toString('latin1');
+          } else {
+            text = utf8;
+          }
+        }
+
+        if (!text || text.length < 500) {
+          lastError = `Contenu trop court pour ${url}`;
+          continue;
+        }
+
+        console.log(`[GUTENBERG] ✅ ${url} — ${text.length} chars, encodage détecté`);
+        res.setHeader("Content-Type", "text/plain; charset=utf-8");
+        res.setHeader("Access-Control-Allow-Origin", "*");
+        return res.send(text);
+
+      } catch (err: any) {
+        lastError = err.message;
+        console.warn(`[GUTENBERG] ❌ ${url}: ${err.message}`);
+      }
+    }
+
+    return res.status(502).json({ error: `Impossible de récupérer le livre ${bookId}: ${lastError}` });
+  });
+
+  // ════════════════════════════════════════════════════════════════════════
   // ── API PROXY WEB ────────────────────────────────────────────────────────
   // ════════════════════════════════════════════════════════════════════════
 
