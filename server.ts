@@ -3,22 +3,61 @@ import path from "path";
 import { createServer as createViteServer } from "vite";
 import { GoogleGenAI } from "@google/genai";
 import dotenv from "dotenv";
+import Database from "better-sqlite3";
+import fs from "fs";
 
 dotenv.config();
 
-// Lazy helper for Gemini Client
+// ── SQLite init ─────────────────────────────────────────────────────────────
+const DATA_DIR = path.join(process.cwd(), 'data');
+if (!fs.existsSync(DATA_DIR)) fs.mkdirSync(DATA_DIR, { recursive: true });
+
+const db = new Database(path.join(DATA_DIR, 'speechify.db'));
+
+// Activer WAL pour de meilleures performances en lecture/écriture simultanées
+db.pragma('journal_mode = WAL');
+
+// Création de la table books si elle n'existe pas
+db.exec(`
+  CREATE TABLE IF NOT EXISTS books (
+    id          TEXT PRIMARY KEY,
+    data        TEXT NOT NULL,
+    updated_at  INTEGER NOT NULL DEFAULT (unixepoch())
+  );
+  CREATE TABLE IF NOT EXISTS bookmarks (
+    id          TEXT PRIMARY KEY,
+    book_id     TEXT NOT NULL,
+    data        TEXT NOT NULL,
+    created_at  INTEGER NOT NULL DEFAULT (unixepoch())
+  );
+`);
+
+console.log('[SQLite] Base de données initialisée :', path.join(DATA_DIR, 'speechify.db'));
+
+// ── Helpers SQLite ──────────────────────────────────────────────────────────
+const stmtGetAllBooks    = db.prepare('SELECT data FROM books ORDER BY updated_at DESC');
+const stmtGetBook        = db.prepare('SELECT data FROM books WHERE id = ?');
+const stmtUpsertBook     = db.prepare(`
+  INSERT INTO books (id, data, updated_at) VALUES (?, ?, unixepoch())
+  ON CONFLICT(id) DO UPDATE SET data = excluded.data, updated_at = unixepoch()
+`);
+const stmtDeleteBook     = db.prepare('DELETE FROM books WHERE id = ?');
+const stmtGetBookmarks   = db.prepare('SELECT data FROM bookmarks WHERE book_id = ? ORDER BY created_at DESC');
+const stmtUpsertBookmark = db.prepare(`
+  INSERT INTO bookmarks (id, book_id, data, created_at) VALUES (?, ?, ?, unixepoch())
+  ON CONFLICT(id) DO UPDATE SET data = excluded.data
+`);
+const stmtDeleteBookmark = db.prepare('DELETE FROM bookmarks WHERE id = ?');
+
+// ── Lazy Gemini client ──────────────────────────────────────────────────────
 function getGeminiClient() {
   const apiKey = process.env.GEMINI_API_KEY;
   if (!apiKey) {
-    throw new Error("La clé d'API GEMINI_API_KEY est manquante dans la configuration du serveur. Veuillez l'ajouter dans Paramètres > Clés d'API.");
+    throw new Error("La clé d'API GEMINI_API_KEY est manquante dans la configuration du serveur.");
   }
   return new GoogleGenAI({
     apiKey: apiKey,
-    httpOptions: {
-      headers: {
-        'User-Agent': 'aistudio-build',
-      }
-    }
+    httpOptions: { headers: { 'User-Agent': 'aistudio-build' } }
   });
 }
 
@@ -26,23 +65,135 @@ async function startServer() {
   const app = express();
   const PORT = 3000;
 
-  // Body parsers with elevated JSON limits for conveying larger book/chapter payloads safely!
   app.use(express.json({ limit: '20mb' }));
   app.use(express.urlencoded({ limit: '20mb', extended: true }));
 
-  // API Route: Server-side proxy for robust fetching of external web content (bypasses browser CORS completely!)
+  // ── CORS pour dev ────────────────────────────────────────────────────────
+  app.use((req, res, next) => {
+    res.setHeader('Access-Control-Allow-Origin', '*');
+    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+    if (req.method === 'OPTIONS') return res.sendStatus(204);
+    next();
+  });
+
+  // ════════════════════════════════════════════════════════════════════════
+  // ── API LIVRES (SQLite) ──────────────────────────────────────────────────
+  // ════════════════════════════════════════════════════════════════════════
+
+  // GET /api/books — Récupérer tous les livres
+  app.get('/api/books', (req, res) => {
+    try {
+      const rows = stmtGetAllBooks.all() as { data: string }[];
+      const books = rows.map(r => JSON.parse(r.data));
+      res.json({ books, count: books.length });
+    } catch (err: any) {
+      console.error('[API BOOKS] GET error:', err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // GET /api/books/:id — Récupérer un livre par ID
+  app.get('/api/books/:id', (req, res) => {
+    try {
+      const row = stmtGetBook.get(req.params.id) as { data: string } | undefined;
+      if (!row) return res.status(404).json({ error: 'Livre introuvable' });
+      res.json(JSON.parse(row.data));
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // POST /api/books — Sauvegarder / mettre à jour un livre
+  app.post('/api/books', (req, res) => {
+    try {
+      const book = req.body;
+      if (!book?.id) return res.status(400).json({ error: 'ID du livre manquant' });
+      stmtUpsertBook.run(book.id, JSON.stringify(book));
+      res.json({ success: true, id: book.id });
+    } catch (err: any) {
+      console.error('[API BOOKS] POST error:', err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // POST /api/books/batch — Sauvegarder plusieurs livres en une fois
+  app.post('/api/books/batch', (req, res) => {
+    try {
+      const { books } = req.body;
+      if (!Array.isArray(books)) return res.status(400).json({ error: 'books[] requis' });
+      const upsertMany = db.transaction((booksArr: any[]) => {
+        for (const book of booksArr) {
+          if (book?.id) stmtUpsertBook.run(book.id, JSON.stringify(book));
+        }
+      });
+      upsertMany(books);
+      res.json({ success: true, count: books.length });
+    } catch (err: any) {
+      console.error('[API BOOKS] BATCH error:', err);
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // DELETE /api/books/:id — Supprimer un livre
+  app.delete('/api/books/:id', (req, res) => {
+    try {
+      stmtDeleteBook.run(req.params.id);
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // ════════════════════════════════════════════════════════════════════════
+  // ── API MARQUE-PAGES ─────────────────────────────────────────────────────
+  // ════════════════════════════════════════════════════════════════════════
+
+  // GET /api/bookmarks/:bookId
+  app.get('/api/bookmarks/:bookId', (req, res) => {
+    try {
+      const rows = stmtGetBookmarks.all(req.params.bookId) as { data: string }[];
+      res.json({ bookmarks: rows.map(r => JSON.parse(r.data)) });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // POST /api/bookmarks
+  app.post('/api/bookmarks', (req, res) => {
+    try {
+      const bm = req.body;
+      if (!bm?.id || !bm?.documentId) return res.status(400).json({ error: 'id et documentId requis' });
+      stmtUpsertBookmark.run(bm.id, bm.documentId, JSON.stringify(bm));
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // DELETE /api/bookmarks/:id
+  app.delete('/api/bookmarks/:id', (req, res) => {
+    try {
+      stmtDeleteBookmark.run(req.params.id);
+      res.json({ success: true });
+    } catch (err: any) {
+      res.status(500).json({ error: err.message });
+    }
+  });
+
+  // ════════════════════════════════════════════════════════════════════════
+  // ── API PROXY WEB ────────────────────────────────────────────────────────
+  // ════════════════════════════════════════════════════════════════════════
+
   app.get("/api/proxy", async (req, res) => {
     const { url } = req.query;
     if (!url || typeof url !== "string") {
       return res.status(400).json({ error: "L'URL est requise" });
     }
-
     try {
       console.log(`[API PROXY] Fetching URL: ${url}`);
-      
       const controller = new AbortController();
-      const timeoutId = setTimeout(() => controller.abort(), 12000); // 12 seconds timeout
-
+      const timeoutId = setTimeout(() => controller.abort(), 12000);
       const response = await fetch(url, {
         headers: {
           "User-Agent": "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36",
@@ -51,38 +202,35 @@ async function startServer() {
         },
         signal: controller.signal
       });
-
       clearTimeout(timeoutId);
-
       if (!response.ok) {
-        return res.status(response.status).json({ 
-          error: `Le site distant a retourné le statut d'erreur: ${response.status} ${response.statusText}` 
+        return res.status(response.status).json({
+          error: `Le site distant a retourné le statut d'erreur: ${response.status} ${response.statusText}`
         });
       }
-
       const body = await response.text();
       res.setHeader("Content-Type", "text/html; charset=utf-8");
       return res.send(body);
     } catch (error: any) {
       console.error(`[API PROXY ERROR] Failed to fetch: ${url}`, error);
-      return res.status(500).json({ 
-        error: `Impossible de récupérer le contenu de cette page directement. Erreur : ${error.message || error}` 
+      return res.status(500).json({
+        error: `Impossible de récupérer le contenu de cette page. Erreur : ${error.message || error}`
       });
     }
   });
 
-  // API Route: AI-powered document & chapter summarizer using Gemini 3.5 Flash server-side!
+  // ════════════════════════════════════════════════════════════════════════
+  // ── API GEMINI ────────────────────────────────════════════════════════════
+  // ════════════════════════════════════════════════════════════════════════
+
   app.post("/api/gemini/summarize", async (req, res) => {
     const { text, title, tone, lang } = req.body;
-
     if (!text || typeof text !== "string" || !text.trim()) {
       return res.status(400).json({ error: "Le contenu textuel est requis pour pouvoir générer un résumé." });
     }
-
     try {
       console.log(`[API SUMMARIZE] Generating summary for: "${title || 'Sans titre'}" with tone "${tone || 'standard'}"`);
       const ai = getGeminiClient();
-
       let formatInstruction = "Fais un résumé structuré, aéré et clair en français.";
       if (tone === "bullet") {
         formatInstruction = "Génère une liste à puces des points clés importants (entre 5 et 8 points), précédés d'icônes ou d'emojis pertinents et gais. Sois synthétique.";
@@ -93,109 +241,53 @@ async function startServer() {
       } else {
         formatInstruction = "Génère un résumé fluide et complet composé d'un court paragraphe d'introduction pour poser le cadre général, puis de 3 à 5 faits marquants clés sous forme de liste fluide, et d'une conclusion synthétique.";
       }
-
       const targetLang = lang || "fr";
-
-      const systemInstruction = `Tu es une IA d'apprentissage intelligente, chaleureuse et captivante, intégrée directement dans cette liseuse audio vocale haut de gamme.
-Ton rôle est de lire le texte fourni et d'en générer un résumé fantastique, agréable et ultra-compréhensible.
-Consignes primordiales :
-1. Réponds de préférence en français ou dans la langue cible : ${targetLang}.
-2. Sois CONVIVIAL et fluide. Formule des phrases claires, mélodieuses, faciles et agréables à écouter si elles sont lues à haute voix par notre synthèse vocale (évite les listes de chiffres austères sans contexte, les symboles ésotériques ou les abréviations cryptiques).
-3. Utilise le balisage Markdown classique de façon sobre et gracieuse (titres h3, listes à puces gais, gras pour mettre en valeur les notions essentielles).
-4. Fournis un livrable fini, propre et professionnel. NE commence JAMAIS par des phrases métas comme "Voici le résumé demandé" ou "En tant qu'assistant...". Débute directement par le coeur du sujet ou un titre de section engageant.
-5. Sois fidèle au document original et ne déforme pas les faits officiels décrits dans le texte.`;
-
-      // Limit data size safely to fit the context window without issue
-      const contentForGemini = text.length > 120000 ? text.substring(0, 120000) + "\n\n[... CONTENU TRONQUÉ POUR LE RÉSUMÉ POUR RAISONS DE PERFORMANCE ...]" : text;
-
+      const systemInstruction = `Tu es une IA d'apprentissage intelligente, chaleureuse et captivante, intégrée directement dans cette liseuse audio vocale haut de gamme.\nTon rôle est de lire le texte fourni et d'en générer un résumé fantastique, agréable et ultra-compréhensible.\nConsignes primordiales :\n1. Réponds de préférence en français ou dans la langue cible : ${targetLang}.\n2. Sois CONVIVIAL et fluide. Formule des phrases claires, mélodieuses, faciles et agréables à écouter si elles sont lues à haute voix par notre synthèse vocale.\n3. Utilise le balisage Markdown classique de façon sobre et gracieuse.\n4. Fournis un livrable fini, propre et professionnel. NE commence JAMAIS par des phrases métas.\n5. Sois fidèle au document original.`;
+      const contentForGemini = text.length > 120000 ? text.substring(0, 120000) + "\n\n[... CONTENU TRONQUÉ ...]" : text;
       const response = await ai.models.generateContent({
-        model: "gemini-3.5-flash",
-        contents: `Titre de la section / du document : "${title || 'Sans titre'}"\n\nInstructions de formatage spécifiques : ${formatInstruction}\n\nTexte source :\n${contentForGemini}`,
-        config: {
-          systemInstruction,
-          temperature: 0.6,
-        }
+        model: "gemini-2.5-flash",
+        contents: `Titre : "${title || 'Sans titre'}"\n\nInstructions : ${formatInstruction}\n\nTexte source :\n${contentForGemini}`,
+        config: { systemInstruction, temperature: 0.6 }
       });
-
       const summaryText = response.text || "Impossible d'extraire le résumé généré.";
       return res.json({ summary: summaryText });
     } catch (error: any) {
       console.error(`[API SUMMARIZE ERROR]`, error);
-      
-      // Return a refined human-readable error response
       let userFriendlyError = "Une erreur est survenue lors de l'appel au service de résumé par IA.";
       if (error.message?.includes("API_KEY")) {
-        userFriendlyError = "La clé d'API de l'IA (GEMINI_API_KEY) est introuvable ou invalide sur le serveur. Veuillez configurer le secret dans l'onglet Paramètres > Clés d'API.";
+        userFriendlyError = "La clé d'API de l'IA (GEMINI_API_KEY) est introuvable ou invalide sur le serveur.";
       } else {
         userFriendlyError = `Erreur de traitement IA : ${error.message || error}`;
       }
-
       return res.status(500).json({ error: userFriendlyError });
     }
   });
 
-  // API Route: AI-powered Word Definition & Contextual Dictionary using Gemini 3.5 Flash!
   app.post("/api/gemini/define", async (req, res) => {
     const { word, sentence, lang } = req.body;
-
     if (!word || typeof word !== "string" || !word.trim()) {
       return res.status(400).json({ error: "Le mot recherché est requis." });
     }
-
     try {
-      console.log(`[API DEFINE] Looking up word: "${word}" inside sentence: "${sentence || 'N/A'}"`);
+      console.log(`[API DEFINE] Looking up word: "${word}"`);
       const ai = getGeminiClient();
-
       const targetLang = lang || "fr";
-
-      const systemInstruction = `Tu es une IA d'apprentissage, un enseignant de français et un linguiste bienveillant.
-Ton rôle est d'analyser le mot fourni par l'utilisateur et d'en retourner une fiche d'apprentissage ultra-didactique sous format JSON STRICT.
-Ne mets aucun filtre markdown, retourne uniquement du code JSON brut et valide, sans fioritures ni texte d'enrobage.
-
-Le schéma JSON de retour doit correspondre EXACTEMENT à ceci :
-{
-  "word": "le mot original",
-  "partOfSpeech": "nature grammaticale (ex: nom féminin, verbe du 1er groupe, adjectif, etc.)",
-  "definition": "définition claire, simple et accessible",
-  "etymology": "étymologie succincte ou origine historique amusante et instructive",
-  "contextualExplanation": "explication de comment ce mot s'insère ou prend sens dans la phrase de contexte fournie (si une phrase de contexte est présente, sinon dis comment il s'utilise en général)",
-  "synonyms": ["synonyme1", "synonyme2", "synonyme3"],
-  "example": "une phrase d'exemple élégante montrant son usage"
-}
-
-Consignes supplémentaires :
-1. Rédige les explications dans la langue cible : ${targetLang} (par défaut en français, sois convivial, clair et pédagogique).
-2. Si le mot est un verbe conjugué, indique son infinitif dans la clé "word" ainsi que sa forme conjuguée.
-3. Sois précis et instructif.`;
-
+      const systemInstruction = `Tu es une IA d'apprentissage, un enseignant de français et un linguiste bienveillant.\nTon rôle est d'analyser le mot fourni et d'en retourner une fiche d'apprentissage ultra-didactique sous format JSON STRICT.\nNe mets aucun filtre markdown, retourne uniquement du code JSON brut et valide.\n\nSchéma JSON attendu :\n{\n  "word": "le mot original",\n  "partOfSpeech": "nature grammaticale",\n  "definition": "définition claire et simple",\n  "etymology": "étymologie succincte",\n  "contextualExplanation": "explication dans le contexte fourni",\n  "synonyms": ["synonyme1", "synonyme2", "synonyme3"],\n  "example": "phrase d'exemple élégante"\n}\n\nRéponds en ${targetLang}.`;
       const response = await ai.models.generateContent({
-        model: "gemini-3.5-flash",
+        model: "gemini-2.5-flash",
         contents: `Mot sélectionné : "${word}"\nPhrase de contexte : "${sentence || ''}"`,
-        config: {
-          systemInstruction,
-          temperature: 0.2, // low temperature for precise factual dictionary lookup
-          responseMimeType: "application/json",
-        }
+        config: { systemInstruction, temperature: 0.2, responseMimeType: "application/json" }
       });
-
       const responseText = response.text || "{}";
       const wordDefinition = JSON.parse(responseText.trim());
       return res.json(wordDefinition);
     } catch (error: any) {
       console.error(`[API DEFINE ERROR]`, error);
-      
-      let userFriendlyError = "Une erreur est survenue lors de la récupération de la définition.";
-      if (error.message?.includes("API_KEY")) {
-        userFriendlyError = "La clé d'API de l'IA (GEMINI_API_KEY) est introuvable ou invalide sur le serveur.";
-      } else {
-        userFriendlyError = `Erreur : ${error.message || error}`;
-      }
-
-      return res.status(500).json({ error: userFriendlyError });
+      return res.status(500).json({ error: `Erreur : ${error.message || error}` });
     }
   });
 
-  // Vite middleware for development
+  // ── Vite dev / production static ─────────────────────────────────────────
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({
       server: { middlewareMode: true },
@@ -212,6 +304,7 @@ Consignes supplémentaires :
 
   app.listen(PORT, "0.0.0.0", () => {
     console.log(`Server running on http://localhost:${PORT}`);
+    console.log(`[SQLite] Stockage livres actif → data/speechify.db`);
   });
 }
 
