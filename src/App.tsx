@@ -12,6 +12,7 @@ import ReaderControls from './components/ReaderControls';
 import ReaderSettings from './components/ReaderSettings';
 import HomeDashboard from './components/HomeDashboard';
 import GutenbergExplorer from './components/GutenbergExplorer';
+import InteractiveHelpGuide from './components/InteractiveHelpGuide';
 
 
 const DEFAULT_SETTINGS: UserSettings = {
@@ -1243,68 +1244,10 @@ export default function App() {
       {/* 5. Overlay Welcome help guide */}
       <AnimatePresence>
         {showWelcomeHelp && (
-          <div className="fixed inset-0 bg-black/60 backdrop-blur-sm z-50 flex items-center justify-center p-4">
-            <motion.div
-              initial={{ scale: 0.95, opacity: 0 }}
-              animate={{ scale: 1, opacity: 1 }}
-              exit={{ scale: 0.95, opacity: 0 }}
-              className="bg-[#121111]/95 text-stone-100 rounded-[28px] max-w-lg w-full p-6 shadow-2xl relative text-left border border-stone-900"
-            >
-              <button
-                onClick={() => setShowWelcomeHelp(false)}
-                className="absolute right-4 top-4 text-stone-400 hover:text-white p-1.5 rounded-lg cursor-pointer"
-              >
-                <X className="w-5 h-5" />
-              </button>
-
-              <div className="flex items-center space-x-2.5 text-[#646cff] mb-4">
-                <BookOpen className="w-6 h-6" />
-                <h3 className="text-xl font-black tracking-tight font-sans">
-                  Guide de démarrage
-                </h3>
-              </div>
-
-              <div className="space-y-4 text-xs leading-relaxed text-stone-300">
-                <p>
-                  Bienvenue dans l'univers de la lecture audio naturelle de <strong>SpeechifyPro</strong>. Cette liseuse intelligente convertit vos textes en fichiers de synthèse vocale vivants.
-                </p>
-
-                <div className="space-y-3">
-                  <div className="flex items-start space-x-2.5">
-                    <span className="h-5 w-5 rounded bg-[#646cff] text-white font-extrabold flex items-center justify-center flex-shrink-0 text-[10px]">1</span>
-                    <p><strong>Imports Locaux & URL :</strong> Sous l'onglet <strong>Importer</strong>, déposez un fichier local (PDF, ePUB) ou entrez simplement le <strong>lien URL d'un article ou site internet</strong> (Wikipédia, blogs, actualités) pour l'écouter instantanément et sans distractions.</p>
-                  </div>
-                  <div className="flex items-start space-x-2.5">
-                    <span className="h-5 w-5 rounded bg-[#646cff] text-white font-extrabold flex items-center justify-center flex-shrink-0 text-[10px]">2</span>
-                    <p><strong>Domaine public illimité :</strong> Explorez l'onglet <strong>Librairie</strong> pour rechercher et télécharger en 1 clic plus de 70 000 œuvres classiques libres de droits du **Projet Gutenberg**.</p>
-                  </div>
-                  <div className="flex items-start space-x-2.5">
-                    <span className="h-5 w-5 rounded bg-[#646cff] text-white font-extrabold flex items-center justify-center flex-shrink-0 text-[10px]">3</span>
-                    <p><strong>Lecture d'arrière-plan globale :</strong> Écoutez vos documents tout en configurant votre liseuse ou en naviguant sur l'accueil ! Un mini-lecteur flottant persistera au bas de l'écran.</p>
-                  </div>
-                  <div className="flex items-start space-x-2.5">
-                    <span className="h-5 w-5 rounded bg-[#646cff] text-white font-extrabold flex items-center justify-center flex-shrink-0 text-[10px]/[10px]">4</span>
-                    <p><strong>Geste "Clic-pour-lire" :</strong> En cours de lecture, cliquez directement sur <strong>n'importe quelle phrase du texte</strong> pour y positionner instantanément la synthèse vocale.</p>
-                  </div>
-                  <div className="flex items-start space-x-2.5">
-                    <span className="h-5 w-5 rounded bg-[#646cff] text-white font-extrabold flex items-center justify-center flex-shrink-0 text-[10px]">5</span>
-                    <p><strong>Objectifs & Thèmes :</strong> Suivez vos minutes écoutées par jour et basculez en 1 clic entre le mode sombre de nuit et le mode clair/crème en haut à droite pour votre confort visuel.</p>
-                  </div>
-                </div>
-
-                <div className="bg-stone-900 border border-stone-850 p-3 rounded-xl mt-4 text-[11px] text-stone-400 font-mono">
-                  <p>💡 <em>Note : Toutes vos voix système de haute qualité sont chargées nativement. Ajustez la vitesse, le thème de lecture (sombre, clair, sépia, papier) et le pas de voix à tout moment depuis les options de lecture !</em></p>
-                </div>
-              </div>
-
-              <button
-                onClick={() => setShowWelcomeHelp(false)}
-                className="w-full mt-6 py-2.5 bg-[#646cff] text-white font-black rounded-full hover:bg-[#525aff] transition-all text-xs cursor-pointer shadow-sm text-center"
-              >
-                C'est compris, bonne lecture !
-              </button>
-            </motion.div>
-          </div>
+          <InteractiveHelpGuide 
+            onClose={() => setShowWelcomeHelp(false)} 
+            documentLanguage={activeBook?.language || 'fr'} 
+          />
         )}
       </AnimatePresence>
     </div>
