@@ -412,7 +412,7 @@ export default function GutenbergExplorer({
   onNavigateToTab
 }: GutenbergExplorerProps) {
   const [searchQuery, setSearchQuery] = useState('');
-  const [activeLang, setActiveLang] = useState<'all' | 'fr' | 'en' | 'es'>('fr');
+  const [activeLang, setActiveLang] = useState<'all' | 'fr' | 'en' | 'es' | 'de' | 'it'>('fr');
   const [searchResults, setSearchResults] = useState<GutendexBook[]>([]);
   const [loading, setLoading] = useState(false);
   const [errorText, setErrorText] = useState<string | null>(null);
@@ -785,6 +785,8 @@ export default function GutenbergExplorer({
       case 'fr': return 'Français';
       case 'en': return 'Anglais';
       case 'es': return 'Espagnol';
+      case 'de': return 'Allemand';
+      case 'it': return 'Italien';
       default: return lang.toUpperCase();
     }
   };
@@ -803,7 +805,7 @@ export default function GutenbergExplorer({
             <p className="text-stone-500 dark:text-stone-400 text-xs mt-0.5">Accédez à plus de 70 000 œuvres littéraires gratuites, téléchargeables et prêtes à l'écoute vocale !</p>
           </div>
         </div>
-        <div className="flex gap-1 bg-stone-100 dark:bg-stone-950 p-1 rounded-xl border border-stone-200 dark:border-stone-900 self-stretch sm:self-auto justify-center select-none font-sans text-[11px] font-bold">
+        <div className="flex flex-wrap gap-1 bg-stone-100 dark:bg-stone-950 p-1 rounded-xl border border-stone-200 dark:border-stone-900 self-stretch sm:self-auto justify-center select-none font-sans text-[11px] font-bold">
           <button 
             type="button"
             onClick={() => setActiveLang('fr')} 
@@ -824,6 +826,20 @@ export default function GutenbergExplorer({
             className={`px-3 py-1.5 rounded-lg cursor-pointer transition-all ${activeLang === 'es' ? 'bg-[#646cff] text-white' : 'text-stone-500 hover:text-stone-950 dark:hover:text-white'}`}
           >
             Espagnol
+          </button>
+          <button 
+            type="button"
+            onClick={() => setActiveLang('de')} 
+            className={`px-3 py-1.5 rounded-lg cursor-pointer transition-all ${activeLang === 'de' ? 'bg-[#646cff] text-white' : 'text-stone-500 hover:text-stone-950 dark:hover:text-white'}`}
+          >
+            Allemand
+          </button>
+          <button 
+            type="button"
+            onClick={() => setActiveLang('it')} 
+            className={`px-3 py-1.5 rounded-lg cursor-pointer transition-all ${activeLang === 'it' ? 'bg-[#646cff] text-white' : 'text-stone-500 hover:text-stone-950 dark:hover:text-white'}`}
+          >
+            Italien
           </button>
           <button 
             type="button"

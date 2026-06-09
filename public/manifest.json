@@ -1,0 +1,25 @@
+{
+  "name": "Liseuse Vocale Multilingue",
+  "short_name": "Liseuse Vocale",
+  "description": "Liseuse vocale intelligente et multilingue avec voix de studio, surbrillance en temps réel et support de lecture hors ligne complet.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#1c1917",
+  "theme_color": "#1c1917",
+  "orientation": "portrait-primary",
+  "categories": ["books", "education", "utilities"],
+  "icons": [
+    {
+      "src": "/icon.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "any"
+    },
+    {
+      "src": "/icon-maskable.svg",
+      "type": "image/svg+xml",
+      "sizes": "any",
+      "purpose": "maskable"
+    }
+  ]
+}
