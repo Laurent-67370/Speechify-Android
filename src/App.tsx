@@ -1040,6 +1040,12 @@ export default function App() {
                         onQuickBookmark={handleQuickBookmarkToggle}
                         isParagraphBookmarked={isParagraphBookmarked}
                         language={activeBook?.language || 'fr'}
+                        documentBook={activeBook || undefined}
+                        currentChapterIndex={currentChapterIdx}
+                        onChapterSelect={(idx) => handleJumpToLocation(idx, 0)}
+                        onUpdateBook={handleUpdateBook}
+                        bookmarks={activeBookBookmarks}
+                        onJumpToLocation={handleJumpToLocation}
                       />
                     ) : (
                       <div className="flex flex-col items-center justify-center h-full text-stone-400 bg-stone-950">

@@ -11,7 +11,7 @@ Que ce soit pour reposer vos yeux fatigués, réviser des concepts clés, ou vou
 ### 🤖 1. Charly, votre Guide Interactif & Didactique
 - **Parcours d'Apprentissage Vivant :** Un assistant virtuel jovial vous explique le fonctionnement en 6 étapes animées (sélectionnable en haut à droite !).
 - **Le Laboratoire Acoustique :** Entraînez-vous à façonner la voix de synthèse en temps réel. Sélectionnez vos préférences de vitesse ($0.5x$ à $2.5x$) et de tessiture (grave/aigu).
-- **Entraînement "Clic-pour-Lire" :** Simulez des clics de lecture directement dans le guide pour comprendre l'immédiateté du geste.
+- **Entraînement "Clic-pour-Lire" :** Simules des clics de lecture directement dans le guide pour comprendre l'immédiateté du geste.
 - **Le Grand Quiz des Lecteurs :** Validez vos connaissances avec un mini-quiz interactif amusant et décrochez votre brevet officiel de *Lecteur Intelligent* !
 
 ### 🔮 2. Les Résumés Extraordinaires par l'IA (Gemini 3.5 Flash)
@@ -23,28 +23,36 @@ Que ce soit pour reposer vos yeux fatigués, réviser des concepts clés, ou vou
   - ⚡ **Court :** Un condensé percutant de 3 à 5 phrases captivantes, idéal pour un mémo express.
 - **Vocalisation Directe du Résumé :** Écoutez votre résumé intelligent en un clic grâce à la synthèse vocale intégrée, pour une mémorisation auditive maximale !
 
-### ⚡ 3. Geste Naturel "Click-to-Read"
-- **Navigation au Doigt et à l'Œil :** Cliquez simplement sur n'importe quel paragraphe du livre pour que l'orateur reprenne précisément la lecture à cet endroit. Plus besoin d'avancer ou de reculer à l'aveugle !
+### ⛵ 3. Navigation Ultragranulaire & Transitions de Chapitres Fluides
+- **Contrôles Ultra-Intelligents en Tête de Lecture :** Une barre de navigation redessinée, s'adaptant parfaitement aux écrans mobiles compacts, avec de grands boutons faciles d'accès pour sauter de chapitre en chapitre.
+- **Butoir de Fin sans Zone Vide :** Élimination complète des espaces vides inutiles après le dernier paragraphe. À la place, une zone de complétion magnifique et engageante se présente en fin de lecture.
+- **Boîte à Outils de Fin de Chapitre :** Un jalon interactif vous félicite en fin de lecture et propose immédiatement des raccourcis précieux :
+  - ⚡ **Passer au chapitre suivant** d'un clic (avec rembobinage et défilement fluide vers le haut de la page).
+  - 🔄 **Relire le chapitre** instantanément.
+  - ✨ **Générer le résumé par l'IA** ou marquer la page.
+- **Geste Naturel "Click-to-Read" :** Cliquez simplement sur n'importe quel paragraphe pour déplacer instantanément le flux de lecture vocale à cet endroit précis.
 
 ### 🌌 4. Confort d'Affichage & Design de Pointe
 - **Thème Sombre Cosmique (Night Mode) :** Un canevas noir profond, apaisant et mystique pour vos écoutes nocturnes.
-- **Thème Jour Raffiné (Sable) :** Un rendu crème ultra-agréable et lumineux, ménageant la rétine en plein soleil.
-- **Égaliseur Virtuel Réactif :** Une onde audio bondissante au design épuré sur l'accueil, qui danse au rythme de la lecture vocale.
-- **Mini-Lecteur Flottant Global :** Naviguez sur votre tableau de bord ou dans la librairie tout en continuant d'écouter votre livre de manière fluide en arrière-plan !
+- **Thème Jour Raffiné (Sable) :** Un rendu crème de style littéraire, ménageant la rétine même en plein soleil.
+- **Égaliseur Virtuel Réactif :** Une onde audio en mouvement qui vibre et ondule en temps réel au rythme de la voix.
+- **Mini-Lecteur Flottant Global :** Naviguez librement dans la bibliothèque ou les synthèses pendant que le lecteur continue l'expérience audio en arrière-plan !
 
-### 📚 5. Bibliothèque Universelle & Importateur Multimodes
-- **Le Projet Gutenberg intégré :** Accédez directement à plus de 70 000 classiques universels gratuits (Jules Verne, Victor Hugo, Jane Austen) et importez-les en un seul clic !
-- **Lecteur Intelligent d'Articles Web (URL) :** Collez le lien internet d'un blog, d'un article de journal ou d'une page Wikipédia. Notre serveur extrait et nettoie instantanément le corps de texte pour l'orner d'une lecture épurée de toute publicité.
-- **Dossiers Personnels :** Choisissez ou glissez-déposez vos fichiers ePUB et PDF locaux avec détection automatique de la langue.
+### 📚 5. Bibliothèque Immense de Classiques (12 Ouvrages Emblématiques)
+La sélection Gutenberg de départ a été multipliée par trois, offrant désormais un éventail captivant de classiques préconfigurés, d'un simple clic :
+- 🇫🇷 **Sélection Française :** *Madame Bovary* (Gustave Flaubert), *Candide* (Voltaire), *Le Horla* (Guy de Maupassant), et *Les Fleurs du Mal* (Charles Baudelaire).
+- 🇬🇧 **Sélection Anglaise :** *The Picture of Dorian Gray* (Oscar Wilde), *Moby Dick* (Herman Melville), *Huckleberry Finn* (Mark Twain), et *The Metamorphosis* (Franz Kafka).
+- 🇪🇸 **Sélection Espagnole :** *La Celestina* (Fernando de Rojas), *La vida del Buscón* (Francisco de Quevedo), *Novelas Ejemplares* (Cervantes), et *Marianela* (Pérez Galdós).
+- **Importation Personnalisée :** Intégrez vos propres documents locaux ePUB et PDF avec détection automatique de la langue, ou saisissez simplement une URL web pour parser un article en un instant.
 
 ---
 
 ## 🛠️ Stack Technique & Technologies
 
 - **Frontend :** ⚡ React 18+ (avec TypeScript) et Vite pour une réactivité instantanée.
-- **Moteur d'Animations :** 🚀 Motion (`motion/react`) assurant des micro-animations et des transitions d'onglets particulièrement soignées.
-- **Design & Styles :** 🎨 Tailwind CSS configuré avec des palettes haut de gamme et des typographies lisibles.
-- **Moteur d'IA :** 🤖 SDK officiel Google GenAI (`@google/genai`) exécutant les requêtes Gemini 3.5 Flash en toute sécurité côté serveur.
+- **Moteur d'Animations :** 🚀 Motion (`motion/react`) assurant des micro-animations et des transitions d'onglets hautement fluides.
+- **Design & Styles :** 🎨 Tailwind CSS configuré avec des palettes d'excellence littéraire.
+- **Moteur d'IA :** 🤖 SDK officiel Google GenAI (`@google/genai`) exécutant les requêtes Gemini 3.5 Flash côté serveur.
 - **Serveur & Proxy robuste :** 💻 Serveur Node/Express pour le proxy d'extraction web et l'appel sécurisé des API sans blocage CORS.
 
 ---
@@ -57,7 +65,7 @@ npm install
 ```
 
 ### 2. Configurer le secret d'IA Gemini (Optionnel)
-Pour pouvoir demander des résumés intelligents à l'IA, créez un fichier `.env` à la racine (ou via l'onglet Clés d'API d'AI Studio) et renseignez-y vote clé :
+Pour pouvoir demander des résumés intelligents à l'IA, créez un fichier `.env` à la racine de votre environnement ou renseignez-y vote clé :
 ```env
 GEMINI_API_KEY=votre_cle_api_ici
 ```
@@ -66,7 +74,7 @@ GEMINI_API_KEY=votre_cle_api_ici
 ```bash
 npm run dev
 ```
-*L'application s'ouvre magiquement sur votre port réservé http://localhost:3000.*
+*L'application s'ouvre sur le port réservé http://localhost:3000.*
 
 ### 4. Linter la structure de code pour préserver la qualité
 ```bash
