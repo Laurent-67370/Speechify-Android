@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react';
 import { BookOpen, HelpCircle, X, ChevronLeft, VolumeX, Library, Home, Headphones, Upload, Play, Pause, Globe } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { DocumentBook, UserSettings, Bookmark, Chapter } from './types';
-import { splitIntoSentences } from './utils/textUtils';
+import { splitIntoSentences, preprocessTextForSpeech } from './utils/textUtils';
 import { SAMPLES } from './data/samples';
 import DocumentUpload from './components/DocumentUpload';
 import Sidebar from './components/Sidebar';
@@ -61,6 +61,15 @@ export default function App() {
     settings: DEFAULT_SETTINGS,
     activeBook: null as DocumentBook | null,
   });
+
+  const speechTimeoutRef = useRef<any>(null);
+
+  const clearSpeechTimeout = () => {
+    if (speechTimeoutRef.current) {
+      clearTimeout(speechTimeoutRef.current);
+      speechTimeoutRef.current = null;
+    }
+  };
 
   // Sync references with React state to access inside async synthesizer event callbacks
   useEffect(() => {
@@ -203,7 +212,8 @@ export default function App() {
   const speakCurrentSegment = () => {
     if (typeof window === 'undefined' || !window.speechSynthesis) return;
 
-    // Terminate any ongoing audio structures
+    // Terminate any ongoing audio structures and clear scheduled pauses
+    clearSpeechTimeout();
     window.speechSynthesis.cancel();
 
     const state = speechStateRef.current;
@@ -224,9 +234,13 @@ export default function App() {
       return;
     }
 
-    // Instantiate Utterance object
-    const utterance = new SpeechSynthesisUtterance(sentenceToRead);
-    utterance.lang = state.activeBook.language || 'fr';
+    // Preprocess text to format double-punctuations and strip raw artifacts (like em-dashes / underscores)
+    const language = state.activeBook.language || 'fr';
+    const preprocessedText = preprocessTextForSpeech(sentenceToRead, language);
+
+    // Instantiate Utterance object with clean audible text
+    const utterance = new SpeechSynthesisUtterance(preprocessedText);
+    utterance.lang = language;
     utterance.rate = state.settings.speechRate;
     utterance.pitch = state.settings.speechPitch;
 
@@ -241,10 +255,38 @@ export default function App() {
 
     // Bind playback progress callbacks
     utterance.onend = () => {
-      // Execute only if we description playback remains active
-      if (speechStateRef.current.isPlaying) {
-        handleNextSentence();
+      clearSpeechTimeout();
+
+      // Determine the ideal breath pause between sentences based on end of sentence punctuation and paragraph layouts.
+      // This establishes a soothing, professional human-like cadence.
+      const trimmedSentence = sentenceToRead.trim();
+      const lastChar = trimmedSentence.slice(-1);
+      
+      let baseDelay = 400; // default full stop pause (in ms)
+
+      if (lastChar === '?' || lastChar === '!') {
+        baseDelay = 650; // strong exclamation/interrogative rhetorical pause
+      } else if (lastChar === ';' || lastChar === ':') {
+        baseDelay = 250; // semi-structural clause-boundary pause
+      } else if (lastChar === ',' || trimmedSentence.endsWith('...')) {
+        baseDelay = 350; // soft or ellipsis ellipsis pause
       }
+
+      // If at paragraph boundary (and not block EOF), increase pause to represent layout shift
+      const isParagraphEnd = state.sentenceIdx === sentences.length - 1;
+      if (isParagraphEnd) {
+        baseDelay = 950; // restful breath between paragraphs
+      }
+
+      // Scale the pause inversely with the speech rate so faster readers description get bogged down
+      const scaledDelay = Math.max(80, Math.round(baseDelay / state.settings.speechRate));
+
+      speechTimeoutRef.current = setTimeout(() => {
+        speechTimeoutRef.current = null;
+        if (speechStateRef.current.isPlaying) {
+          handleNextSentence();
+        }
+      }, scaledDelay);
     };
 
     utterance.onerror = (evt) => {
@@ -262,6 +304,7 @@ export default function App() {
   // Cancel synthesis on component unmount
   useEffect(() => {
     return () => {
+      clearSpeechTimeout();
       if (typeof window !== 'undefined' && window.speechSynthesis) {
         window.speechSynthesis.cancel();
       }
@@ -279,6 +322,7 @@ export default function App() {
   const handlePlayPause = () => {
     if (isPlaying) {
       setIsPlaying(false);
+      clearSpeechTimeout();
       if (typeof window !== 'undefined' && window.speechSynthesis) {
         window.speechSynthesis.cancel(); // Clears channel safely
       }
@@ -291,6 +335,7 @@ export default function App() {
   // Stops reading entirely and resets to paragraph origin
   const handleStop = () => {
     setIsPlaying(false);
+    clearSpeechTimeout();
     setCurrentSentenceIdx(0);
     if (typeof window !== 'undefined' && window.speechSynthesis) {
       window.speechSynthesis.cancel();
@@ -364,6 +409,7 @@ export default function App() {
 
   // Jump to raw coordinates via TOC or Search selection
   const handleJumpToLocation = (chapterIdx: number, paragraphIdx: number, sentenceIdx = 0) => {
+    clearSpeechTimeout();
     if (typeof window !== 'undefined' && window.speechSynthesis) {
       window.speechSynthesis.cancel();
     }

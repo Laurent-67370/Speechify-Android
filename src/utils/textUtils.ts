@@ -58,6 +58,59 @@ export function splitIntoSentences(text: string): string[] {
 }
 
 /**
+ * Preprocess text for natural-sounding speech synthesis.
+ * Strips formatting artifacts, formats double-punctuations to ensure appropriate pauses,
+ * and replaces symbols that could be incorrectly spoken as literal words (like dashes or underscores).
+ */
+export function preprocessTextForSpeech(text: string, lang: string = 'fr'): string {
+  if (!text) return '';
+
+  let cleaned = text;
+
+  // Remove Project Gutenberg underscore formatting for italics (e.g. _italics_)
+  cleaned = cleaned.replace(/_/g, ' ');
+
+  // Standardize spacing around ellipses to avoid pronunciation glitches and achieve a suspenseful pause
+  cleaned = cleaned.replace(/…/g, '... ');
+  cleaned = cleaned.replace(/\.{3,}/g, '... ');
+
+  // Strip leading punctuation often used as dialogue or decorative bullets
+  cleaned = cleaned.replace(/^[\u2014\u2013\u2212\-*•\s]+/, ''); 
+
+  // Replace inline em-dashes and double dashes with commas so they generate breaths rather than reading "tiret" or "dash"
+  cleaned = cleaned.replace(/\s*[\u2014\u2013\u2212]\s*/g, ', ');
+  cleaned = cleaned.replace(/\s*\-\-\s*/g, ', ');
+
+  // Replace parentheses and brackets with commas to avoid literal spelling of bracket marks
+  cleaned = cleaned.replace(/\s*[\(\[\{]\s*/g, ', ');
+  cleaned = cleaned.replace(/\s*[\)\]\}]\s*/g, ', ');
+
+  // Remove quotes and angle brackets representing dialogues
+  cleaned = cleaned.replace(/[«»“”"„'`]/g, ' ');
+
+  // Language-specific double punctuation spacing for smoother native prosody
+  if (lang.toLowerCase().startsWith('fr')) {
+    // Spacing before double punctuation marks causes French TTS to pitch modulate accurately
+    cleaned = cleaned.replace(/\s*;\s*/g, ' ; ');
+    cleaned = cleaned.replace(/\s*:\s*/g, ' : ');
+    cleaned = cleaned.replace(/\s*!\s*/g, ' ! ');
+    cleaned = cleaned.replace(/\s*\?\s*/g, ' ? ');
+  } else {
+    // English & standard languages flow better with no space before but a clean space after
+    cleaned = cleaned.replace(/\s*;\s*/g, '; ');
+    cleaned = cleaned.replace(/\s*:\s*/g, ': ');
+    cleaned = cleaned.replace(/\s*!\s*/g, '! ');
+    cleaned = cleaned.replace(/\s*\?\s*/g, '? ');
+  }
+
+  // Remove double commas, redundant trailing spaces
+  cleaned = cleaned.replace(/,\s*,/g, ',');
+  cleaned = cleaned.replace(/\s+/g, ' ');
+
+  return cleaned.trim();
+}
+
+/**
  * Calculates reading time in minutes based on average reading speeds (200 words-per-minute)
  */
 export function estimateReadingTime(wordCount: number): number {
