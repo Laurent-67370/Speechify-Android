@@ -14,6 +14,7 @@ import ReaderSettings from './components/ReaderSettings';
 import HomeDashboard from './components/HomeDashboard';
 import GutenbergExplorer from './components/GutenbergExplorer';
 import InteractiveHelpGuide from './components/InteractiveHelpGuide';
+import StatsPage from './components/StatsPage';
 
 
 const DEFAULT_SETTINGS: UserSettings = {
@@ -36,7 +37,7 @@ export default function App() {
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
   
   // Tabbed Navigation
-  const [currentTab, setCurrentTab] = useState<'accueil' | 'lire' | 'biblio' | 'librairie' | 'importer'>('accueil');
+  const [currentTab, setCurrentTab] = useState<'accueil' | 'lire' | 'biblio' | 'librairie' | 'importer' | 'stats'>('accueil');
   const [libSubTab, setLibSubTab] = useState<'gutenberg' | 'samples'>('gutenberg');
 
   // Daily Stats trackers
@@ -157,6 +158,8 @@ export default function App() {
         try {
           const todayStr = new Date().toISOString().split('T')[0];
           localStorage.setItem(`vox_listened_m_${todayStr}`, next.toFixed(2));
+          // Sauvegarder aussi pour le graphique semaine (format speechify_day_YYYY-MM-DD)
+          localStorage.setItem(`speechify_day_${todayStr}`, next.toFixed(2));
         } catch (e) {
           console.error(e);
         }
@@ -933,6 +936,24 @@ export default function App() {
             </motion.div>
           )}
 
+          {currentTab === 'stats' && (
+            <motion.div
+              key="stats-tab"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="w-full h-full overflow-hidden"
+            >
+              <StatsPage
+                recentBooks={recentBooks}
+                listeningMinutesToday={listeningMinutesToday}
+                dailyGoalMinutes={dailyGoalMinutes}
+                onUpdateDailyGoal={handleUpdateDailyGoal}
+                theme={settings.theme}
+              />
+            </motion.div>
+          )}
+
           {currentTab === 'lire' && (
             <motion.div
               key="reader-view"
@@ -1197,7 +1218,25 @@ export default function App() {
           >
             <Headphones className={`w-5 h-5 transition-all duration-300 ${currentTab === 'lire' ? 'text-[#646cff] drop-shadow-[0_0_10px_rgba(100,108,255,0.4)] animate-pulse' : ''}`} />
             <span className="text-[10px] mt-1 font-semibold tracking-tight">Lire</span>
-            {currentTab === 'lire' && (
+            {currentTab === 'stats' && (
+            <motion.div
+              key="stats-tab"
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              exit={{ opacity: 0 }}
+              className="w-full h-full overflow-hidden"
+            >
+              <StatsPage
+                recentBooks={recentBooks}
+                listeningMinutesToday={listeningMinutesToday}
+                dailyGoalMinutes={dailyGoalMinutes}
+                onUpdateDailyGoal={handleUpdateDailyGoal}
+                theme={settings.theme}
+              />
+            </motion.div>
+          )}
+
+          {currentTab === 'lire' && (
               <motion.div className="absolute top-[-7px] w-5 h-[2px] bg-[#646cff] rounded-full" layoutId="purple-active-tab" />
             )}
           </button>
@@ -1234,7 +1273,23 @@ export default function App() {
             )}
           </button>
 
-          {/* Tab 5: Importer */}
+          {/* Tab 5: Stats */}
+          <button
+            onClick={() => setCurrentTab('stats')}
+            className={`flex flex-col items-center justify-center p-1 cursor-pointer transition-all duration-200 flex-1 relative ${
+              currentTab === 'stats' ? 'text-white' : 'hover:text-stone-200 text-stone-500'
+            }`}
+            title="Statistiques"
+            id="tab-stats"
+          >
+            <svg className={`w-5 h-5 transition-all duration-300 ${currentTab === 'stats' ? 'text-[#646cff] drop-shadow-[0_0_10px_rgba(100,108,255,0.4)]' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+            <span className="text-[10px] mt-1 font-semibold tracking-tight">Stats</span>
+            {currentTab === 'stats' && (
+              <motion.div className="absolute top-[-7px] w-5 h-[2px] bg-[#646cff] rounded-full" layoutId="purple-active-tab" />
+            )}
+          </button>
+
+          {/* Tab 6: Importer */}
           <button 
             onClick={() => setCurrentTab('importer')}
             className={`flex flex-col items-center justify-center p-1 cursor-pointer transition-all duration-200 flex-1 relative ${
