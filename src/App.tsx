@@ -556,6 +556,12 @@ export default function App() {
     saveBookmarks(bookmarks.filter(b => b.documentId !== id));
   };
 
+  const handleUpdateBook = (updatedBook: DocumentBook) => {
+    setActiveBook(updatedBook);
+    const updatedList = recentBooks.map(b => b.id === updatedBook.id ? updatedBook : b);
+    saveRecentBooks(updatedList);
+  };
+
   // Launch a book (sample or upload)
   const handleSelectBook = (book: DocumentBook) => {
     if (typeof window !== 'undefined' && window.speechSynthesis) {
@@ -1011,6 +1017,7 @@ export default function App() {
                                   setSidebarOpen(false);
                                 }
                               }}
+                              onUpdateBook={handleUpdateBook}
                             />
                           </div>
                         </motion.div>

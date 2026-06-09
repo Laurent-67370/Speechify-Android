@@ -4,6 +4,7 @@ export interface Chapter {
   content: string; // The full raw or HTML/text content
   paragraphs: string[]; // Segmented paragraphs for reading and navigation
   wordCount: number;
+  summary?: string; // Cache AI summary of this chapter
 }
 
 export interface DocumentBook {
@@ -22,6 +23,7 @@ export interface DocumentBook {
   speechRate?: number;
   speechPitch?: number;
   voiceURI?: string;
+  summary?: string; // Cache AI summary of the full book
 }
 
 export interface Bookmark {
