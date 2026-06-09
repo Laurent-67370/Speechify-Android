@@ -708,7 +708,7 @@ export default function App() {
               exit={{ opacity: 0 }}
               className="w-full overflow-y-auto bg-[#0a0a09] dark:bg-[#0a0a09] text-stone-100 p-4 sm:p-6 pb-24"
             >
-              <div className="max-w-xl mx-auto py-2 space-y-6">
+              <div className="max-w-3xl mx-auto py-2 space-y-6">
                 <div>
                   <h2 className="text-3xl font-black text-white font-sans tracking-tight">Ma Bibliothèque</h2>
                   <p className="text-stone-400 text-xs mt-1 font-sans font-medium">Tous vos documents importés ({recentBooks.length})</p>
@@ -720,7 +720,9 @@ export default function App() {
                   bookmarks={bookmarks}
                   onSelectBookmark={handleSelectBookmark}
                   onDeleteBook={handleDeleteBook}
-                  initialTab="library"
+                  showLibraryAndBookmarksOnly={true}
+                  hideHeader={true}
+                  onNavigateToTab={setCurrentTab}
                 />
               </div>
             </motion.div>
@@ -734,7 +736,7 @@ export default function App() {
               exit={{ opacity: 0 }}
               className="w-full overflow-y-auto bg-[#0a0a09] dark:bg-[#0a0a09] text-stone-100 p-4 sm:p-6 pb-24"
             >
-              <div className="max-w-xl mx-auto py-2 space-y-6">
+              <div className="max-w-3xl mx-auto py-2 space-y-6">
                 <div>
                   <h2 className="text-3xl font-black text-white font-sans tracking-tight">Librairie</h2>
                   <p className="text-stone-400 text-xs mt-1 font-sans font-medium">Suggestions classiques de chefs-d'œuvre multilingues ({SAMPLES.length})</p>
@@ -746,7 +748,8 @@ export default function App() {
                   bookmarks={bookmarks}
                   onSelectBookmark={handleSelectBookmark}
                   onDeleteBook={handleDeleteBook}
-                  initialTab="samples"
+                  onlyShowSamples={true}
+                  hideHeader={true}
                 />
               </div>
             </motion.div>
@@ -760,9 +763,9 @@ export default function App() {
               exit={{ opacity: 0 }}
               className="w-full overflow-y-auto bg-[#0a0a09] dark:bg-[#0a0a09] text-stone-100 p-4 sm:p-6 pb-24"
             >
-              <div className="max-w-xl mx-auto py-2 space-y-6">
+              <div className="max-w-3xl mx-auto py-2 space-y-6">
                 <div>
-                  <h2 className="text-3xl font-black text-white font-sans tracking-tight">Importer</h2>
+                  <h2 className="text-3xl font-black text-[#646cff] font-sans tracking-tight">Importer</h2>
                   <p className="text-stone-400 text-xs mt-1 font-sans font-medium">Glissez un document PDF ou ePUB pour l'écouter instantanément</p>
                 </div>
                 <DocumentUpload
@@ -772,6 +775,8 @@ export default function App() {
                   bookmarks={bookmarks}
                   onSelectBookmark={handleSelectBookmark}
                   onDeleteBook={handleDeleteBook}
+                  onlyShowUpload={true}
+                  hideHeader={true}
                 />
               </div>
             </motion.div>

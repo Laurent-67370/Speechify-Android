@@ -14,6 +14,13 @@ interface DocumentUploadProps {
   onSelectBookmark: (bookmark: Bookmark) => void;
   onDeleteBook: (bookId: string) => void;
   initialTab?: 'library' | 'samples' | 'bookmarks';
+  
+  // Custom flags to remove redundancies across tab views
+  hideHeader?: boolean;
+  onlyShowUpload?: boolean;
+  onlyShowSamples?: boolean;
+  showLibraryAndBookmarksOnly?: boolean;
+  onNavigateToTab?: (tab: 'accueil' | 'lire' | 'biblio' | 'librairie' | 'importer') => void;
 }
 
 export default function DocumentUpload({ 
@@ -23,7 +30,12 @@ export default function DocumentUpload({
   bookmarks, 
   onSelectBookmark, 
   onDeleteBook,
-  initialTab
+  initialTab,
+  hideHeader = false,
+  onlyShowUpload = false,
+  onlyShowSamples = false,
+  showLibraryAndBookmarksOnly = false,
+  onNavigateToTab
 }: DocumentUploadProps) {
   const [isDragging, setIsDragging] = useState(false);
   const [loading, setLoading] = useState(false);
@@ -31,16 +43,19 @@ export default function DocumentUpload({
   const [errorStatus, setErrorStatus] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [activeTab, setActiveTab] = useState<'library' | 'samples' | 'bookmarks'>(
-    initialTab || (recentBooks.length > 0 ? 'library' : 'samples')
-  );
+  
+  // Clean default logic for the active sub-tab inside library
+  const [activeTab, setActiveTab] = useState<'library' | 'samples' | 'bookmarks'>(() => {
+    if (initialTab) return initialTab;
+    if (showLibraryAndBookmarksOnly) return 'library';
+    return recentBooks.length > 0 ? 'library' : 'samples';
+  });
 
   useEffect(() => {
     if (initialTab) {
       setActiveTab(initialTab);
     }
   }, [initialTab]);
-
 
   const processFile = async (file: File) => {
     setLoading(true);
@@ -119,149 +134,272 @@ export default function DocumentUpload({
     }
   };
 
-  return (
-    <div className="max-w-4xl mx-auto px-4 py-8 md:py-12">
-      <motion.div
-        initial={{ opacity: 0, y: 15 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="text-center mb-10"
-      >
-        <span className="px-3.5 py-1 text-[10px] font-bold tracking-widest text-amber-800 bg-amber-500/10 rounded-full border border-amber-500/20 uppercase dark:text-amber-300">
-          Synthèse Vocale Pro / Hors Ligne
-        </span>
-        <h1 className="mt-4 text-4xl sm:text-5xl font-extrabold tracking-tight text-stone-900 dark:text-stone-100 font-serif">
-          Liseur Acoustique
-        </h1>
-        <p className="mt-3 text-base text-stone-600 max-w-xl mx-auto dark:text-stone-400">
-          Convertissez vos documents PDF et ePUB en récits audio immersifs avec notre moteur de synthèse naturelle fluide et autonome.
-        </p>
-      </motion.div>
+  // 1. Rendering only the drag-and-drop file uploader (for 'importer' tab)
+  if (onlyShowUpload) {
+    return (
+      <div className="w-full font-sans">
+        <motion.div
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          id="dropzone"
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          onClick={loading ? undefined : selectFileInput}
+          className={`relative overflow-hidden cursor-pointer rounded-2xl border-2 border-dashed p-10 md:p-14 text-center transition-all duration-300 ${
+            isDragging
+              ? 'border-[#646cff] bg-[#646cff]/5 scale-[1.01] shadow-lg dark:bg-[#646cff]/10'
+              : 'border-stone-850 bg-stone-950/40 hover:border-stone-700 hover:bg-stone-950/70'
+          }`}
+        >
+          <input
+            type="file"
+            id="file-pick"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            accept=".pdf,.epub"
+            className="hidden"
+            disabled={loading}
+          />
 
-      {/* Upload Zone */}
-      <motion.div
-        initial={{ opacity: 0, scale: 0.98 }}
-        animate={{ opacity: 1, scale: 1 }}
-        transition={{ delay: 0.1 }}
-        id="dropzone"
-        onDragOver={handleDragOver}
-        onDragLeave={handleDragLeave}
-        onDrop={handleDrop}
-        onClick={loading ? undefined : selectFileInput}
-        className={`relative overflow-hidden cursor-pointer rounded-2xl border-2 border-dashed p-10 md:p-14 text-center transition-all duration-300 ${
-          isDragging
-            ? 'border-amber-500 bg-amber-500/5 scale-[1.01] shadow-lg dark:bg-amber-500/10'
-            : 'border-stone-300 bg-white hover:border-stone-400 hover:shadow-md dark:border-stone-700 dark:bg-[#151312] dark:hover:border-stone-600'
-        }`}
-      >
-        <input
-          type="file"
-          id="file-pick"
-          ref={fileInputRef}
-          onChange={handleFileChange}
-          accept=".pdf,.epub"
-          className="hidden"
-          disabled={loading}
-        />
+          <AnimatePresence mode="wait">
+            {loading ? (
+              <motion.div
+                key="loading-state"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="flex flex-col items-center justify-center space-y-4 py-6"
+              >
+                <div className="relative">
+                  <Loader2 className="w-12 h-12 text-[#646cff] animate-spin" />
+                  <BookOpen className="w-5 h-5 text-[#767fff] absolute top-3.5 left-3.5 font-bold" />
+                </div>
+                <p className="font-semibold text-white">{progressMessage}</p>
+                <p className="text-xs text-stone-400">Analyse de la structure du fichier en cours, veuillez patienter...</p>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="upload-state"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="flex flex-col items-center space-y-4"
+              >
+                <div className="p-4 bg-stone-900 border border-stone-805 rounded-full text-stone-300">
+                  <Upload className="w-10 h-10 text-[#646cff]" />
+                </div>
+                <div>
+                  <p className="text-lg font-bold text-white">
+                    Déposez votre document ici, ou <span className="text-[#646cff] hover:text-[#767fff] underline decoration-2 underline-offset-2">parcourez</span>
+                  </p>
+                  <p className="text-xs text-stone-400 mt-2">
+                    Prend en charge les formats <strong className="text-stone-300">PDF</strong> et <strong className="text-stone-300">ePUB</strong> (sans DRM)
+                  </p>
+                </div>
+                <div className="flex gap-4 pt-2 text-[10px] text-stone-500 font-mono">
+                  <span className="flex items-center gap-1">
+                    <FileText className="w-3.5 h-3.5" /> PDF (Texte indexé)
+                  </span>
+                  <span className="flex items-center gap-1">
+                    <BookOpen className="w-3.5 h-3.5" /> ePUB (Chapitré)
+                  </span>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
 
-        <AnimatePresence mode="wait">
-          {loading ? (
+        {/* Error Alert */}
+        <AnimatePresence>
+          {errorStatus && (
             <motion.div
-              key="loading-state"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0 }}
-              className="flex flex-col items-center justify-center space-y-4 py-6"
+              className="mt-6 p-4 rounded-xl bg-red-950/20 border border-red-900/35 text-red-300 flex items-start space-x-3 text-xs"
             >
-              <div className="relative">
-                <Loader2 className="w-12 h-12 text-amber-500 animate-spin" />
-                <BookOpen className="w-5 h-5 text-amber-600 absolute top-3.5 left-3.5 font-bold" />
-              </div>
-              <p className="font-semibold text-stone-700 dark:text-stone-300">{progressMessage}</p>
-              <p className="text-xs text-stone-400">Analyse de la structure du fichier en cours, veuillez patienter...</p>
-            </motion.div>
-          ) : (
-            <motion.div
-              key="upload-state"
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="flex flex-col items-center space-y-4"
-            >
-              <div className="p-4 bg-stone-50 rounded-full text-stone-400 dark:bg-stone-800 dark:text-stone-300">
-                <Upload className="w-10 h-10 text-amber-500" />
-              </div>
+              <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0 text-red-400" />
               <div>
-                <p className="text-xl font-bold text-stone-800 dark:text-stone-100">
-                  Déposez votre document ici, ou <span className="text-amber-600 underline decoration-2 underline-offset-2 hover:text-amber-500">parcourez</span>
-                </p>
-                <p className="text-sm text-stone-400 mt-2">
-                  Prend en charge les formats <strong className="text-stone-600 dark:text-stone-350">PDF</strong> et <strong className="text-stone-600 dark:text-stone-350">ePUB</strong> (sans DRM)
-                </p>
-              </div>
-              <div className="flex gap-4 pt-2 text-xs text-stone-400 font-mono">
-                <span className="flex items-center gap-1">
-                  <FileText className="w-3.5 h-3.5" /> PDF (Texte indexé)
-                </span>
-                <span className="flex items-center gap-1">
-                  <BookOpen className="w-3.5 h-3.5" /> ePUB (Chapitré)
-                </span>
+                <p className="font-bold">Une erreur est survenue lors de l'import :</p>
+                <p className="text-stone-300 mt-1">{errorStatus}</p>
               </div>
             </motion.div>
           )}
         </AnimatePresence>
-      </motion.div>
+      </div>
+    );
+  }
 
-      {/* Error Alert */}
-      <AnimatePresence>
-        {errorStatus && (
-          <motion.div
-            initial={{ opacity: 0, y: -10 }}
-            animate={{ opacity: 1, y: 0 }}
-            exit={{ opacity: 0 }}
-            className="mt-6 p-4 rounded-xl bg-red-50 border border-red-100 flex items-start space-x-3 dark:bg-red-950/20 dark:border-red-900/30 text-red-800 dark:text-red-300"
-          >
-            <AlertCircle className="w-5 h-5 mt-0.5 flex-shrink-0" />
-            <div>
-              <p className="font-semibold">Une erreur est survenue lors de l'import :</p>
-              <p className="text-sm mt-1">{errorStatus}</p>
-            </div>
-          </motion.div>
-        )}
-      </AnimatePresence>
+  // 2. Rendering only the Classic masterpieces grid (for 'librairie' tab)
+  if (onlyShowSamples) {
+    return (
+      <div className="w-full font-sans pt-2">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          {SAMPLES.map((sample) => (
+            <motion.div
+              key={sample.id}
+              whileHover={{ y: -4, transition: { duration: 0.15 } }}
+              onClick={() => onSelectSample(sample)}
+              className="flex flex-col bg-stone-900/40 border border-stone-900 rounded-2xl p-5 cursor-pointer hover:border-[#646cff]/50 hover:bg-stone-900/60 transition-all text-left group"
+            >
+              <div className="flex justify-between items-start mb-3">
+                <span className="px-2 py-0.5 text-[9px] font-mono font-bold rounded bg-[#646cff]/10 text-[#767fff] uppercase border border-[#646cff]/15">
+                  {getLanguageLabel(sample.language)}
+                </span>
+                <span className="text-[9px] uppercase tracking-wider font-semibold font-mono bg-stone-950/80 text-stone-400 px-2 py-0.5 rounded">
+                  Classique
+                </span>
+              </div>
+              
+              <h3 className="text-base font-black text-white flex-grow leading-snug font-sans group-hover:text-[#646cff] transition-colors">
+                {sample.title}
+              </h3>
+              <p className="text-xs text-stone-400 mt-1 font-sans">
+                {sample.author}
+              </p>
 
-      {/* Tab Switcher */}
-      <div className="mt-12 mb-8 flex justify-center">
-        <div className="flex p-1.5 bg-[#FAF9F5] dark:bg-[#151312] rounded-xl border border-stone-200 dark:border-stone-850 max-w-full overflow-x-auto select-none gap-1 sm:gap-1.5 focus:outline-none scrollbar-none">
+              <div className="mt-4 pt-4 border-t border-stone-900 flex items-center justify-between text-[11px] text-stone-500 font-mono">
+                <span>{sample.chapters.length} section(s)</span>
+                <span className="flex items-center text-[#646cff] group-hover:text-[#767fff] font-bold">
+                  Écouter &rarr;
+                </span>
+              </div>
+            </motion.div>
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  // Helper styles for tab switching
+  const isLibraryActive = activeTab === 'library';
+  const isBookmarksActive = activeTab === 'bookmarks';
+
+  // 3 & 4. Normal render with full or filtered tabs (for 'biblio' tab or others)
+  return (
+    <div className="w-full font-sans">
+      {!hideHeader && (
+        <motion.div
+          initial={{ opacity: 0, y: 15 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="text-center mb-10"
+        >
+          <span className="px-3.5 py-1 text-[10px] font-bold tracking-widest text-[#767fff] bg-[#646cff]/10 rounded-full border border-[#646cff]/20 uppercase">
+            Synthèse Vocale Pro / Hors Ligne
+          </span>
+          <h1 className="mt-4 text-4xl sm:text-5xl font-extrabold tracking-tight text-white font-sans">
+            Liseur Acoustique
+          </h1>
+          <p className="mt-3 text-base text-stone-400 max-w-xl mx-auto">
+            Convertissez vos documents PDF et ePUB en récits audio immersifs avec notre moteur de synthèse naturelle fluide et autonome.
+          </p>
+        </motion.div>
+      )}
+
+      {/* Conditional uploader box (only shown when not filtered to library-only) */}
+      {!showLibraryAndBookmarksOnly && !onlyShowUpload && (
+        <motion.div
+          initial={{ opacity: 0, scale: 0.98 }}
+          animate={{ opacity: 1, scale: 1 }}
+          transition={{ delay: 0.1 }}
+          id="dropzone"
+          onDragOver={handleDragOver}
+          onDragLeave={handleDragLeave}
+          onDrop={handleDrop}
+          onClick={loading ? undefined : selectFileInput}
+          className={`relative overflow-hidden cursor-pointer rounded-2xl border-2 border-dashed p-10 md:p-14 text-center transition-all duration-300 ${
+            isDragging
+              ? 'border-[#646cff] bg-[#646cff]/5 scale-[1.01] shadow-lg dark:bg-[#646cff]/10'
+              : 'border-stone-850 bg-[#131212] hover:border-stone-700'
+          }`}
+        >
+          <input
+            type="file"
+            id="file-pick"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            accept=".pdf,.epub"
+            className="hidden"
+            disabled={loading}
+          />
+
+          <AnimatePresence mode="wait">
+            {loading ? (
+              <motion.div
+                key="loading-state"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="flex flex-col items-center justify-center space-y-4 py-6"
+              >
+                <div className="relative">
+                  <Loader2 className="w-12 h-12 text-[#646cff] animate-spin" />
+                  <BookOpen className="w-5 h-5 text-[#767fff] absolute top-3.5 left-3.5 font-bold" />
+                </div>
+                <p className="font-semibold text-white">{progressMessage}</p>
+                <p className="text-xs text-stone-500">Analyse de la structure du fichier en cours, veuillez patienter...</p>
+              </motion.div>
+            ) : (
+              <motion.div
+                key="upload-state"
+                initial={{ opacity: 0 }}
+                animate={{ opacity: 1 }}
+                exit={{ opacity: 0 }}
+                className="flex flex-col items-center space-y-4"
+              >
+                <div className="p-4 bg-stone-900 border border-stone-800 rounded-full text-stone-400">
+                  <Upload className="w-10 h-10 text-[#646cff]" />
+                </div>
+                <div>
+                  <p className="text-xl font-bold text-white">
+                    Déposez votre document ici, ou <span className="text-[#646cff] hover:text-[#767fff] underline decoration-2 underline-offset-2">parcourez</span>
+                  </p>
+                  <p className="text-sm text-stone-400 mt-2">
+                    Prend en charge les formats <strong className="text-stone-300">PDF</strong> et <strong className="text-stone-300">ePUB</strong> (sans DRM)
+                  </p>
+                </div>
+              </motion.div>
+            )}
+          </AnimatePresence>
+        </motion.div>
+      )}
+
+      {/* Tab Switcher for Libraries */}
+      <div className="mt-4 mb-6 flex justify-start">
+        <div className="flex p-1 bg-stone-950 rounded-xl border border-stone-900 select-none gap-1 focus:outline-none">
           <button
             onClick={() => setActiveTab('library')}
-            className={`flex items-center space-x-2 px-4 py-2.5 rounded-lg text-xs font-bold tracking-wide transition-all duration-200 whitespace-nowrap cursor-pointer ${
-              activeTab === 'library'
-                ? 'bg-amber-500 text-stone-950 shadow-sm font-black'
-                : 'text-stone-605 dark:text-stone-400 hover:text-stone-900 dark:hover:text-[#F9F8F6] hover:bg-stone-50 dark:hover:bg-stone-850/50'
+            className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-xs font-bold tracking-tight transition-all whitespace-nowrap cursor-pointer ${
+              isLibraryActive
+                ? 'bg-[#646cff] text-white font-black'
+                : 'text-stone-400 hover:text-white hover:bg-stone-900'
             }`}
           >
             <BookOpen className="w-3.5 h-3.5" />
-            <span>Ma Bibliothèque ({recentBooks.length})</span>
+            <span>Documents ({recentBooks.length})</span>
           </button>
 
-          <button
-            onClick={() => setActiveTab('samples')}
-            className={`flex items-center space-x-2 px-4 py-2.5 rounded-lg text-xs font-bold tracking-wide transition-all duration-200 whitespace-nowrap cursor-pointer ${
-              activeTab === 'samples'
-                ? 'bg-amber-500 text-stone-950 shadow-sm font-black'
-                : 'text-stone-605 dark:text-stone-400 hover:text-stone-900 dark:hover:text-[#F9F8F6] hover:bg-stone-50 dark:hover:bg-stone-850/50'
-            }`}
-          >
-            <Sparkles className="w-3.5 h-3.5" />
-            <span>Suggestions Classiques ({SAMPLES.length})</span>
-          </button>
+          {!showLibraryAndBookmarksOnly && (
+            <button
+              onClick={() => setActiveTab('samples')}
+              className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-xs font-bold tracking-tight transition-all whitespace-nowrap cursor-pointer ${
+                activeTab === 'samples'
+                  ? 'bg-[#646cff] text-white font-black'
+                  : 'text-stone-400 hover:text-white hover:bg-stone-900'
+              }`}
+            >
+              <Sparkles className="w-3.5 h-3.5" />
+              <span>Librairie ({SAMPLES.length})</span>
+            </button>
+          )}
 
           <button
             onClick={() => setActiveTab('bookmarks')}
-            className={`flex items-center space-x-2 px-4 py-2.5 rounded-lg text-xs font-bold tracking-wide transition-all duration-200 whitespace-nowrap cursor-pointer ${
-              activeTab === 'bookmarks'
-                ? 'bg-amber-500 text-stone-950 shadow-sm font-black'
-                : 'text-stone-605 dark:text-stone-400 hover:text-stone-900 dark:hover:text-[#F9F8F6] hover:bg-stone-50 dark:hover:bg-stone-850/50'
+            className={`flex items-center space-x-2 px-4 py-2 rounded-lg text-xs font-bold tracking-tight transition-all whitespace-nowrap cursor-pointer ${
+              isBookmarksActive
+                ? 'bg-[#646cff] text-white font-black'
+                : 'text-stone-400 hover:text-white hover:bg-stone-900'
             }`}
           >
             <BookmarkIcon className="w-3.5 h-3.5" />
@@ -270,135 +408,74 @@ export default function DocumentUpload({
         </div>
       </div>
 
-      {/* Tabs Dynamic Rendering Panel */}
-      <div className="mt-4">
+      {/* Dynamic Views Rendering Panel */}
+      <div className="mt-2">
         <AnimatePresence mode="wait">
-          {activeTab === 'samples' && (
-            <motion.div
-              key="samples-tab"
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
-              className="font-sans"
-            >
-              <div className="flex items-center space-x-2 mb-6">
-                <Sparkles className="w-5 h-5 text-amber-500" />
-                <h2 className="text-2xl font-extrabold text-stone-800 dark:text-stone-100 font-serif">
-                  Explorer des chefs-d'œuvre (Prêts à l'écoute)
-                </h2>
-              </div>
-
-              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-                {SAMPLES.map((sample) => (
-                  <motion.div
-                    key={sample.id}
-                    whileHover={{ y: -4, transition: { duration: 0.15 } }}
-                    onClick={() => onSelectSample(sample)}
-                    className="flex flex-col bg-[#F5F2ED] border border-stone-200 rounded-xl p-5 cursor-pointer hover:shadow-md hover:border-amber-500/50 dark:bg-[#1a1816] dark:border-stone-800 dark:hover:bg-[#22201e] dark:hover:border-amber-500/40 transition-all text-left group"
-                  >
-                    <div className="flex justify-between items-start mb-3">
-                      <span className="px-2.5 py-0.5 text-[10px] font-mono font-bold rounded bg-amber-500/10 text-amber-800 dark:text-amber-305 uppercase">
-                        {getLanguageLabel(sample.language)}
-                      </span>
-                      <span className="text-[10px] uppercase tracking-wider font-semibold font-mono bg-stone-200/60 text-stone-700 px-2 py-0.5 rounded dark:bg-stone-800 dark:text-stone-305">
-                        Échantillon
-                      </span>
-                    </div>
-                    
-                    <h3 className="text-lg font-bold text-stone-850 dark:text-stone-200 flex-grow leading-snug font-serif group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
-                      {sample.title}
-                    </h3>
-                    <p className="text-sm text-stone-605 mt-1 dark:text-stone-400">
-                      {sample.author}
-                    </p>
-
-                    <div className="mt-4 pt-4 border-t border-stone-300/30 dark:border-stone-800/60 flex items-center justify-between text-xs text-stone-500 font-mono">
-                      <span>{sample.chapters.length} section(s)</span>
-                      <span className="flex items-center text-amber-600 font-bold dark:text-amber-400">
-                        Débuter l'écoute →
-                      </span>
-                    </div>
-                  </motion.div>
-                ))}
-              </div>
-            </motion.div>
-          )}
-
-          {activeTab === 'library' && (
+          {isLibraryActive && (
             <motion.div
               key="library-tab"
-              initial={{ opacity: 0, y: 10 }}
+              initial={{ opacity: 0, y: 5 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
-              className="font-sans"
+              exit={{ opacity: 0, y: -5 }}
+              transition={{ duration: 0.15 }}
             >
-              <div className="flex items-center space-x-2.5 mb-6">
-                <BookOpen className="w-5 h-5 text-amber-500" />
-                <h2 className="text-2xl font-extrabold text-stone-800 dark:text-stone-100 font-serif">
-                  Vos documents importés ({recentBooks.length})
-                </h2>
-              </div>
-
               {recentBooks.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {recentBooks.map((book) => (
                     <motion.div
                       key={book.id}
-                      whileHover={{ y: -2, transition: { duration: 0.15 } }}
+                      whileHover={{ y: -2, transition: { duration: 0.1 } }}
                       onClick={() => onSelectSample(book)}
-                      className="flex items-start p-4 bg-white border border-stone-200 rounded-xl cursor-pointer hover:border-amber-500/50 hover:shadow-sm dark:bg-[#151312] dark:border-stone-800 dark:hover:border-stone-700 transition-all text-left relative group"
+                      className="flex items-start p-4 bg-[#111110] border border-stone-900 rounded-2xl cursor-pointer hover:border-[#646cff]/40 hover:bg-stone-900/20 transition-all text-left relative group"
                     >
-                      <div className="p-3 bg-stone-50 rounded-lg mr-4 mt-0.5 text-amber-500 dark:bg-stone-800 dark:text-amber-400 flex-shrink-0">
-                        <FileText className="w-6 h-6" />
+                      <div className="p-3 bg-stone-950 border border-stone-850 rounded-xl mr-3 mt-0.5 text-[#646cff] flex-shrink-0">
+                        <FileText className="w-5 h-5" />
                       </div>
                       
                       <div className="flex-grow min-w-0 pr-6">
-                        <h3 className="font-bold text-stone-805 truncate dark:text-stone-100 font-serif group-hover:text-amber-600 dark:group-hover:text-amber-400 transition-colors">
+                        <h3 className="font-extrabold text-white text-sm truncate font-sans group-hover:text-[#646cff] transition-colors">
                           {book.title}
                         </h3>
-                        <p className="text-xs text-stone-400 truncate mt-0.5">
-                          {book.author} — <span className="uppercase font-mono text-[9px] font-bold text-stone-500">{book.type}</span>
+                        <p className="text-[11px] text-stone-400 truncate mt-0.5">
+                          {book.author} — <span className="uppercase font-mono text-[9px] font-bold text-[#646cff] bg-[#646cff]/10 px-1 py-0.5 rounded border border-[#646cff]/15 ml-1">{book.type}</span>
                         </p>
                         
-                        {/* Position details */}
                         {book.currentChapterIndex !== undefined && (
-                          <div className="mt-1 flex items-center gap-1.5 text-[10px] font-mono font-bold text-amber-600 dark:text-amber-400">
-                            <span>Dernier arrêt :</span>
+                          <div className="mt-1 flex items-center gap-1.5 text-[10px] font-mono font-bold text-[#767fff]">
+                            <span>Reprendre :</span>
                             <span className="truncate max-w-[180px] sm:max-w-[240px]">
                               {book.chapters && book.chapters[book.currentChapterIndex]
-                                ? `${book.chapters[book.currentChapterIndex].title} (Para. ${(book.currentParagraphIndex || 0) + 1})`
+                                ? `${book.chapters[book.currentChapterIndex].title}`
                                 : `Section ${book.currentChapterIndex + 1}`}
                             </span>
                           </div>
                         )}
                         
-                        {/* Progress Line */}
+                        {/* Progress Tracker */}
                         <div className="mt-3 flex items-center space-x-2">
-                          <div className="flex-grow bg-stone-100 rounded-full h-1.5 dark:bg-stone-800 overflow-hidden">
+                          <div className="flex-grow bg-stone-900 rounded-full h-1.5 overflow-hidden">
                             <div
-                              className="bg-amber-500 h-1.5 rounded-full transition-all duration-300"
+                              className="bg-[#646cff] h-1.5 rounded-full transition-all duration-300"
                               style={{ width: `${book.progressPercent || 0}%` }}
                             ></div>
                           </div>
-                          <span className="text-[10px] font-semibold text-stone-500 min-w-[28px] text-right font-mono">
+                          <span className="text-[10px] font-bold text-stone-400 min-w-[28px] text-right font-mono">
                             {Math.round(book.progressPercent || 0)}%
                           </span>
                         </div>
                       </div>
 
-                      {/* Confirm Delete state or Simple delete button */}
+                      {/* Delete actions */}
                       {confirmDeleteId === book.id ? (
-                        <div className="absolute top-2 right-2 flex items-center space-x-1.5 z-10 bg-[#FAF9F5] dark:bg-[#151312] p-1.5 rounded-lg border border-red-200 dark:border-red-950/40 shadow-sm">
-                          <span className="text-[10px] font-bold text-red-500">Supprimer ?</span>
+                        <div className="absolute top-2 right-2 flex items-center space-x-2.5 z-10 bg-stone-950 border border-stone-850 p-1.5 rounded-xl text-[10px]">
+                          <span className="font-bold text-red-400">Effacer ?</span>
                           <button
                             onClick={(e) => {
                               e.stopPropagation();
                               onDeleteBook(book.id);
                               setConfirmDeleteId(null);
                             }}
-                            className="px-2 py-0.5 bg-red-500 text-white rounded text-[10px] font-extrabold hover:bg-red-650 transition-colors cursor-pointer"
+                            className="px-2 py-1 bg-red-650 hover:bg-red-700 text-white rounded-md font-bold transition-all cursor-pointer"
                           >
                             Oui
                           </button>
@@ -407,7 +484,7 @@ export default function DocumentUpload({
                               e.stopPropagation();
                               setConfirmDeleteId(null);
                             }}
-                            className="px-2 py-0.5 bg-stone-100 dark:bg-stone-800 text-stone-600 dark:text-stone-300 rounded text-[10px] font-bold hover:bg-stone-200 transition-colors cursor-pointer"
+                            className="px-2 py-1 bg-stone-800 text-stone-300 rounded-md font-medium hover:bg-stone-700 transition-all cursor-pointer"
                           >
                             Non
                           </button>
@@ -418,7 +495,7 @@ export default function DocumentUpload({
                             e.stopPropagation();
                             setConfirmDeleteId(book.id);
                           }}
-                          className="absolute top-3 right-3 p-1.5 rounded-lg text-stone-450 hover:text-red-500 hover:bg-stone-100 dark:hover:bg-stone-800 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100 z-10 cursor-pointer"
+                          className="absolute top-3 right-3 p-1.5 rounded-lg text-stone-500 hover:text-red-400 hover:bg-stone-950 transition-colors opacity-0 group-hover:opacity-100 focus:opacity-100 z-10 cursor-pointer"
                           title="Supprimer ce document de ma bibliothèque"
                         >
                           <Trash2 className="w-3.5 h-3.5" />
@@ -428,39 +505,87 @@ export default function DocumentUpload({
                   ))}
                 </div>
               ) : (
-                <div className="p-10 border border-stone-200 dark:border-stone-850 rounded-2xl bg-[#F5F2ED]/30 dark:bg-[#100e0d]/20 text-center flex flex-col items-center justify-center">
-                  <FileText className="w-10 h-10 text-stone-300 dark:text-stone-700 mb-3" />
-                  <h3 className="font-bold text-base text-stone-750 dark:text-stone-300 font-serif">Votre bibliothèque est vide</h3>
-                  <p className="text-xs text-stone-400 mt-1.5 max-w-sm leading-relaxed">
-                    Glissez-déposez un fichier PDF ou ePUB ci-dessus pour l'ajouter à VoxRead Pro, ou commencez par explorer un de nos classiques littéraires suggérés !
+                <div className="p-8 border border-stone-900 rounded-2xl bg-[#111110] text-center flex flex-col items-center justify-center">
+                  <FileText className="w-10 h-10 text-stone-700 mb-3" />
+                  <h3 className="font-black text-sm text-white font-sans">Votre bibliothèque est vide</h3>
+                  <p className="text-xs text-stone-400 mt-1 max-w-sm leading-relaxed font-sans">
+                    Glissez-déposez ou parcourez des documents électroniques PDF ou ePUB pour les ajouter à votre bibliothèque de lecture audio !
                   </p>
-                  <button
-                    onClick={() => setActiveTab('samples')}
-                    className="mt-5 px-4.5 py-2.5 bg-amber-500/15 text-amber-800 hover:bg-amber-500 hover:text-stone-950 font-extrabold rounded-xl transition-all duration-200 text-xs cursor-pointer border border-amber-500/20"
-                  >
-                    Découvrir les Classiques →
-                  </button>
+                  <div className="flex gap-3 mt-4">
+                    {onNavigateToTab && (
+                      <button
+                        onClick={() => onNavigateToTab('importer')}
+                        className="px-4 py-2 bg-[#646cff] text-white hover:bg-[#525aff] font-bold rounded-full transition-all text-xs cursor-pointer"
+                      >
+                        Importer un document
+                      </button>
+                    )}
+                    {onNavigateToTab && (
+                      <button
+                        onClick={() => onNavigateToTab('librairie')}
+                        className="px-4 py-2 bg-transparent text-stone-300 hover:text-white border border-stone-800 font-bold rounded-full transition-all text-xs cursor-pointer"
+                      >
+                        Explorer les Classiques
+                      </button>
+                    )}
+                  </div>
                 </div>
               )}
             </motion.div>
           )}
 
-          {activeTab === 'bookmarks' && (
+          {activeTab === 'samples' && !showLibraryAndBookmarksOnly && (
             <motion.div
-              key="bookmarks-tab"
-              initial={{ opacity: 0, y: 10 }}
+              key="samples-tab-inner"
+              initial={{ opacity: 0, y: 5 }}
               animate={{ opacity: 1, y: 0 }}
-              exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
-              className="font-sans"
+              exit={{ opacity: 0, y: -5 }}
+              transition={{ duration: 0.15 }}
             >
-              <div className="flex items-center space-x-2.5 mb-6">
-                <BookmarkIcon className="w-5 h-5 text-amber-500" />
-                <h2 className="text-2xl font-extrabold text-stone-800 dark:text-stone-100 font-serif">
-                  Vos Signets & Notes de lecture ({bookmarks.length})
-                </h2>
-              </div>
+              <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                {SAMPLES.map((sample) => (
+                  <motion.div
+                    key={sample.id}
+                    whileHover={{ y: -3, transition: { duration: 0.1 } }}
+                    onClick={() => onSelectSample(sample)}
+                    className="flex flex-col bg-stone-900/40 border border-stone-900 rounded-2xl p-5 cursor-pointer hover:border-[#646cff]/50 hover:bg-stone-900/60 transition-all text-left group"
+                  >
+                    <div className="flex justify-between items-start mb-3">
+                      <span className="px-2 py-0.5 text-[9px] font-mono font-bold rounded bg-[#646cff]/10 text-[#767fff] uppercase border border-[#646cff]/15">
+                        {getLanguageLabel(sample.language)}
+                      </span>
+                      <span className="text-[9px] uppercase tracking-wider font-semibold font-mono bg-stone-950 text-stone-400 px-2 py-0.5 rounded">
+                        Classique
+                      </span>
+                    </div>
+                    
+                    <h3 className="text-sm font-black text-white flex-grow leading-snug font-sans group-hover:text-[#646cff] transition-all">
+                      {sample.title}
+                    </h3>
+                    <p className="text-xs text-stone-400 mt-1 font-sans">
+                      {sample.author}
+                    </p>
 
+                    <div className="mt-4 pt-4 border-t border-stone-900 flex items-center justify-between text-[11px] text-stone-500 font-mono">
+                      <span>{sample.chapters.length} sections</span>
+                      <span className="flex items-center text-[#646cff] group-hover:text-[#767fff] font-bold">
+                        Écouter &rarr;
+                      </span>
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            </motion.div>
+          )}
+
+          {isBookmarksActive && (
+            <motion.div
+              key="bookmarks-tab-inner"
+              initial={{ opacity: 0, y: 5 }}
+              animate={{ opacity: 1, y: 0 }}
+              exit={{ opacity: 0, y: -5 }}
+              transition={{ duration: 0.15 }}
+            >
               {bookmarks.length > 0 ? (
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   {bookmarks.map((bm) => {
@@ -475,29 +600,29 @@ export default function DocumentUpload({
                       <div
                         key={bm.id}
                         onClick={() => onSelectBookmark(bm)}
-                        className="flex flex-col p-4 bg-white border border-stone-200 rounded-xl hover:border-amber-500/50 hover:shadow-sm dark:bg-[#151312] dark:border-stone-800 dark:hover:border-stone-700 transition-all cursor-pointer text-left text-xs"
+                        className="flex flex-col p-4 bg-[#111110] border border-stone-900 rounded-2xl hover:border-[#646cff]/50 hover:shadow-sm transition-all cursor-pointer text-left text-xs"
                       >
-                        <div className="flex items-center justify-between mb-2 text-[10px] font-mono font-bold text-stone-400">
-                          <span className="truncate max-w-[200px] text-stone-605 dark:text-stone-300 font-bold">
-                            📚 {matchingBook?.title || 'Document'}
+                        <div className="flex items-center justify-between mb-2 text-[10px] font-mono font-bold text-stone-550">
+                          <span className="truncate max-w-[200px] text-stone-300 font-bold">
+                            📖 {matchingBook?.title || 'Document'}
                           </span>
                           <span>
                             {dateLabel}
                           </span>
                         </div>
 
-                        <p className="text-[#2D2926] dark:text-stone-200 font-serif italic mb-2.5 pl-2.5 border-l-2 border-amber-500/40 line-clamp-2 leading-relaxed">
+                        <p className="text-stone-200 font-serif italic mb-2.5 pl-2.5 border-l-2 border-[#646cff]/40 line-clamp-2 leading-relaxed text-xs">
                           "{bm.textSnippet}"
                         </p>
 
-                        <div className="flex items-center justify-between mt-1 text-[10px] text-amber-600 dark:text-amber-400 font-bold uppercase tracking-wider">
+                        <div className="flex items-center justify-between mt-1 text-[10px] text-[#767fff] font-bold uppercase tracking-wider font-mono">
                           <span>Sec. {bm.chapterIndex + 1} — Para. {bm.paragraphIndex + 1}</span>
-                          <span className="group-hover:translate-x-1 duration-200 transition-transform">Reprendre ici &rarr;</span>
+                          <span>Reprendre ici &rarr;</span>
                         </div>
 
                         {bm.note && (
-                          <div className="mt-2.5 p-2 bg-amber-500/5 border border-amber-500/10 rounded-lg text-stone-700 dark:text-stone-300">
-                            <span className="font-extrabold text-[9px] text-amber-700 dark:text-amber-400 block uppercase tracking-wide mb-0.5">Note personnelle :</span>
+                          <div className="mt-2.5 p-2 bg-[#646cff]/5 border border-[#646cff]/10 rounded-xl text-stone-300">
+                            <span className="font-extrabold text-[9px] text-[#767fff] block uppercase tracking-wide mb-0.5">Note personnelle :</span>
                             <p className="leading-relaxed">{bm.note}</p>
                           </div>
                         )}
@@ -506,11 +631,11 @@ export default function DocumentUpload({
                   })}
                 </div>
               ) : (
-                <div className="p-10 border border-stone-200 dark:border-stone-850 rounded-2xl bg-[#F5F2ED]/30 dark:bg-[#100e0d]/20 text-center flex flex-col items-center justify-center">
-                  <BookmarkIcon className="w-10 h-10 text-stone-300 dark:text-stone-700 mb-3" />
-                  <h3 className="font-bold text-base text-stone-750 dark:text-stone-300 font-serif">Aucun signet enregistré</h3>
-                  <p className="text-xs text-stone-400 mt-1.5 max-w-sm leading-relaxed">
-                    Pendant que vous écoutez un texte, cliquez sur le paragraphe pour marquer des points d'arrêt, dictez ou rédigez vos notes. Tout sera sauvegardé ici !
+                <div className="p-8 border border-stone-900 rounded-2xl bg-[#111110] text-center flex flex-col items-center justify-center">
+                  <BookmarkIcon className="w-10 h-10 text-stone-700 mb-3" />
+                  <h3 className="font-black text-sm text-white font-sans">Aucun signet ou note</h3>
+                  <p className="text-xs text-stone-400 mt-1 max-w-sm leading-relaxed font-sans">
+                    Pendant que vous lisez, double-cliquez ou configurez des signets pour épingler des citations et rédiger des notes vocales ou écrites !
                   </p>
                 </div>
               )}
