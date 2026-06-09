@@ -131,6 +131,15 @@ export default function App() {
     return () => clearInterval(interval);
   }, [isPlaying]);
 
+  // Synchronize settings.theme with the root document element for dark mode
+  useEffect(() => {
+    if (settings.theme === 'dark') {
+      document.documentElement.classList.add('dark');
+    } else {
+      document.documentElement.classList.remove('dark');
+    }
+  }, [settings.theme]);
+
   const handleUpdateDailyGoal = (goal: number) => {
     setDailyGoalMinutes(goal);
     try {
@@ -588,9 +597,7 @@ export default function App() {
 
   return (
     <div className={`min-h-screen flex flex-col transition-all duration-300 select-none pb-12 ${
-      currentTab === 'accueil' ? 'bg-[#0a0a09] text-stone-100' : (
-        settings.theme === 'dark' ? 'bg-[#0f0e0d] text-stone-100' : 'bg-[#F9F8F6] text-[#2D2926]'
-      )
+      settings.theme === 'dark' ? 'bg-[#0a0a09] text-stone-100' : 'bg-[#F9F8F6] text-[#2D2926]'
     }`}>
       {/* 1. Global Navigation Navbar (Only shown on 'lire' tab when activeBook is loaded) */}
       {currentTab === 'lire' && activeBook && (
@@ -706,11 +713,13 @@ export default function App() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="w-full overflow-y-auto bg-[#0a0a09] dark:bg-[#0a0a09] text-stone-100 p-4 sm:p-6 pb-24"
+              className={`w-full overflow-y-auto p-4 sm:p-6 pb-24 transition-all duration-300 ${
+                settings.theme === 'dark' ? 'bg-[#0a0a09] text-stone-100' : 'bg-[#F9F8F6] text-[#2D2926]'
+              }`}
             >
               <div className="max-w-3xl mx-auto py-2 space-y-6">
                 <div>
-                  <h2 className="text-3xl font-black text-white font-sans tracking-tight">Ma Bibliothèque</h2>
+                  <h2 className="text-3xl font-black text-stone-900 dark:text-white font-sans tracking-tight">Ma Bibliothèque</h2>
                   <p className="text-stone-400 text-xs mt-1 font-sans font-medium">Tous vos documents importés ({recentBooks.length})</p>
                 </div>
                 <DocumentUpload
@@ -734,11 +743,13 @@ export default function App() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="w-full overflow-y-auto bg-[#0a0a09] dark:bg-[#0a0a09] text-stone-100 p-4 sm:p-6 pb-24"
+              className={`w-full overflow-y-auto p-4 sm:p-6 pb-24 transition-all duration-300 ${
+                settings.theme === 'dark' ? 'bg-[#0a0a09] text-stone-100' : 'bg-[#F9F8F6] text-[#2D2926]'
+              }`}
             >
               <div className="max-w-3xl mx-auto py-2 space-y-6">
                 <div>
-                  <h2 className="text-3xl font-black text-white font-sans tracking-tight">Librairie</h2>
+                  <h2 className="text-3xl font-black text-stone-900 dark:text-white font-sans tracking-tight">Librairie</h2>
                   <p className="text-stone-400 text-xs mt-1 font-sans font-medium">Suggestions classiques de chefs-d'œuvre multilingues ({SAMPLES.length})</p>
                 </div>
                 <DocumentUpload
@@ -761,11 +772,13 @@ export default function App() {
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="w-full overflow-y-auto bg-[#0a0a09] dark:bg-[#0a0a09] text-stone-100 p-4 sm:p-6 pb-24"
+              className={`w-full overflow-y-auto p-4 sm:p-6 pb-24 transition-all duration-300 ${
+                settings.theme === 'dark' ? 'bg-[#0a0a09] text-stone-100' : 'bg-[#F9F8F6] text-[#2D2926]'
+              }`}
             >
               <div className="max-w-3xl mx-auto py-2 space-y-6">
                 <div>
-                  <h2 className="text-3xl font-black text-[#646cff] font-sans tracking-tight">Importer</h2>
+                  <h2 className="text-3xl font-black text-[#646cff] dark:text-[#767fff] font-sans tracking-tight">Importer</h2>
                   <p className="text-stone-400 text-xs mt-1 font-sans font-medium">Glissez un document PDF ou ePUB pour l'écouter instantanément</p>
                 </div>
                 <DocumentUpload
@@ -1132,17 +1145,21 @@ export default function App() {
                     <p><strong>Lecture d'arrière-plan globale :</strong> Écoutez vos documents tout en configurant votre liseuse ou en naviguant sur l'accueil ! Un mini-lecteur flottant persistera au bas de l'écran.</p>
                   </div>
                   <div className="flex items-start space-x-2.5">
-                    <span className="h-5 w-5 rounded bg-[#646cff] text-white font-extrabold flex items-center justify-center flex-shrink-0 text-[10px]">3</span>
+                    <span className="h-5 w-5 rounded bg-[#646cff] text-white font-extrabold flex items-center justify-center flex-shrink-0 text-[10px]/[10px]">3</span>
                     <p><strong>Geste intelligent "Clic-pour-lire" :</strong> En mode lecture, cliquez directement sur <strong>n'importe quelle phrase du texte</strong> pour y positionner instantanément la synthèse vocale.</p>
                   </div>
                   <div className="flex items-start space-x-2.5">
                     <span className="h-5 w-5 rounded bg-[#646cff] text-white font-extrabold flex items-center justify-center flex-shrink-0 text-[10px]">4</span>
                     <p><strong>Objectifs et Motivation :</strong> Suivez vos minutes écoutées chaque jour en temps réel et réglez vos objectifs pour acquérir un rituel de lecture quotidien.</p>
                   </div>
+                  <div className="flex items-start space-x-2.5">
+                    <span className="h-5 w-5 rounded bg-[#646cff] text-white font-extrabold flex items-center justify-center flex-shrink-0 text-[10px]">5</span>
+                    <p><strong>Mode Sombre & Clair :</strong> Basculez à tout moment entre le mode sombre de nuit et le mode clair/crème en haut à droite de l'écran d'accueil pour soulager vos yeux.</p>
+                  </div>
                 </div>
 
                 <div className="bg-stone-900 border border-stone-850 p-3 rounded-xl mt-4 text-[11px] text-stone-400 font-mono">
-                  <p>💡 <em>Note : Toutes vos voix système de haute qualité sont chargées nativement. Ajustez la vitesse et le pas de voix à tout moment depuis les options de lecture !</em></p>
+                  <p>💡 <em>Note : Toutes vos voix système de haute qualité sont chargées nativement. Ajustez la vitesse, le thème de lecture (sombre, clair, sépia, papier) et le pas de voix à tout moment depuis les options de lecture !</em></p>
                 </div>
               </div>
 

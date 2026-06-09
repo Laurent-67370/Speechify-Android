@@ -117,14 +117,16 @@ export default function HomeDashboard({
   };
 
   return (
-    <div className="w-full flex flex-col min-h-full bg-[#0a0a09] dark:bg-[#0a0a09] text-stone-100 p-4 sm:p-6 pb-24 overflow-y-auto font-sans select-none">
+    <div className={`w-full flex flex-col min-h-full p-4 sm:p-6 pb-24 overflow-y-auto font-sans select-none transition-all duration-300 ${
+      theme === 'dark' ? 'bg-[#0a0a09] text-stone-100' : 'bg-[#F9F8F6] text-[#2D2926]'
+    }`}>
       
       {/* 1. Header Toolbar matching screenshot model exactly */}
-      <div className="flex items-center justify-between py-2 mb-6">
+      <div className="flex items-center justify-between py-2 mb-6 border-b border-stone-200/50 dark:border-stone-900/50">
         <div className="flex items-center space-x-2">
           {/* Custom logo & brand mimicking SpeechifyPro */}
           <div className="text-2xl font-extrabold tracking-tight select-none">
-            <span className="text-white font-sans font-black">Speechify</span>
+            <span className="text-stone-900 dark:text-white font-sans font-black">Speechify</span>
             <span className="text-[#646cff] dark:text-[#767fff] font-sans font-black ml-1">Pro</span>
           </div>
         </div>
@@ -132,7 +134,7 @@ export default function HomeDashboard({
         <div className="flex items-center space-x-3">
           <button 
             onClick={onHelpClick}
-            className="p-3 text-stone-300 hover:text-white bg-stone-900 border border-stone-800 rounded-full transition-colors cursor-pointer"
+            className="p-3 text-stone-600 hover:text-stone-900 bg-stone-100 dark:bg-stone-900 border border-stone-200 link:border-slate-300 dark:border-stone-800 rounded-full transition-colors cursor-pointer"
             title="Aide d'utilisation"
             id="help-button"
           >
@@ -141,7 +143,7 @@ export default function HomeDashboard({
           
           <button 
             onClick={handleShare}
-            className="p-3 text-stone-300 hover:text-white bg-stone-900 border border-stone-800 rounded-full transition-colors relative cursor-pointer"
+            className="p-3 text-stone-600 hover:text-stone-900 bg-stone-100 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-full transition-colors relative cursor-pointer"
             title="Partager l'application"
             id="share-button"
           >
@@ -162,11 +164,11 @@ export default function HomeDashboard({
 
           <button 
             onClick={onThemeToggle}
-            className="p-3 text-stone-300 hover:text-white bg-stone-900 border border-stone-800 rounded-full transition-colors cursor-pointer"
+            className="p-3 text-stone-600 hover:text-stone-900 bg-stone-100 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded-full transition-colors cursor-pointer"
             title="Changer de thème"
             id="theme-button"
           >
-            {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-400" /> : <Moon className="w-4 h-4 text-amber-400" />}
+            {theme === 'dark' ? <Sun className="w-4 h-4 text-amber-500" /> : <Moon className="w-4 h-4 text-indigo-600" />}
           </button>
         </div>
       </div>
@@ -174,20 +176,20 @@ export default function HomeDashboard({
       <div className="max-w-xl mx-auto w-full space-y-6">
         
         {/* 2. Stat card premium widget */}
-        <div className="bg-[#131212] border border-stone-900 rounded-[28px] p-5 sm:p-6 shadow-xl space-y-5" id="stats-widget">
+        <div className="bg-white dark:bg-[#131212] border border-stone-200 dark:border-stone-900 rounded-[28px] p-5 sm:p-6 shadow-sm dark:shadow-xl space-y-5" id="stats-widget">
           {/* Stat row */}
-          <div className="grid grid-cols-3 gap-2 text-center divide-x divide-stone-800">
+          <div className="grid grid-cols-3 gap-2 text-center divide-x divide-stone-200 dark:divide-stone-800">
             <div>
-              <p className="text-2xl font-black text-white font-sans tracking-tight">{totalDocuments}</p>
-              <p className="text-[11px] text-stone-400 mt-1 uppercase font-semibold tracking-wider">Documents</p>
+              <p className="text-2xl font-black text-stone-900 dark:text-white font-sans tracking-tight">{totalDocuments}</p>
+              <p className="text-[11px] text-stone-500 dark:text-stone-400 mt-1 uppercase font-semibold tracking-wider">Documents</p>
             </div>
             <div>
-              <p className="text-2xl font-black text-white font-sans tracking-tight">{totalLibraryMinutes} m</p>
-              <p className="text-[11px] text-stone-400 mt-1 uppercase font-semibold tracking-wider">Total bibliothèque</p>
+              <p className="text-2xl font-black text-stone-900 dark:text-white font-sans tracking-tight">{totalLibraryMinutes} m</p>
+              <p className="text-[11px] text-stone-500 dark:text-stone-400 mt-1 uppercase font-semibold tracking-wider">Total bibliothèque</p>
             </div>
             <div>
-              <p className="text-2xl font-black text-white font-sans tracking-tight">{listeningMinutesToday.toFixed(1)} m</p>
-              <p className="text-[11px] text-stone-400 mt-1 uppercase font-semibold tracking-wider">Aujourd'hui</p>
+              <p className="text-2xl font-black text-stone-900 dark:text-white font-sans tracking-tight">{listeningMinutesToday.toFixed(1)} m</p>
+              <p className="text-[11px] text-stone-500 dark:text-stone-400 mt-1 uppercase font-semibold tracking-wider">Aujourd'hui</p>
             </div>
           </div>
 
@@ -203,7 +205,7 @@ export default function HomeDashboard({
             </button>
             <button
               onClick={() => handleLaunchBook(activeBook || allBooks[0], true)}
-              className="bg-transparent hover:bg-stone-900 text-white font-black py-3 rounded-full border border-stone-800 hover:border-stone-700 flex items-center justify-center gap-2 cursor-pointer transition-all text-sm"
+              className="bg-transparent hover:bg-stone-50 dark:hover:bg-stone-900 text-stone-800 dark:text-white font-black py-3 rounded-full border border-stone-200 dark:border-stone-800 hover:border-stone-300 dark:hover:border-stone-700 flex items-center justify-center gap-2 cursor-pointer transition-all text-sm"
               id="dashboard-resume"
             >
               <Play className="w-4 h-4 text-[#646cff] fill-[#646cff]" />
@@ -214,16 +216,16 @@ export default function HomeDashboard({
 
         {/* 3. Section Title "Accueil" */}
         <div className="pt-2 text-left">
-          <h2 className="text-3xl font-black text-white leading-none font-sans tracking-tight">Accueil</h2>
-          <p className="text-stone-400 text-xs mt-1 font-sans font-medium">
+          <h2 className="text-3xl font-black text-stone-900 dark:text-white leading-none font-sans tracking-tight">Accueil</h2>
+          <p className="text-stone-500 dark:text-stone-400 text-xs mt-1 font-sans font-medium">
             {totalDocuments} documents • {totalLibraryMinutes} min
           </p>
         </div>
 
         {/* 4. "Objectif du jour" widget card mimic screenshot exactly */}
-        <div className="bg-[#131212] border border-stone-900 rounded-[24px] p-5 shadow-lg" id="goals-widget">
+        <div className="bg-white dark:bg-[#131212] border border-stone-200 dark:border-stone-900 rounded-[24px] p-5 shadow-sm dark:shadow-md" id="goals-widget">
           <div className="flex items-center justify-between">
-            <div className="flex items-center space-x-2 text-white font-black">
+            <div className="flex items-center space-x-2 text-stone-805 dark:text-white font-black">
               <span className="text-base">🎯</span>
               <span className="text-sm font-black font-sans">Objectif du jour</span>
             </div>
@@ -233,7 +235,7 @@ export default function HomeDashboard({
           </div>
 
           {/* Progress bar */}
-          <div className="w-full bg-[#1e1d1d] h-2.5 rounded-full mt-4 overflow-hidden shadow-inner relative">
+          <div className="w-full bg-[#1e1d1d]/10 dark:bg-[#1e1d1d] h-2.5 rounded-full mt-4 overflow-hidden shadow-inner relative">
             <motion.div
               className="absolute left-0 top-0 bottom-0 bg-[#646cff] rounded-full"
               initial={{ width: 0 }}
@@ -242,7 +244,7 @@ export default function HomeDashboard({
             />
           </div>
 
-          <div className="flex items-center justify-between text-xs text-stone-400 mt-3 font-sans font-medium">
+          <div className="flex items-center justify-between text-xs text-stone-500 dark:text-stone-400 mt-3 font-sans font-medium">
             <span>{listeningMinutesToday.toFixed(1)} min écoutées</span>
             
             {isEditingGoal ? (
@@ -251,13 +253,13 @@ export default function HomeDashboard({
                   type="number"
                   value={tempGoal}
                   onChange={(e) => setTempGoal(parseInt(e.target.value) || 0)}
-                  className="w-12 py-0.5 px-1.5 bg-stone-900 border border-stone-800 rounded text-center font-bold text-white text-xs focus:outline-none focus:border-indigo-500"
+                  className="w-12 py-0.5 px-1.5 bg-stone-100 dark:bg-stone-900 border border-stone-200 dark:border-stone-800 rounded text-center font-bold text-stone-900 dark:text-white text-xs focus:outline-none focus:border-indigo-500"
                   min="1"
                   max="300"
                 />
                 <button
                   onClick={handleSaveGoal}
-                  className="p-1 bg-amber-500 rounded text-stone-950 font-bold hover:bg-amber-600 transition-all cursor-pointer"
+                  className="p-1 bg-[#646cff] hover:bg-[#525aff] rounded text-white font-bold transition-all cursor-pointer"
                   title="Enregistrer"
                 >
                   <Check className="w-3.5 h-3.5" />
@@ -266,7 +268,7 @@ export default function HomeDashboard({
             ) : (
               <button 
                 onClick={() => { setTempGoal(dailyGoalMinutes); setIsEditingGoal(true); }}
-                className="hover:text-white transition-colors flex items-center gap-1 cursor-pointer"
+                className="hover:text-stone-900 dark:hover:text-white transition-colors flex items-center gap-1 cursor-pointer"
                 title="Modifier l'objectif"
               >
                 <span>objectif : {dailyGoalMinutes} min</span>
@@ -282,7 +284,7 @@ export default function HomeDashboard({
           {/* Arrow Left */}
           <button
             onClick={handlePrevCarousel}
-            className="absolute left-[-16px] z-10 p-2 bg-[#131212]/90 border border-stone-850 text-stone-300 hover:text-white rounded-full hover:bg-stone-900 transition-colors cursor-pointer shadow-md"
+            className="absolute left-[-16px] z-10 p-2 bg-white dark:bg-[#131212]/90 border border-stone-200 dark:border-stone-850 text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white rounded-full hover:bg-stone-100 dark:hover:bg-stone-900 transition-colors cursor-pointer shadow-md"
             title="Précédent"
             id="carousel-prev"
           >
@@ -295,23 +297,23 @@ export default function HomeDashboard({
             initial={{ opacity: 0, scale: 0.98 }}
             animate={{ opacity: 1, scale: 1 }}
             exit={{ opacity: 0 }}
-            className="w-full bg-[#131212] border border-[#2d2a45]/30 rounded-[28px] p-5 sm:p-6 shadow-xl relative overflow-hidden"
+            className="w-full bg-white dark:bg-[#131212] border border-stone-200 dark:border-[#2d2a45]/30 rounded-[28px] p-5 sm:p-6 shadow-sm dark:shadow-xl relative overflow-hidden"
             id={`carousel-card-${activeCarouselBook?.id}`}
           >
             <div className="flex items-start gap-4">
               {/* Cover Icon */}
-              <div className="p-3 bg-stone-900/80 rounded-2xl text-stone-400 border border-stone-800 flex-shrink-0">
+              <div className="p-3 bg-stone-100 dark:bg-stone-900/80 rounded-2xl text-stone-500 dark:text-stone-400 border border-stone-200 dark:border-stone-800 flex-shrink-0">
                 <FileText className="w-6 h-6 text-[#646cff]" />
               </div>
               <div className="text-left min-w-0 pr-2">
-                <h3 className="font-extrabold text-white text-base sm:text-lg truncate tracking-tight font-sans">
+                <h3 className="font-extrabold text-stone-900 dark:text-white text-base sm:text-lg truncate tracking-tight font-sans">
                   {activeCarouselBook?.title}
                 </h3>
-                <p className="text-xs text-stone-400 truncate mt-0.5 font-medium font-sans prose">
+                <p className="text-xs text-stone-500 dark:text-stone-400 truncate mt-0.5 font-medium font-sans prose">
                   {activeCarouselBook?.author}
                 </p>
-                <div className="flex flex-wrap items-center gap-1.5 mt-2 font-mono text-[9px] font-bold text-stone-300">
-                  <span className="px-2 py-0.5 bg-stone-900 rounded uppercase">{activeCarouselBook?.type}</span>
+                <div className="flex flex-wrap items-center gap-1.5 mt-2 font-mono text-[9px] font-bold text-stone-600 dark:text-stone-300">
+                  <span className="px-2 py-0.5 bg-stone-100 dark:bg-stone-900 rounded uppercase">{activeCarouselBook?.type}</span>
                   <span>•</span>
                   <span>{getBookDurationMinutes(activeCarouselBook)} min</span>
                   <span>•</span>
@@ -321,7 +323,7 @@ export default function HomeDashboard({
             </div>
 
             {/* CTA action buttons inside inside the card */}
-            <div className="flex items-center gap-3 pt-5 mt-3 border-t border-stone-900/40">
+            <div className="flex items-center gap-3 pt-5 mt-3 border-t border-stone-100 dark:border-stone-900/40">
               <button
                 onClick={() => handleLaunchBook(activeCarouselBook, true)}
                 className="flex-grow bg-[#646cff] hover:bg-[#525aff] text-white font-black py-2.5 rounded-full flex items-center justify-center gap-1.5 cursor-pointer transition-all text-sm shadow-md"
@@ -333,7 +335,7 @@ export default function HomeDashboard({
 
               <button
                 onClick={() => handleLaunchBook(activeCarouselBook, false)}
-                className="p-2.5 hover:bg-stone-900 text-stone-300 hover:text-white rounded-full border border-stone-800/80 cursor-pointer transition-colors"
+                className="p-2.5 bg-stone-50 dark:bg-transparent hover:bg-stone-100 dark:hover:bg-stone-900 text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white rounded-full border border-stone-200 dark:border-stone-800/80 cursor-pointer transition-colors"
                 title="Consulter le texte"
                 id="carousel-read-button"
               >
@@ -345,7 +347,7 @@ export default function HomeDashboard({
           {/* Arrow Right */}
           <button
             onClick={handleNextCarousel}
-            className="absolute right-[-16px] z-10 p-2 bg-[#131212]/90 border border-stone-850 text-stone-300 hover:text-white rounded-full hover:bg-stone-900 transition-colors cursor-pointer shadow-md"
+            className="absolute right-[-16px] z-10 p-2 bg-white dark:bg-[#131212]/90 border border-stone-200 dark:border-stone-850 text-stone-600 dark:text-stone-300 hover:text-stone-900 dark:hover:text-white rounded-full hover:bg-stone-100 dark:hover:bg-stone-900 transition-colors cursor-pointer shadow-md"
             title="Suivant"
             id="carousel-next-btn"
           >
@@ -360,7 +362,7 @@ export default function HomeDashboard({
               key={i}
               onClick={() => setCarouselIdx(i)}
               className={`h-1.5 rounded-full transition-all duration-300 cursor-pointer ${
-                i === carouselIdx ? 'w-4 bg-[#646cff]' : 'w-1.5 bg-stone-700'
+                i === carouselIdx ? 'w-4 bg-[#646cff]' : 'w-1.5 bg-stone-300 dark:bg-stone-700'
               }`}
               title={`Page ${i + 1}`}
             />
@@ -368,23 +370,23 @@ export default function HomeDashboard({
         </div>
 
         {/* 6. Equalizer indicator card at the bottom */}
-        <div className="bg-[#131212] border border-stone-900 rounded-[24px] p-5 text-left space-y-4" id="eq-widget">
+        <div className="bg-white dark:bg-[#131212] border border-stone-200 dark:border-stone-900 rounded-[24px] p-5 text-left space-y-4" id="eq-widget">
           <div className="flex items-start justify-between">
             <div>
-              <h4 className="font-extrabold text-white text-sm font-sans truncate max-w-[240px]">
+              <h4 className="font-extrabold text-stone-900 dark:text-white text-sm font-sans truncate max-w-[240px]">
                 {activeCarouselBook?.title}
               </h4>
-              <p className="text-xs text-stone-450 font-mono mt-0.5">
+              <p className="text-xs text-stone-500 dark:text-stone-400 font-mono mt-0.5">
                 Type : <span className="uppercase font-bold text-[#646cff]">{activeCarouselBook?.type}</span> • {getBookDurationMinutes(activeCarouselBook)} min • {activeCarouselBook?.language === 'fr' ? 'Français' : activeCarouselBook?.language === 'en' ? 'Anglais' : 'Espagnol'}
               </p>
             </div>
-            <span className="text-[10px] bg-[#646cff]/10 text-[#767fff] px-2.5 py-1 rounded-full font-bold font-sans uppercase tracking-widest border border-[#646cff]/20 flex-shrink-0">
+            <span className="text-[10px] bg-[#646cff]/10 text-indigo-700 dark:text-[#767fff] px-2.5 py-1 rounded-full font-bold font-sans uppercase tracking-widest border border-[#646cff]/20 flex-shrink-0">
               {activeCarouselBook?.type === 'sample' ? 'DÉMO' : activeCarouselBook?.type}
             </span>
           </div>
 
           {/* Jumping Equalizer Layout bar */}
-          <div className="flex items-end justify-center gap-1 h-8 px-1 pb-1 bg-stone-950/60 rounded-xl" id="eq-bars">
+          <div className="flex items-end justify-center gap-1 h-8 px-1 pb-1 bg-stone-100 dark:bg-stone-950/60 rounded-xl" id="eq-bars">
             {randomBars.map(bar => (
               <div
                 key={bar.id}
