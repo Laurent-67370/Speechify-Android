@@ -1,7 +1,7 @@
 import { useState, useEffect, useRef, lazy, Suspense } from 'react';
 import { BookOpen, HelpCircle, X, ChevronLeft, VolumeX, Library, Home, Headphones, Upload, Play, Pause, Globe } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { DocumentBook, UserSettings, Bookmark, Chapter } from './types';
+import { DocumentBook, UserSettings, Bookmark, Chapter, Annotation, Flashcard } from './types';
 import { splitIntoSentences, preprocessTextForSpeech } from './utils/textUtils';
 import { resolveSpeechConfig } from './utils/customVoices';
 import { getAllBooksFromDB, saveAllBooksToDB } from './utils/indexedDB';
@@ -20,6 +20,11 @@ import { useGoogleTTS } from './utils/useGoogleTTS';
 const GutenbergExplorer   = lazy(() => import('./components/GutenbergExplorer'));
 const InteractiveHelpGuide = lazy(() => import('./components/InteractiveHelpGuide'));
 const StatsPage           = lazy(() => import('./components/StatsPage'));
+const FlashcardsPage      = lazy(() => import('./components/FlashcardsPage'));
+const CharlyChatModal     = lazy(() => import('./components/CharlyChatModal'));
+import AnnotationModal from './components/AnnotationModal';
+import DictionaryModal from './components/DictionaryModal';
+import SelectionPopup from './components/SelectionPopup';
 
 // ── Loader Suspense ─────────────────────────────────────────────────────────
 function SuspenseLoader() {
@@ -51,7 +56,7 @@ export default function App() {
   const [bookmarks, setBookmarks] = useState<Bookmark[]>([]);
   
   // Tabbed Navigation
-  const [currentTab, setCurrentTab] = useState<'accueil' | 'lire' | 'biblio' | 'librairie' | 'importer' | 'stats'>('accueil');
+  const [currentTab, setCurrentTab] = useState<'accueil' | 'lire' | 'biblio' | 'librairie' | 'importer' | 'stats' | 'flashcards'>('accueil');
   const [libSubTab, setLibSubTab] = useState<'gutenberg' | 'samples'>('gutenberg');
 
   // Daily Stats trackers
@@ -62,6 +67,20 @@ export default function App() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
   const [showWelcomeHelp, setShowWelcomeHelp] = useState(false);
+
+  // Annotations
+  const [annotations, setAnnotations] = useState<Annotation[]>([]);
+  const [showAnnotationModal, setShowAnnotationModal] = useState(false);
+  const [pendingAnnotation, setPendingAnnotation] = useState<{ text: string; pIdx: number } | null>(null);
+
+  // Flashcards
+  const [flashcards, setFlashcards] = useState<Flashcard[]>([]);
+
+  // Dictionnaire
+  const [dictionaryWord, setDictionaryWord] = useState<{ word: string; sentence: string } | null>(null);
+
+  // Charly Chat
+  const [showCharlyChatModal, setShowCharlyChatModal] = useState(false);
 
 
   // Speech tracker states
@@ -168,6 +187,11 @@ export default function App() {
 
     loadBooksData();
 
+    // Charger flashcards depuis le serveur
+    fetch('/api/flashcards').then(r => r.json()).then(data => {
+      if (data.flashcards) setFlashcards(data.flashcards);
+    }).catch(() => {});
+
     // Set sidebar open on widescreen display (PC) by default, close on smaller tablets/smartphones
     if (typeof window !== 'undefined' && window.innerWidth >= 1024) {
       setSidebarOpen(true);
@@ -216,6 +240,52 @@ export default function App() {
       document.documentElement.classList.remove('dark');
     }
   }, [settings.theme]);
+
+  // Handlers annotations
+  const handleAnnotate = (selectedText: string, pIdx: number) => {
+    if (!activeBook) return;
+    setPendingAnnotation({ text: selectedText, pIdx });
+    setShowAnnotationModal(true);
+  };
+
+  const handleSaveAnnotation = async (annotation: Annotation) => {
+    const updated = [...annotations, annotation];
+    setAnnotations(updated);
+    try {
+      await fetch('/api/annotations', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(annotation)
+      });
+    } catch (e) { console.error('[Annotations] Save error', e); }
+  };
+
+  // Handlers flashcards
+  const handleSaveFlashcard = async (card: Flashcard) => {
+    const updated = [...flashcards.filter(c => c.id !== card.id), card];
+    setFlashcards(updated);
+    try {
+      await fetch('/api/flashcards', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(card)
+      });
+    } catch (e) { console.error('[Flashcards] Save error', e); }
+  };
+
+  const handleDeleteFlashcard = async (id: string) => {
+    setFlashcards(prev => prev.filter(c => c.id !== id));
+    try { await fetch(`/api/flashcards/${id}`, { method: 'DELETE' }); }
+    catch (e) { console.error('[Flashcards] Delete error', e); }
+  };
+
+  const handleUpdateFlashcard = async (card: Flashcard) => {
+    setFlashcards(prev => prev.map(c => c.id === card.id ? card : c));
+    try {
+      await fetch('/api/flashcards', {
+        method: 'POST', headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(card)
+      });
+    } catch (e) { console.error('[Flashcards] Update error', e); }
+  };
 
   const handleUpdateDailyGoal = (goal: number) => {
     setDailyGoalMinutes(goal);
@@ -1366,6 +1436,25 @@ export default function App() {
             )}
           </button>
 
+          {/* Tab Flash: Flashcards */}
+          <button
+            onClick={() => setCurrentTab('flashcards')}
+            className={`flex flex-col items-center justify-center p-1 cursor-pointer transition-all duration-200 flex-1 relative ${
+              currentTab === 'flashcards' ? 'text-white' : 'hover:text-stone-200 text-stone-500'
+            }`}
+            title="Flashcards"
+            id="tab-flashcards"
+          >
+            <svg className={`w-5 h-5 transition-all duration-300 ${currentTab === 'flashcards' ? 'text-[#646cff] drop-shadow-[0_0_10px_rgba(100,108,255,0.4)]' : ''}`} viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="2" y="4" width="20" height="16" rx="2"/><path d="M7 8h10M7 12h6"/></svg>
+            <span className="text-[10px] mt-1 font-semibold tracking-tight">Cartes</span>
+            {flashcards.length > 0 && (
+              <span className="absolute top-0 right-1 w-4 h-4 bg-indigo-600 text-white text-[8px] font-black rounded-full flex items-center justify-center">{flashcards.filter(c=>!c.mastered).length || flashcards.length}</span>
+            )}
+            {currentTab === 'flashcards' && (
+              <motion.div className="absolute top-[-7px] w-5 h-[2px] bg-[#646cff] rounded-full" layoutId="purple-active-tab" />
+            )}
+          </button>
+
           {/* Tab 6: Importer */}
           <button 
             onClick={() => setCurrentTab('importer')}
@@ -1384,6 +1473,52 @@ export default function App() {
         </div>
       </footer>
 
+      {/* Annotation Modal */}
+      <AnimatePresence>
+        {showAnnotationModal && pendingAnnotation && activeBook && (
+          <AnnotationModal
+            selectedText={pendingAnnotation.text}
+            documentId={activeBook.id}
+            chapterIndex={currentChapterIdx}
+            paragraphIndex={pendingAnnotation.pIdx}
+            onSave={handleSaveAnnotation}
+            onClose={() => { setShowAnnotationModal(false); setPendingAnnotation(null); }}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Dictionary Modal */}
+      <AnimatePresence>
+        {dictionaryWord && (
+          <DictionaryModal
+            word={dictionaryWord.word}
+            sentenceContext={dictionaryWord.sentence}
+            language={activeBook?.language || 'fr'}
+            onClose={() => setDictionaryWord(null)}
+            onSaveFlashcard={handleSaveFlashcard}
+            sourceBookTitle={activeBook?.title}
+          />
+        )}
+      </AnimatePresence>
+
+      {/* Charly Chat Modal */}
+      <AnimatePresence>
+        {showCharlyChatModal && activeBook && (
+          <ErrorBoundary>
+            <Suspense fallback={<SuspenseLoader />}>
+              <CharlyChatModal
+                bookTitle={activeBook.title}
+                bookAuthor={activeBook.author}
+                currentChapterTitle={activeBook.chapters[currentChapterIdx]?.title || ''}
+                currentParagraphText={activeBook.chapters[currentChapterIdx]?.paragraphs[currentParagraphIdx] || ''}
+                language={activeBook.language || 'fr'}
+                onClose={() => setShowCharlyChatModal(false)}
+              />
+            </Suspense>
+          </ErrorBoundary>
+        )}
+      </AnimatePresence>
+
       {/* 5. Overlay Welcome help guide */}
       <AnimatePresence>
         {showWelcomeHelp && (
@@ -1401,3 +1536,4 @@ export default function App() {
     </ErrorBoundary>
   );
 }
+
