@@ -2,6 +2,8 @@ import { Type, Moon, Sun, Scroll, AlignLeft, Paintbrush, Languages, Volume2 } fr
 import { motion } from 'motion/react';
 import { UserSettings, TextTheme, FontFamily } from '../types';
 
+import GoogleTTSSettings from './GoogleTTSSettings';
+
 interface ReaderSettingsProps {
   settings: UserSettings;
   onSettingsChange: (settings: Partial<UserSettings>) => void;
@@ -232,6 +234,14 @@ export default function ReaderSettings({ settings, onSettingsChange, documentLan
           <span className="uppercase text-stone-700 bg-stone-100 border border-stone-150 dark:bg-stone-800 dark:text-stone-300 px-1.5 py-0.5 rounded font-bold">
             {documentLanguage}
           </span>
+        </div>
+
+        {/* ── Google Cloud TTS Premium ── */}
+        <div className="border-t border-stone-200 dark:border-stone-800 pt-4">
+          <GoogleTTSSettings
+            documentLanguage={documentLanguage}
+            theme={settings.theme}
+          />
         </div>
       </div>
     </div>
