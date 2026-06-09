@@ -1,7 +1,9 @@
-import { useEffect, useRef } from 'react';
-import { Bookmark, Sparkles, Type, Moon, Sun, AlignLeft } from 'lucide-react';
+import React, { useEffect, useRef, useState } from 'react';
+import { Bookmark, Sparkles, Type, Moon, Sun, AlignLeft, BookOpen } from 'lucide-react';
+import { motion } from 'motion/react';
 import { Chapter, UserSettings } from '../types';
 import { splitIntoSentences } from '../utils/textUtils';
+import DictionaryModal from './DictionaryModal';
 
 interface TextViewerProps {
   chapter: Chapter;
@@ -13,6 +15,7 @@ interface TextViewerProps {
   onLocationSelect: (paragraphIdx: number, sentenceIdx: number) => void;
   onQuickBookmark: (paragraphIdx: number) => void;
   isParagraphBookmarked: (paragraphIdx: number) => boolean;
+  language?: string;
 }
 
 export default function TextViewer({
@@ -25,9 +28,63 @@ export default function TextViewer({
   onLocationSelect,
   onQuickBookmark,
   isParagraphBookmarked,
+  language = 'fr',
 }: TextViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const activeSyllableRef = useRef<HTMLSpanElement>(null);
+
+  // States to facilitate online Definition & Language lookups
+  const [selectedText, setSelectedText] = useState<string | null>(null);
+  const [coords, setCoords] = useState<{ x: number; y: number } | null>(null);
+  const [lookupWord, setLookupWord] = useState<string | null>(null);
+  const [lookupContext, setLookupContext] = useState<string>('');
+
+  // Handle auto-closing floating markers on clicking empty spaces
+  useEffect(() => {
+    const handleDocumentClick = (e: MouseEvent) => {
+      setTimeout(() => {
+        const selection = window.getSelection();
+        if (!selection || selection.toString().trim() === '') {
+          setSelectedText(null);
+          setCoords(null);
+        }
+      }, 50);
+    };
+
+    document.addEventListener('mousedown', handleDocumentClick);
+    return () => {
+      document.removeEventListener('mousedown', handleDocumentClick);
+    };
+  }, []);
+
+  const handleSelectionAndMouseUp = (e: React.MouseEvent, sentenceText: string) => {
+    setTimeout(() => {
+      const selection = window.getSelection();
+      if (selection) {
+        const text = selection.toString().trim();
+        // Avoid triggers on long paragraphs or single digits
+        if (text && text.length > 1 && text.length < 50 && !text.includes('\n')) {
+          try {
+            const range = selection.getRangeAt(0);
+            const rect = range.getBoundingClientRect();
+            setCoords({
+              x: rect.left + rect.width / 2,
+              y: rect.top - 40,
+            });
+            setSelectedText(text);
+            setLookupContext(sentenceText);
+          } catch (err) {
+            setCoords({
+              x: e.clientX,
+              y: e.clientY - 40,
+            });
+            setSelectedText(text);
+            setLookupContext(sentenceText);
+          }
+        }
+      }
+    }, 20);
+  };
 
   // Auto Scroll handling
   useEffect(() => {
@@ -291,7 +348,13 @@ export default function TextViewer({
                       <span
                         key={sIdx}
                         ref={isActive ? activeSyllableRef : null}
-                        onClick={() => onLocationSelect(pIdx, sIdx)}
+                        onMouseUp={(e) => handleSelectionAndMouseUp(e, sentence)}
+                        onClick={() => {
+                          const selectionText = window.getSelection()?.toString().trim();
+                          if (!selectionText) {
+                            onLocationSelect(pIdx, sIdx);
+                          }
+                        }}
                         className={`inline transition-all duration-300 rounded cursor-pointer ${
                           isActive
                             ? 'font-bold underline decoration-2 underline-offset-4 decoration-amber-500/40'
@@ -302,7 +365,7 @@ export default function TextViewer({
                           borderRadius: '0.25rem',
                           padding: '0.05rem 0.15rem'
                         }}
-                        title="Cliquer pour écouter cette phrase"
+                        title="Cliquer pour écouter cette phrase • Double-cliquer pour définir un mot"
                       >
                         {sentence}{' '}
                       </span>
@@ -314,6 +377,55 @@ export default function TextViewer({
           })}
         </div>
       </div>
+
+      {/* Floating look-up bubble for active word highlights */}
+      {selectedText && coords && (
+        <div 
+          style={{ 
+            position: 'fixed', 
+            left: `${coords.x}px`, 
+            top: `${coords.y}px`, 
+            transform: 'translateX(-50%)',
+            zIndex: 100
+          }}
+          className="pointer-events-auto"
+        >
+          <motion.div
+            initial={{ scale: 0.8, opacity: 0, y: 5 }}
+            animate={{ scale: 1, opacity: 1, y: 0 }}
+            exit={{ scale: 0.8, opacity: 0, y: 5 }}
+            className="flex items-center"
+          >
+            <button
+              onMouseDown={(e) => {
+                // Keep browser selection active!
+                e.preventDefault();
+                e.stopPropagation();
+              }}
+              onClick={(e) => {
+                e.stopPropagation();
+                setLookupWord(selectedText);
+                setSelectedText(null);
+                setCoords(null);
+              }}
+              className="bg-amber-600 hover:bg-amber-500 active:scale-95 text-stone-950 font-black text-[11px] px-3.5 py-2 rounded-full shadow-xl flex items-center gap-1.5 cursor-pointer hover:shadow-amber-500/20 transition-all whitespace-nowrap border border-amber-400"
+            >
+              <BookOpen className="w-3.5 h-3.5 text-stone-950" />
+              <span>Définir "{selectedText.length > 12 ? selectedText.substring(0, 12) + '...' : selectedText}"</span>
+            </button>
+          </motion.div>
+        </div>
+      )}
+
+      {/* Dictionary definition dialog modal */}
+      {lookupWord && (
+        <DictionaryModal
+          word={lookupWord}
+          sentenceContext={lookupContext}
+          language={language}
+          onClose={() => setLookupWord(null)}
+        />
+      )}
     </div>
   );
 }

@@ -134,6 +134,67 @@ Consignes primordiales :
     }
   });
 
+  // API Route: AI-powered Word Definition & Contextual Dictionary using Gemini 3.5 Flash!
+  app.post("/api/gemini/define", async (req, res) => {
+    const { word, sentence, lang } = req.body;
+
+    if (!word || typeof word !== "string" || !word.trim()) {
+      return res.status(400).json({ error: "Le mot recherché est requis." });
+    }
+
+    try {
+      console.log(`[API DEFINE] Looking up word: "${word}" inside sentence: "${sentence || 'N/A'}"`);
+      const ai = getGeminiClient();
+
+      const targetLang = lang || "fr";
+
+      const systemInstruction = `Tu es une IA d'apprentissage, un enseignant de français et un linguiste bienveillant.
+Ton rôle est d'analyser le mot fourni par l'utilisateur et d'en retourner une fiche d'apprentissage ultra-didactique sous format JSON STRICT.
+Ne mets aucun filtre markdown, retourne uniquement du code JSON brut et valide, sans fioritures ni texte d'enrobage.
+
+Le schéma JSON de retour doit correspondre EXACTEMENT à ceci :
+{
+  "word": "le mot original",
+  "partOfSpeech": "nature grammaticale (ex: nom féminin, verbe du 1er groupe, adjectif, etc.)",
+  "definition": "définition claire, simple et accessible",
+  "etymology": "étymologie succincte ou origine historique amusante et instructive",
+  "contextualExplanation": "explication de comment ce mot s'insère ou prend sens dans la phrase de contexte fournie (si une phrase de contexte est présente, sinon dis comment il s'utilise en général)",
+  "synonyms": ["synonyme1", "synonyme2", "synonyme3"],
+  "example": "une phrase d'exemple élégante montrant son usage"
+}
+
+Consignes supplémentaires :
+1. Rédige les explications dans la langue cible : ${targetLang} (par défaut en français, sois convivial, clair et pédagogique).
+2. Si le mot est un verbe conjugué, indique son infinitif dans la clé "word" ainsi que sa forme conjuguée.
+3. Sois précis et instructif.`;
+
+      const response = await ai.models.generateContent({
+        model: "gemini-3.5-flash",
+        contents: `Mot sélectionné : "${word}"\nPhrase de contexte : "${sentence || ''}"`,
+        config: {
+          systemInstruction,
+          temperature: 0.2, // low temperature for precise factual dictionary lookup
+          responseMimeType: "application/json",
+        }
+      });
+
+      const responseText = response.text || "{}";
+      const wordDefinition = JSON.parse(responseText.trim());
+      return res.json(wordDefinition);
+    } catch (error: any) {
+      console.error(`[API DEFINE ERROR]`, error);
+      
+      let userFriendlyError = "Une erreur est survenue lors de la récupération de la définition.";
+      if (error.message?.includes("API_KEY")) {
+        userFriendlyError = "La clé d'API de l'IA (GEMINI_API_KEY) est introuvable ou invalide sur le serveur.";
+      } else {
+        userFriendlyError = `Erreur : ${error.message || error}`;
+      }
+
+      return res.status(500).json({ error: userFriendlyError });
+    }
+  });
+
   // Vite middleware for development
   if (process.env.NODE_ENV !== "production") {
     const vite = await createViteServer({

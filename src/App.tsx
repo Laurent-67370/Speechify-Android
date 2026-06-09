@@ -1039,6 +1039,7 @@ export default function App() {
                         onLocationSelect={(pIdx, sIdx) => handleJumpToLocation(currentChapterIdx, pIdx, sIdx)}
                         onQuickBookmark={handleQuickBookmarkToggle}
                         isParagraphBookmarked={isParagraphBookmarked}
+                        language={activeBook?.language || 'fr'}
                       />
                     ) : (
                       <div className="flex flex-col items-center justify-center h-full text-stone-400 bg-stone-950">
