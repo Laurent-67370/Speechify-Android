@@ -49,6 +49,67 @@ const stmtUpsertBookmark = db.prepare(`
 `);
 const stmtDeleteBookmark = db.prepare('DELETE FROM bookmarks WHERE id = ?');
 
+// ── Rate Limiter (en mémoire, sans dépendance) ──────────────────────────────
+const rateHits = new Map<string, { count: number; resetAt: number }>();
+const RATE_WINDOW_MS = 60_000; // 1 minute
+
+function rateLimiter(maxRequests: number) {
+  return (req: express.Request, res: express.Response, next: express.NextFunction) => {
+    const ip = req.ip || req.socket.remoteAddress || 'unknown';
+    const now = Date.now();
+    const entry = rateHits.get(ip);
+
+    if (!entry || now > entry.resetAt) {
+      rateHits.set(ip, { count: 1, resetAt: now + RATE_WINDOW_MS });
+      return next();
+    }
+
+    entry.count++;
+    if (entry.count > maxRequests) {
+      res.setHeader('Retry-After', Math.ceil((entry.resetAt - now) / 1000));
+      return res.status(429).json({ error: 'Trop de requêtes. Réessayez dans quelques secondes.' });
+    }
+    next();
+  };
+}
+
+// Nettoyage périodique du rate limiter (toutes les 10 min)
+setInterval(() => {
+  const now = Date.now();
+  for (const [ip, entry] of rateHits) {
+    if (now > entry.resetAt) rateHits.delete(ip);
+  }
+}, 600_000).unref?.();
+
+// ── CORS — Origines autorisées ───────────────────────────────────────────────
+const ALLOWED_ORIGINS = [
+  'https://speechify.lhusser.fr',
+  'http://localhost:5173',       // Vite dev
+  'http://localhost:3000',       // Express dev
+  'http://localhost:4173',       // Vite preview
+];
+
+function corsHandler(req: express.Request, res: express.Response, next: express.NextFunction) {
+  const origin = req.headers.origin || '';
+  // En dev (pas d'origin) on autorise
+  if (!origin) return next();
+  // Vérifier l'origine
+  if (ALLOWED_ORIGINS.includes(origin)) {
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  } else if (process.env.NODE_ENV !== 'production') {
+    // En dev on tolère d'autres origines (tests mobile, etc.)
+    res.setHeader('Access-Control-Allow-Origin', origin);
+  } else {
+    // En prod, origine non autorisée — on bloque
+    res.setHeader('Access-Control-Allow-Origin', 'null');
+  }
+  res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
+  res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
+  res.setHeader('Vary', 'Origin');
+  if (req.method === 'OPTIONS') return res.sendStatus(204);
+  next();
+}
+
 // ── Lazy Gemini client ──────────────────────────────────────────────────────
 function getGeminiClient() {
   const apiKey = process.env.GEMINI_API_KEY;
@@ -68,14 +129,11 @@ async function startServer() {
   app.use(express.json({ limit: '20mb' }));
   app.use(express.urlencoded({ limit: '20mb', extended: true }));
 
-  // ── CORS pour dev ────────────────────────────────────────────────────────
-  app.use((req, res, next) => {
-    res.setHeader('Access-Control-Allow-Origin', '*');
-    res.setHeader('Access-Control-Allow-Methods', 'GET,POST,PUT,DELETE,OPTIONS');
-    res.setHeader('Access-Control-Allow-Headers', 'Content-Type');
-    if (req.method === 'OPTIONS') return res.sendStatus(204);
-    next();
-  });
+  // ── CORS (origines autorisées uniquement) ───────────────────────────────
+  app.use(corsHandler);
+
+  // ── Rate limiting global (60 req/min par IP) ───────────────────────────
+  app.use(rateLimiter(60));
 
   // ════════════════════════════════════════════════════════════════════════
   // ── API LIVRES (SQLite) ──────────────────────────────────────────────────
@@ -248,7 +306,6 @@ async function startServer() {
 
         console.log(`[GUTENBERG] ✅ ${url} — ${text.length} chars, encodage détecté`);
         res.setHeader("Content-Type", "text/plain; charset=utf-8");
-        res.setHeader("Access-Control-Allow-Origin", "*");
         return res.send(text);
 
       } catch (err: any) {
@@ -302,7 +359,7 @@ async function startServer() {
   // ── API GEMINI ────────────────────────────────════════════════════════════
   // ════════════════════════════════════════════════════════════════════════
 
-  app.post("/api/gemini/summarize", async (req, res) => {
+  app.post("/api/gemini/summarize", rateLimiter(10), async (req, res) => {
     const { text, title, tone, lang } = req.body;
     if (!text || typeof text !== "string" || !text.trim()) {
       return res.status(400).json({ error: "Le contenu textuel est requis pour pouvoir générer un résumé." });
@@ -342,7 +399,7 @@ async function startServer() {
     }
   });
 
-  app.post("/api/gemini/define", async (req, res) => {
+  app.post("/api/gemini/define", rateLimiter(15), async (req, res) => {
     const { word, sentence, lang } = req.body;
     if (!word || typeof word !== "string" || !word.trim()) {
       return res.status(400).json({ error: "Le mot recherché est requis." });
