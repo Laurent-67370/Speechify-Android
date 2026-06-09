@@ -26,6 +26,7 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { Chapter, UserSettings, DocumentBook, Bookmark as BookmarkType } from '../types';
 import { splitIntoSentences } from '../utils/textUtils';
+import { resolveSpeechConfig } from '../utils/customVoices';
 import DictionaryModal from './DictionaryModal';
 
 interface TextViewerProps {
@@ -261,10 +262,21 @@ export default function TextViewer({
       .replace(/[#*`~_\-]/g, ' ')
       .replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF]/g, '');
 
+    const voiceConfig = resolveSpeechConfig(
+      settings.voiceURI,
+      language || 'fr',
+      settings.speechPitch || 1.0,
+      settings.speechRate || 1.1
+    );
+
     const utterance = new SpeechSynthesisUtterance(cleanText);
-    utterance.lang = language || 'fr';
-    utterance.rate = settings.speechRate || 1.1;
-    utterance.pitch = settings.speechPitch || 1.0;
+    utterance.lang = voiceConfig.lang;
+    utterance.rate = voiceConfig.rate;
+    utterance.pitch = voiceConfig.pitch;
+
+    if (voiceConfig.voice) {
+      utterance.voice = voiceConfig.voice;
+    }
 
     utterance.onend = () => setIsSpeakingSummary(false);
     utterance.onerror = () => setIsSpeakingSummary(false);

@@ -17,6 +17,7 @@ import {
 } from 'lucide-react';
 import { Chapter, Bookmark as BookmarkType, DocumentBook } from '../types';
 import { searchInParagraph } from '../utils/textUtils';
+import { resolveSpeechConfig } from '../utils/customVoices';
 
 interface SidebarProps {
   documentBook: DocumentBook;
@@ -233,17 +234,20 @@ export default function Sidebar({
       .replace(/[#*`~_\-]/g, ' ') // strip markdown syntactics
       .replace(/[\uE000-\uF8FF]|\uD83C[\uDC00-\uDFFF]|\uD83D[\uDC00-\uDFFF]|[\u2011-\u26FF]|\uD83E[\uDD10-\uDDFF]/g, ''); // strip emojis
 
+    const voiceConfig = resolveSpeechConfig(
+      documentBook.voiceURI || undefined,
+      documentBook.language || 'fr',
+      documentBook.speechPitch || 1.0,
+      documentBook.speechRate || 1.1
+    );
+
     const utterance = new SpeechSynthesisUtterance(cleanText);
-    utterance.lang = documentBook.language || 'fr';
+    utterance.lang = voiceConfig.lang;
+    utterance.rate = voiceConfig.rate;
+    utterance.pitch = voiceConfig.pitch;
     
-    // Attempt to match current reading settings
-    utterance.rate = documentBook.speechRate || 1.1;
-    utterance.pitch = documentBook.speechPitch || 1.0;
-    
-    if (documentBook.voiceURI) {
-      const allVoices = window.speechSynthesis.getVoices();
-      const match = allVoices.find(v => v.voiceURI === documentBook.voiceURI);
-      if (match) utterance.voice = match;
+    if (voiceConfig.voice) {
+      utterance.voice = voiceConfig.voice;
     }
 
     utterance.onend = () => {

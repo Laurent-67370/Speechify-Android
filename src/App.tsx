@@ -3,6 +3,7 @@ import { BookOpen, HelpCircle, X, ChevronLeft, VolumeX, Library, Home, Headphone
 import { motion, AnimatePresence } from 'motion/react';
 import { DocumentBook, UserSettings, Bookmark, Chapter } from './types';
 import { splitIntoSentences, preprocessTextForSpeech } from './utils/textUtils';
+import { resolveSpeechConfig } from './utils/customVoices';
 import { getAllBooksFromDB, saveAllBooksToDB } from './utils/indexedDB';
 import { SAMPLES } from './data/samples';
 import DocumentUpload from './components/DocumentUpload';
@@ -262,19 +263,22 @@ export default function App() {
     const language = state.activeBook.language || 'fr';
     const preprocessedText = preprocessTextForSpeech(sentenceToRead, language);
 
+    // Resolve our custom parameters (including voice, language, pitch and rate overrides)
+    const voiceConfig = resolveSpeechConfig(
+      state.settings.voiceURI,
+      language,
+      state.settings.speechPitch,
+      state.settings.speechRate
+    );
+
     // Instantiate Utterance object with clean audible text
     const utterance = new SpeechSynthesisUtterance(preprocessedText);
-    utterance.lang = language;
-    utterance.rate = state.settings.speechRate;
-    utterance.pitch = state.settings.speechPitch;
+    utterance.lang = voiceConfig.lang;
+    utterance.rate = voiceConfig.rate;
+    utterance.pitch = voiceConfig.pitch;
 
-    // Apply voice binding
-    if (state.settings.voiceURI) {
-      const allVoices = window.speechSynthesis.getVoices();
-      const matched = allVoices.find(v => v.voiceURI === state.settings.voiceURI);
-      if (matched) {
-        utterance.voice = matched;
-      }
+    if (voiceConfig.voice) {
+      utterance.voice = voiceConfig.voice;
     }
 
     // Bind playback progress callbacks

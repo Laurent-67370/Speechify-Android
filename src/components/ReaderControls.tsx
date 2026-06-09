@@ -1,6 +1,7 @@
 import { useState, useEffect } from 'react';
 import { Play, Pause, Square, SkipBack, SkipForward, Volume2, Settings, List, Sliders, ChevronDown } from 'lucide-react';
 import { UserSettings } from '../types';
+import { AppVoice, getAllAvailableVoices } from '../utils/customVoices';
 
 interface ReaderControlsProps {
   isPlaying: boolean;
@@ -29,70 +30,71 @@ export default function ReaderControls({
   onToggleSettings,
   chapterProgressText,
 }: ReaderControlsProps) {
-  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
-  const [selectedVoice, setSelectedVoice] = useState<SpeechSynthesisVoice | null>(null);
+  const [voices, setVoices] = useState<AppVoice[]>([]);
 
   // Load and filter speech synthesis voices
   useEffect(() => {
-    if (typeof window === 'undefined' || !window.speechSynthesis) return;
-
     const loadVoices = () => {
-      const allVoices = window.speechSynthesis.getVoices();
+      const allVoices = getAllAvailableVoices();
       setVoices(allVoices);
+      
+      const docLangPrefix = (documentLanguage || 'fr').substring(0, 2).toLowerCase();
       
       // Determine best initial voice matching the document language
       const matchingVoices = allVoices.filter(v => 
-        v.lang.toLowerCase().startsWith(documentLanguage.toLowerCase())
+        v.lang.toLowerCase().startsWith(docLangPrefix)
       );
       
       // Look for custom selected voice from settings
       const savedVoice = allVoices.find(v => v.voiceURI === settings.voiceURI);
       
-      if (savedVoice) {
-        setSelectedVoice(savedVoice);
-      } else if (matchingVoices.length > 0) {
-        // Fallback to first matching language voice
-        setSelectedVoice(matchingVoices[0]);
-        onSettingsChange({ voiceURI: matchingVoices[0].voiceURI });
-      } else if (allVoices.length > 0) {
-        // Fallback to system default or first voice
-        const fallback = allVoices.find(v => v.default) || allVoices[0];
-        setSelectedVoice(fallback);
-        onSettingsChange({ voiceURI: fallback.voiceURI });
+      if (!savedVoice) {
+        if (matchingVoices.length > 0) {
+          // Default to the first matching language, favoring a custom studio voice if present
+          const customFavored = matchingVoices.find(v => v.isCustom);
+          const fallback = customFavored || matchingVoices[0];
+          onSettingsChange({ voiceURI: fallback.voiceURI });
+        } else if (allVoices.length > 0) {
+          const fallback = allVoices.find(v => v.default) || allVoices[0];
+          onSettingsChange({ voiceURI: fallback.voiceURI });
+        }
       }
     };
 
     loadVoices();
     
-    // Chrome and Safari load voices asynchronously
-    if (window.speechSynthesis.onvoiceschanged !== undefined) {
-      window.speechSynthesis.onvoiceschanged = loadVoices;
+    if (typeof window !== 'undefined' && window.speechSynthesis) {
+      if (window.speechSynthesis.onvoiceschanged !== undefined) {
+        window.speechSynthesis.onvoiceschanged = loadVoices;
+      }
     }
-  }, [documentLanguage]);
+  }, [documentLanguage, settings.voiceURI]);
 
   const handleVoiceChange = (voiceURI: string) => {
-    const voice = voices.find(v => v.voiceURI === voiceURI);
-    if (voice) {
-      setSelectedVoice(voice);
-      onSettingsChange({ voiceURI });
-    }
+    onSettingsChange({ voiceURI });
   };
 
   // Group and sort voices to put matching language at the top
   const getGroupedVoices = () => {
-    const matching: SpeechSynthesisVoice[] = [];
-    const others: SpeechSynthesisVoice[] = [];
+    const matching: AppVoice[] = [];
+    const others: AppVoice[] = [];
+    const docLangPrefix = (documentLanguage || 'fr').substring(0, 2).toLowerCase();
 
     voices.forEach(v => {
-      if (v.lang.toLowerCase().startsWith(documentLanguage.toLowerCase())) {
+      if (v.lang.toLowerCase().startsWith(docLangPrefix)) {
         matching.push(v);
       } else {
         others.push(v);
       }
     });
 
-    // Sort alphabetically by name
-    const sorter = (a: SpeechSynthesisVoice, b: SpeechSynthesisVoice) => a.name.localeCompare(b.name);
+    // Custom voices first, then normal system voices sorted by name
+    const sorter = (a: AppVoice, b: AppVoice) => {
+      if (a.isCustom && !b.isCustom) return -1;
+      if (!a.isCustom && b.isCustom) return 1;
+      return a.name.localeCompare(b.name);
+    };
+
     matching.sort(sorter);
     others.sort(sorter);
 
@@ -140,7 +142,7 @@ export default function ReaderControls({
           {/* Skip back sentence */}
           <button
             onClick={onPreviousSentence}
-            disabled={!selectedVoice}
+            disabled={!settings.voiceURI}
             className="p-2.5 rounded-xl border border-stone-800 bg-stone-900 text-stone-300 hover:text-white hover:bg-stone-850 disabled:opacity-40 select-none cursor-pointer transition-all"
             title="Phrase précédente"
           >
@@ -150,7 +152,7 @@ export default function ReaderControls({
           {/* Master Play/Pause trigger */}
           <button
             onClick={onPlayPause}
-            disabled={!selectedVoice}
+            disabled={!settings.voiceURI}
             className={`p-4 rounded-full flex items-center justify-center cursor-pointer transition-all active:scale-95 disabled:opacity-40 shadow-lg ${
               isPlaying
                 ? 'bg-amber-500 hover:bg-amber-600 text-stone-950 font-black scale-105'
@@ -164,7 +166,7 @@ export default function ReaderControls({
           {/* Skip forward sentence */}
           <button
             onClick={onNextSentence}
-            disabled={!selectedVoice}
+            disabled={!settings.voiceURI}
             className="p-2.5 rounded-xl border border-stone-800 bg-stone-900 text-stone-300 hover:text-white hover:bg-stone-850 disabled:opacity-40 select-none cursor-pointer transition-all"
             title="Phrase suivante"
           >
