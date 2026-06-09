@@ -54,7 +54,7 @@ export default function DocumentUpload({
   
   // Filter and Sorting states for recentBooks in Bibliothèque
   const [searchQuery, setSearchQuery] = useState('');
-  const [typeFilter, setTypeFilter] = useState<'all' | 'pdf' | 'epub' | 'web' | 'sample'>('all');
+  const [typeFilter, setTypeFilter] = useState<'all' | 'pdf' | 'epub' | 'web' | 'sample' | 'txt'>('all');
   const [progressFilter, setProgressFilter] = useState<'all' | 'notStarted' | 'inProgress' | 'completed'>('all');
   const [sortBy, setSortBy] = useState<'newest' | 'oldest' | 'title' | 'progress'>('newest');
   
@@ -287,7 +287,7 @@ export default function DocumentUpload({
                     Déposez votre document ici, ou <span className="text-[#646cff] hover:text-[#767fff] underline decoration-2 underline-offset-2">parcourez</span>
                   </p>
                   <p className="text-xs text-stone-400 mt-2">
-                    Prend en charge les formats <strong className="text-stone-300">PDF</strong> et <strong className="text-stone-300">ePUB</strong> (sans DRM)
+                    Prend en charge les formats <strong className="text-stone-300">PDF</strong>, <strong className="text-stone-300">ePUB</strong>, <strong className="text-stone-300">TXT</strong> et <strong className="text-stone-300">Markdown</strong>
                   </p>
                 </div>
                 <div className="flex gap-4 pt-2 text-[10px] text-stone-500 font-mono">
@@ -296,6 +296,9 @@ export default function DocumentUpload({
                   </span>
                   <span className="flex items-center gap-1">
                     <BookOpen className="w-3.5 h-3.5" /> ePUB (Chapitré)
+                  </div>
+                  <div className="flex items-center gap-1.5 text-stone-400">
+                    <FileText className="w-3.5 h-3.5" /> TXT · Markdown (.md)
                   </span>
                 </div>
               </div>
@@ -434,7 +437,9 @@ export default function DocumentUpload({
         book.author.toLowerCase().includes(searchQuery.toLowerCase());
       
       // 2. Type filter
-      const matchesType = typeFilter === 'all' || book.type === typeFilter;
+      const matchesType = typeFilter === 'all'
+      || book.type === typeFilter
+      || (typeFilter === 'txt' && (book.type === 'txt' || book.type === 'md'));
       
       // 3. Progress filter
       const p = book.progressPercent || 0;
@@ -485,7 +490,7 @@ export default function DocumentUpload({
             Liseur Acoustique
           </h1>
           <p className="mt-3 text-base text-stone-400 max-w-xl mx-auto">
-            Convertissez vos documents PDF et ePUB en récits audio immersifs avec notre moteur de synthèse naturelle fluide et autonome.
+            Convertissez vos documents PDF, ePUB, TXT et Markdown en récits audio immersifs avec notre moteur de synthèse naturelle fluide et autonome.
           </p>
         </motion.div>
       )}
@@ -549,7 +554,7 @@ export default function DocumentUpload({
                     Déposez votre document ici, ou <span className="text-[#646cff] hover:text-[#767fff] underline decoration-2 underline-offset-2">parcourez</span>
                   </p>
                   <p className="text-sm text-stone-400 mt-2">
-                    Prend en charge les formats <strong className="text-stone-300">PDF</strong> et <strong className="text-stone-300">ePUB</strong> (sans DRM)
+                    Prend en charge les formats <strong className="text-stone-300">PDF</strong>, <strong className="text-stone-300">ePUB</strong>, <strong className="text-stone-300">TXT</strong> et <strong className="text-stone-300">Markdown</strong>
                   </p>
                 </div>
               </motion.div>
@@ -663,11 +668,12 @@ export default function DocumentUpload({
                           Format :
                         </span>
                         <div className="flex flex-wrap gap-1">
-                          {(['all', 'pdf', 'epub', 'web', 'sample'] as const).map((type) => {
+                          {(['all', 'pdf', 'epub', 'txt', 'web', 'sample'] as const).map((type) => {
                             const labels: Record<string, string> = {
                               all: 'Tous',
                               pdf: 'PDF',
                               epub: 'ePUB',
+                              txt: 'TXT/MD',
                               web: 'Sites Web',
                               sample: 'Classiques'
                             };
@@ -941,7 +947,7 @@ export default function DocumentUpload({
                   <FileText className="w-10 h-10 text-stone-700 mb-3" />
                   <h3 className="font-black text-sm text-white font-sans font-sans">Votre bibliothèque est vide</h3>
                   <p className="text-xs text-stone-400 mt-1 max-w-sm leading-relaxed font-sans font-sans">
-                    Glissez-déposez ou parcourez des documents électroniques PDF ou ePUB pour les ajouter à votre bibliothèque de lecture audio !
+                    Glissez-déposez ou parcourez des documents PDF, ePUB, TXT ou Markdown pour les ajouter à votre bibliothèque de lecture audio !
                   </p>
                   <div className="flex gap-3 mt-4">
                     {onNavigateToTab && (
