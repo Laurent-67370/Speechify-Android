@@ -30,6 +30,17 @@ db.exec(`
     data        TEXT NOT NULL,
     created_at  INTEGER NOT NULL DEFAULT (unixepoch())
   );
+  CREATE TABLE IF NOT EXISTS annotations (
+    id          TEXT PRIMARY KEY,
+    book_id     TEXT NOT NULL,
+    data        TEXT NOT NULL,
+    created_at  INTEGER NOT NULL DEFAULT (unixepoch())
+  );
+  CREATE TABLE IF NOT EXISTS flashcards (
+    id          TEXT PRIMARY KEY,
+    data        TEXT NOT NULL,
+    updated_at  INTEGER NOT NULL DEFAULT (unixepoch())
+  );
 `);
 
 console.log('[SQLite] Base de données initialisée :', path.join(DATA_DIR, 'speechify.db'));
@@ -48,6 +59,18 @@ const stmtUpsertBookmark = db.prepare(`
   ON CONFLICT(id) DO UPDATE SET data = excluded.data
 `);
 const stmtDeleteBookmark = db.prepare('DELETE FROM bookmarks WHERE id = ?');
+const stmtGetAnnotations   = db.prepare('SELECT data FROM annotations WHERE book_id = ? ORDER BY created_at DESC');
+const stmtUpsertAnnotation = db.prepare(`
+  INSERT INTO annotations (id, book_id, data, created_at) VALUES (?, ?, ?, unixepoch())
+  ON CONFLICT(id) DO UPDATE SET data = excluded.data
+`);
+const stmtDeleteAnnotation = db.prepare('DELETE FROM annotations WHERE id = ?');
+const stmtGetFlashcards    = db.prepare('SELECT data FROM flashcards ORDER BY updated_at DESC');
+const stmtUpsertFlashcard  = db.prepare(`
+  INSERT INTO flashcards (id, data, updated_at) VALUES (?, ?, unixepoch())
+  ON CONFLICT(id) DO UPDATE SET data = excluded.data, updated_at = unixepoch()
+`);
+const stmtDeleteFlashcard  = db.prepare('DELETE FROM flashcards WHERE id = ?');
 
 // ── Rate Limiter (en mémoire, sans dépendance) ──────────────────────────────
 const rateHits = new Map<string, { count: number; resetAt: number }>();
@@ -243,7 +266,76 @@ async function startServer() {
   // ── API GUTENBERG (texte brut avec décodage UTF-8/Latin-1 côté serveur) ──
   // ════════════════════════════════════════════════════════════════════════
 
-  app.get("/api/gutenberg/:bookId", async (req, res) => {
+  // ════════════════════════════════════════════════════════════════════════
+  // ── API ANNOTATIONS ──────────────────────────────────────────────────────
+  // ════════════════════════════════════════════════════════════════════════
+  app.get('/api/annotations/:bookId', (req, res) => {
+    try {
+      const rows = stmtGetAnnotations.all(req.params.bookId) as { data: string }[];
+      res.json({ annotations: rows.map(r => JSON.parse(r.data)) });
+    } catch (err: any) { res.status(500).json({ error: err.message }); }
+  });
+  app.post('/api/annotations', (req, res) => {
+    try {
+      const ann = req.body;
+      if (!ann?.id || !ann?.documentId) return res.status(400).json({ error: 'id et documentId requis' });
+      stmtUpsertAnnotation.run(ann.id, ann.documentId, JSON.stringify(ann));
+      res.json({ success: true });
+    } catch (err: any) { res.status(500).json({ error: err.message }); }
+  });
+  app.delete('/api/annotations/:id', (req, res) => {
+    try { stmtDeleteAnnotation.run(req.params.id); res.json({ success: true }); }
+    catch (err: any) { res.status(500).json({ error: err.message }); }
+  });
+
+  // ════════════════════════════════════════════════════════════════════════
+  // ── API FLASHCARDS ────────────────────────────────────────────────────────
+  // ════════════════════════════════════════════════════════════════════════
+  app.get('/api/flashcards', (req, res) => {
+    try {
+      const rows = stmtGetFlashcards.all() as { data: string }[];
+      res.json({ flashcards: rows.map(r => JSON.parse(r.data)) });
+    } catch (err: any) { res.status(500).json({ error: err.message }); }
+  });
+  app.post('/api/flashcards', (req, res) => {
+    try {
+      const card = req.body;
+      if (!card?.id) return res.status(400).json({ error: 'id requis' });
+      stmtUpsertFlashcard.run(card.id, JSON.stringify(card));
+      res.json({ success: true });
+    } catch (err: any) { res.status(500).json({ error: err.message }); }
+  });
+  app.delete('/api/flashcards/:id', (req, res) => {
+    try { stmtDeleteFlashcard.run(req.params.id); res.json({ success: true }); }
+    catch (err: any) { res.status(500).json({ error: err.message }); }
+  });
+
+  // ════════════════════════════════════════════════════════════════════════
+  // ── API GEMINI CHAT (Charly Coach) ───────────────────────────────────────
+  // ════════════════════════════════════════════════════════════════════════
+  app.post("/api/gemini/chat", rateLimiter(20), async (req, res) => {
+    const { systemContext, messages, lang } = req.body;
+    if (!messages || !Array.isArray(messages) || messages.length === 0) {
+      return res.status(400).json({ error: "messages[] requis" });
+    }
+    try {
+      const ai = getGeminiClient();
+      const history = messages.slice(0, -1).map((m: any) => `${m.role === 'user' ? 'Utilisateur' : 'Charly'}: ${m.content}`).join("\n");
+      const lastMsg = messages[messages.length - 1].content;
+      const prompt = `${systemContext}\n\nHistorique de la conversation:\n${history}\n\nUtilisateur: ${lastMsg}\n\nCharly:`;
+      const response = await ai.models.generateContent({
+        model: "gemini-2.5-flash",
+        contents: prompt,
+        config: { temperature: 0.7, maxOutputTokens: 600 }
+      });
+      return res.json({ reply: response.text || "Je n'ai pas pu répondre." });
+    } catch (error: any) {
+      console.error("[API CHAT ERROR]", error);
+      return res.status(500).json({ error: \`Erreur Charly : \${error.message}\` });
+    }
+  });
+
+    app.get("/api/gutenberg/:bookId", async (req, res) => {
     const bookId = parseInt(req.params.bookId);
     if (!bookId || isNaN(bookId)) {
       return res.status(400).json({ error: "bookId invalide" });
@@ -445,3 +537,4 @@ async function startServer() {
 }
 
 startServer();
+
