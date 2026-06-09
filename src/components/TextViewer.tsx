@@ -28,6 +28,7 @@ import { Chapter, UserSettings, DocumentBook, Bookmark as BookmarkType } from '.
 import { splitIntoSentences } from '../utils/textUtils';
 import { resolveSpeechConfig } from '../utils/customVoices';
 import DictionaryModal from './DictionaryModal';
+import SelectionPopup from './SelectionPopup';
 
 interface TextViewerProps {
   chapter: Chapter;
@@ -1291,6 +1292,16 @@ export default function TextViewer({
           onClose={() => setLookupWord(null)}
         />
       )}
+
+      {/* ── Popup sélection de texte ── */}
+      <SelectionPopup
+        containerRef={containerRef}
+        paragraphs={chapter.paragraphs}
+        isPlaying={isPlaying}
+        onJumpToSelection={(pIdx, sIdx) => {
+          onLocationSelect(pIdx, sIdx);
+        }}
+      />
     </div>
   );
 }
