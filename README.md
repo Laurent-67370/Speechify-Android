@@ -92,6 +92,8 @@ Que ce soit pour reposer vos yeux fatigués, réviser des concepts clés, ou vou
 | **Parseurs** | PDF.js 3.4 (PDF) · JSZip (ePUB) · Custom (TXT / Markdown) |
 | **Encodage** | Détection auto UTF-8 / Latin-1 (TextDecoder + Buffer Node.js) |
 | **Serveur** | Node.js / Express — proxy CORS, Gutenberg, Gemini, SQLite |
+| **Sécurité** | CORS restrictif (whitelist) · Rate limiting (60/min global, 10/min Gemini) |
+| **Résilience** | Error Boundary React · Code splitting (`React.lazy`) |
 | **Déploiement** | PM2 + Nginx + Let's Encrypt (HTTPS) |
 
 ---
@@ -153,13 +155,14 @@ src/
 │   ├── ReaderControls.tsx       # Barre audio (play/pause/skip/vitesse)
 │   ├── ReaderSettings.tsx       # Paramètres (voix, thème, taille)
 │   ├── GoogleTTSSettings.tsx    # Config Google Cloud TTS ✨
-│   ├── StatsPage.tsx            # Statistiques (cercle, streak, graphe) 📊
+│   ├── StatsPage.tsx            # Statistiques (cercle, streak, graphe) 📊 ⚡ lazy
 │   ├── SelectionPopup.tsx       # Popup sélection texte 🖱️
 │   ├── HomeDashboard.tsx        # Accueil (carousel, objectif, égaliseur)
 │   ├── Sidebar.tsx              # Table des matières + marque-pages
-│   ├── GutenbergExplorer.tsx    # Recherche + import Gutenberg (70k livres)
+│   ├── GutenbergExplorer.tsx    # Recherche + import Gutenberg (70k livres) ⚡ lazy
 │   ├── DocumentUpload.tsx       # Import PDF/ePUB/TXT/MD/URL
-│   ├── InteractiveHelpGuide.tsx # Guide Charly (6 étapes + quiz)
+│   ├── InteractiveHelpGuide.tsx # Guide Charly (6 étapes + quiz) ⚡ lazy
+│   ├── ErrorBoundary.tsx        # Capture erreurs React + fallback UI 🛡️
 │   └── DictionaryModal.tsx      # Définition mot sélectionné
 ├── utils/
 │   ├── useGoogleTTS.ts          # Hook Google Cloud TTS ✨
@@ -176,13 +179,13 @@ src/
 │   └── samples.ts               # Extraits de démonstration
 └── types.ts                     # Types TypeScript partagés
 
-server.ts                        # Serveur Express
+server.ts                        # Serveur Express + CORS restrictif + Rate limiting 🛡️
 ├── /api/gutenberg/:bookId       # Proxy Gutenberg (UTF-8/Latin-1 auto) 🔤
 ├── /api/books                   # CRUD livres SQLite 💾
 ├── /api/bookmarks               # CRUD marque-pages SQLite 💾
 ├── /api/proxy                   # Proxy web (import URL)
-├── /api/gemini/summarize        # Résumés IA Gemini
-└── /api/gemini/define           # Dictionnaire IA Gemini
+├── /api/gemini/summarize        # Résumés IA Gemini (10 req/min) 🧠
+└── /api/gemini/define           # Dictionnaire IA Gemini (15 req/min)
 
 data/
 └── speechify.db                 # Base SQLite (livres + marque-pages) 💾
@@ -203,6 +206,8 @@ data/
 | v1.4 | Juin 2026 | **StatsPage v2** — cercle animé, streak, KPIs, redesign complet |
 | v1.4 | Juin 2026 | **HTTPS** — `speechify.lhusser.fr` via Nginx + Let's Encrypt + PM2 |
 | v1.5 | Juin 2026 | **Import TXT & Markdown** — parser avec chapitrage auto, détection UTF-8/Latin-1 |
+| v1.6 | Juin 2026 | **Sécurité** — CORS restrictif, rate limiting, Error Boundary React |
+| v1.6 | Juin 2026 | **Perf** — code splitting (708→641 KB), `React.lazy` sur 3 composants |
 
 ---
 
