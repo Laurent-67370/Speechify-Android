@@ -1,6 +1,6 @@
 # 🎧 SpeechifyPro — Votre Liseuse Audio Intelligente & Interactive
 
-Bienvenue sur **SpeechifyPro** ! Une expérience de lecture sonore immersive, conçue pour transformer n'importe quel ouvrage, fichier ePUB/PDF, ou article de presse web en une écoute fluide, captivante et animée.
+Bienvenue sur **SpeechifyPro** ! Une expérience de lecture sonore immersive, conçue pour transformer n'importe quel ouvrage, fichier **ePUB / PDF / TXT / Markdown**, ou article de presse web en une écoute fluide, captivante et animée.
 
 Que ce soit pour reposer vos yeux fatigués, réviser des concepts clés, ou vous instruire tout en cuisinant, laissez **Charly, votre compagnon de l'IA**, vous accompagner pas à pas !
 
@@ -32,9 +32,10 @@ Que ce soit pour reposer vos yeux fatigués, réviser des concepts clés, ou vou
 
 ### 📚 5. Bibliothèque & Import Multi-Source
 - **Projet Gutenberg :** 70 000+ ouvrages classiques en 🇫🇷 🇬🇧 🇪🇸 🇩🇪 🇮🇹.
-- **Import de fichiers :** Glissez-déposez vos ePUB et PDF locaux.
+- **Import de fichiers :** Glissez-déposez vos **ePUB, PDF, TXT et Markdown** (.md, .markdown) locaux.
 - **Import URL :** Collez une URL web pour lire un article en un instant.
-- **Encodage auto :** Détection UTF-8 / Latin-1 pour les classiques Gutenberg (accents corrects).
+- **Encodage auto :** Détection UTF-8 / Latin-1 pour les classiques Gutenberg et les fichiers TXT (accents corrects).
+- **Chapitrage intelligent :** Les fichiers TXT et Markdown sont découpés automatiquement en chapitres (titres `#`, `##`, doubles sauts de ligne).
 
 ### 🎙️ 6. Voix de Studio Premium
 
@@ -88,7 +89,7 @@ Que ce soit pour reposer vos yeux fatigués, réviser des concepts clés, ou vou
 | **IA Résumés** | Google GenAI SDK — Gemini Flash (côté serveur) |
 | **Voix Premium** | Google Cloud TTS REST API (Neural2 / WaveNet) |
 | **Stockage livres** | SQLite (`better-sqlite3`) côté serveur + IndexedDB local |
-| **Parseurs** | PDF.js 3.4 (PDF) · JSZip (ePUB) |
+| **Parseurs** | PDF.js 3.4 (PDF) · JSZip (ePUB) · Custom (TXT / Markdown) |
 | **Encodage** | Détection auto UTF-8 / Latin-1 (TextDecoder + Buffer Node.js) |
 | **Serveur** | Node.js / Express — proxy CORS, Gutenberg, Gemini, SQLite |
 | **Déploiement** | PM2 + Nginx + Let's Encrypt (HTTPS) |
@@ -157,7 +158,7 @@ src/
 │   ├── HomeDashboard.tsx        # Accueil (carousel, objectif, égaliseur)
 │   ├── Sidebar.tsx              # Table des matières + marque-pages
 │   ├── GutenbergExplorer.tsx    # Recherche + import Gutenberg (70k livres)
-│   ├── DocumentUpload.tsx       # Import PDF/ePUB/URL
+│   ├── DocumentUpload.tsx       # Import PDF/ePUB/TXT/MD/URL
 │   ├── InteractiveHelpGuide.tsx # Guide Charly (6 étapes + quiz)
 │   └── DictionaryModal.tsx      # Définition mot sélectionné
 ├── utils/
@@ -169,7 +170,8 @@ src/
 │   └── webParser.ts             # Extraction texte depuis URL
 ├── lib/
 │   ├── pdfParser.ts             # Parser PDF (PDF.js) avec décodage UTF-8
-│   └── epubParser.ts            # Parser ePUB (JSZip) avec décodage UTF-8
+│   ├── epubParser.ts            # Parser ePUB (JSZip) avec décodage UTF-8
+│   └── textParser.ts            # Parser TXT/Markdown avec chapitrage auto et UTF-8/Latin-1
 ├── data/
 │   └── samples.ts               # Extraits de démonstration
 └── types.ts                     # Types TypeScript partagés
@@ -200,6 +202,7 @@ data/
 | v1.3 | Juin 2026 | **Fix encodage** — UTF-8/Latin-1 auto (accents Gutenberg) |
 | v1.4 | Juin 2026 | **StatsPage v2** — cercle animé, streak, KPIs, redesign complet |
 | v1.4 | Juin 2026 | **HTTPS** — `speechify.lhusser.fr` via Nginx + Let's Encrypt + PM2 |
+| v1.5 | Juin 2026 | **Import TXT & Markdown** — parser avec chapitrage auto, détection UTF-8/Latin-1 |
 
 ---
 
