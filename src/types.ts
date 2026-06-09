@@ -1,10 +1,10 @@
 export interface Chapter {
   id: string;
   title: string;
-  content: string; // The full raw or HTML/text content
-  paragraphs: string[]; // Segmented paragraphs for reading and navigation
+  content: string;
+  paragraphs: string[];
   wordCount: number;
-  summary?: string; // Cache AI summary of this chapter
+  summary?: string;
 }
 
 export interface DocumentBook {
@@ -23,7 +23,7 @@ export interface DocumentBook {
   speechRate?: number;
   speechPitch?: number;
   voiceURI?: string;
-  summary?: string; // Cache AI summary of the full book
+  summary?: string;
 }
 
 export interface Bookmark {
@@ -36,19 +36,45 @@ export interface Bookmark {
   createdAt: number;
 }
 
-export type TextTheme = 'light' | 'dark' | 'sepia';
+export interface Annotation {
+  id: string;
+  documentId: string;
+  chapterIndex: number;
+  paragraphIndex: number;
+  selectedText: string;
+  note: string;
+  color: 'yellow' | 'green' | 'blue' | 'pink';
+  createdAt: number;
+}
 
+export interface Flashcard {
+  id: string;
+  word: string;
+  partOfSpeech: string;
+  definition: string;
+  etymology: string;
+  example: string;
+  synonyms: string[];
+  language: string;
+  sourceBookTitle?: string;
+  createdAt: number;
+  reviewCount: number;
+  lastReviewedAt?: number;
+  mastered: boolean;
+}
+
+export type TextTheme = 'light' | 'dark' | 'sepia';
 export type FontFamily = 'sans' | 'serif' | 'dyslexic';
 
 export interface UserSettings {
   theme: TextTheme;
   fontFamily: FontFamily;
-  fontSize: number; // in percentage, e.g., 100, 120, 150
+  fontSize: number;
   lineHeight: 'snug' | 'normal' | 'relaxed';
   autoScroll: boolean;
-  highlightColor: string; // Hex or tailwind color class
-  speechRate: number; // 0.5 to 3
-  speechPitch: number; // 0.5 to 2
-  voiceURI?: string; // Voice URI identifier for speechSynthesis
+  highlightColor: string;
+  speechRate: number;
+  speechPitch: number;
+  voiceURI?: string;
   saveVoicePerDocument: boolean;
 }
