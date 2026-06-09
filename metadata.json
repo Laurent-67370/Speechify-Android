@@ -1,0 +1,6 @@
+{
+  "name": "Liseuse Vocale Multilingue",
+  "description": "Une liseuse vocale intelligente pour fichiers PDF et ePUB avec voix naturelles, surbrillance de lecture, et support complet hors ligne.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
