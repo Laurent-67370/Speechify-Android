@@ -1,5 +1,5 @@
 import React, { useState, useEffect, FormEvent } from 'react';
-import { Search, Download, BookOpen, Sparkles, Globe, RefreshCw, AlertCircle, CheckCircle, TrendingUp, ChevronRight } from 'lucide-react';
+import { Search, Download, BookOpen, Sparkles, Globe, RefreshCw, AlertCircle, CheckCircle, TrendingUp, ChevronRight, ChevronLeft } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { DocumentBook, Chapter } from '../types';
 
@@ -78,7 +78,13 @@ const FEATURED_GUTENBERG = [
     language: 'fr',
     genre: 'Policier / Mystère',
     description: 'La première apparition du célèbre bandit au grand cœur, élégant et facétieux.',
-    cover: '🎩'
+    cover: '🎩',
+    bgClasses: 'from-[#0f172a] via-[#1e293b] to-[#020617]',
+    accentColor: 'text-amber-400',
+    borderColor: 'border-amber-500/30',
+    spineColor: 'bg-amber-500/25',
+    textColor: 'text-amber-50',
+    secondaryColor: 'text-slate-350'
   },
   {
     id: 800,
@@ -87,7 +93,13 @@ const FEATURED_GUTENBERG = [
     language: 'fr',
     genre: 'Aventure',
     description: 'Le pari fou de Phileas Fogg et son fidèle passepartout à travers le globe.',
-    cover: '🎈'
+    cover: '🎈',
+    bgClasses: 'from-[#7c2d12] via-[#ea580c] to-[#431407]',
+    accentColor: 'text-orange-300',
+    borderColor: 'border-orange-500/35',
+    spineColor: 'bg-orange-450/20',
+    textColor: 'text-orange-50',
+    secondaryColor: 'text-orange-200'
   },
   {
     id: 13951,
@@ -95,8 +107,14 @@ const FEATURED_GUTENBERG = [
     author: 'Alexandre Dumas',
     language: 'fr',
     genre: 'Action / Historique',
-    description: '« Un pour tous, tous pour un ! » L\'arrivée tumultueuse de d\'Artagnan à Paris.',
-    cover: '⚔️'
+    description: '« Un pour tous, tous pour un ! » L\'arrivée tumultueuse de d\'Artagnan à Paris face au cardinal.',
+    cover: '⚔️',
+    bgClasses: 'from-[#7f1d1d] via-[#b91c1c] to-[#450a0a]',
+    accentColor: 'text-yellow-400',
+    borderColor: 'border-yellow-600/30',
+    spineColor: 'bg-yellow-500/20',
+    textColor: 'text-amber-100',
+    secondaryColor: 'text-red-200'
   },
   {
     id: 5097,
@@ -105,7 +123,13 @@ const FEATURED_GUTENBERG = [
     language: 'fr',
     genre: 'Science-Fiction / Classique',
     description: 'Voyagez à bord du Nautilus en compagnie du mystérieux et fascinant Capitaine Nemo.',
-    cover: '🐙'
+    cover: '🐙',
+    bgClasses: 'from-teal-950 via-[#0d9488] to-[#134e4a]',
+    accentColor: 'text-teal-300',
+    borderColor: 'border-teal-500/30',
+    spineColor: 'bg-teal-400/20',
+    textColor: 'text-teal-100',
+    secondaryColor: 'text-teal-300'
   },
   // English
   {
@@ -115,7 +139,13 @@ const FEATURED_GUTENBERG = [
     language: 'en',
     genre: 'Fantasy / Merveilleux',
     description: 'Follow Alice down the rabbit hole into a world of nonsense, queens and tea parties.',
-    cover: '🐇'
+    cover: '🐇',
+    bgClasses: 'from-purple-950 via-fuchsia-900 to-indigo-950',
+    accentColor: 'text-fuchsia-300',
+    borderColor: 'border-fuchsia-500/30',
+    spineColor: 'bg-fuchsia-400/25',
+    textColor: 'text-pink-100',
+    secondaryColor: 'text-purple-300'
   },
   {
     id: 1342,
@@ -124,7 +154,13 @@ const FEATURED_GUTENBERG = [
     language: 'en',
     genre: 'Romance / Satire',
     description: 'The romantic clash between the opinionated Elizabeth Bennet and the proud Mr. Darcy.',
-    cover: '💌'
+    cover: '💌',
+    bgClasses: 'from-[#db2777] via-pink-600 to-pink-950',
+    accentColor: 'text-pink-100',
+    borderColor: 'border-pink-300/35',
+    spineColor: 'bg-pink-400/25',
+    textColor: 'text-white',
+    secondaryColor: 'text-pink-200'
   },
   {
     id: 1661,
@@ -133,7 +169,13 @@ const FEATURED_GUTENBERG = [
     language: 'en',
     genre: 'Mystère / Détective',
     description: 'A collection of the finest and most brain-teasing cases solved by Sherlock Holmes.',
-    cover: '🔍'
+    cover: '🔍',
+    bgClasses: 'from-[#451a03] via-[#78350f] to-[#1c0d02]',
+    accentColor: 'text-yellow-501',
+    borderColor: 'border-amber-600/30',
+    spineColor: 'bg-amber-500/20',
+    textColor: 'text-amber-100',
+    secondaryColor: 'text-amber-300'
   },
   {
     id: 84,
@@ -142,7 +184,13 @@ const FEATURED_GUTENBERG = [
     language: 'en',
     genre: 'Gothique / Science-Fiction',
     description: 'A brilliant scientist crafts a living creature out of anatomical components.',
-    cover: '⚡'
+    cover: '⚡',
+    bgClasses: 'from-zinc-900 via-emerald-950 to-neutral-950',
+    accentColor: 'text-emerald-400',
+    borderColor: 'border-emerald-500/35',
+    spineColor: 'bg-emerald-400/20',
+    textColor: 'text-emerald-100',
+    secondaryColor: 'text-stone-400'
   },
   // Spanish
   {
@@ -152,16 +200,28 @@ const FEATURED_GUTENBERG = [
     language: 'es',
     genre: 'Classique / Satire',
     description: 'Las aventuras del hidalgo caballero Alonso Quijano y su fiel escudero Sancho Panza.',
-    cover: '🛡️'
+    cover: '🛡️',
+    bgClasses: 'from-[#7c2d12] via-amber-800 to-stone-900',
+    accentColor: 'text-yellow-400',
+    borderColor: 'border-yellow-600/25',
+    spineColor: 'bg-yellow-500/15',
+    textColor: 'text-yellow-50',
+    secondaryColor: 'text-amber-200'
   },
   {
     id: 31221,
     title: 'Rimas',
     author: 'Gustavo Adolfo Bécquer',
     language: 'es',
-    genre: 'Poesía / Romanticismo',
+    genre: 'Poésie / Романтизм',
     description: 'Una célebre colección de versos delicados y emotivos de la lírica castellana.',
-    cover: '✍️'
+    cover: '✍️',
+    bgClasses: 'from-stone-900 via-stone-850 to-neutral-900 border-neutral-700/30',
+    accentColor: 'text-rose-400',
+    borderColor: 'border-rose-450/20',
+    spineColor: 'bg-rose-400/10',
+    textColor: 'text-rose-100',
+    secondaryColor: 'text-stone-400'
   }
 ];
 
@@ -178,6 +238,39 @@ export default function GutenbergExplorer({
   const [errorText, setErrorText] = useState<string | null>(null);
   const [isSearching, setIsSearching] = useState(false);
   
+  // Carousel states for featured books
+  const [carouselIndex, setCarouselIndex] = useState(0);
+  const [isHovered, setIsHovered] = useState(false);
+
+  // Filter our local hand-picked classics list
+  const filteredFeatured = activeLang === 'all'
+    ? FEATURED_GUTENBERG
+    : FEATURED_GUTENBERG.filter(b => b.language === activeLang);
+
+  // Reset carousel index if category changes to stay safe
+  useEffect(() => {
+    setCarouselIndex(0);
+  }, [activeLang]);
+
+  // Handle continuous rotation for the eye-catching carousel
+  useEffect(() => {
+    if (isHovered || filteredFeatured.length <= 1) return;
+    const interval = setInterval(() => {
+      setCarouselIndex((prev) => (prev + 1) % filteredFeatured.length);
+    }, 6000); // Transitions nicely every 6 seconds
+    return () => clearInterval(interval);
+  }, [isHovered, filteredFeatured.length]);
+
+  const handleNextFeatured = () => {
+    if (filteredFeatured.length === 0) return;
+    setCarouselIndex((prev) => (prev + 1) % filteredFeatured.length);
+  };
+
+  const handlePrevFeatured = () => {
+    if (filteredFeatured.length === 0) return;
+    setCarouselIndex((prev) => (prev - 1 + filteredFeatured.length) % filteredFeatured.length);
+  };
+
   // Tracking download progress
   const [downloadingId, setDownloadingId] = useState<number | null>(null);
   const [downloadProgress, setDownloadProgress] = useState('');
@@ -516,11 +609,6 @@ export default function GutenbergExplorer({
     }
   };
 
-  // Filter our local hand-picked classics list
-  const filteredFeatured = activeLang === 'all'
-    ? FEATURED_GUTENBERG
-    : FEATURED_GUTENBERG.filter(b => b.language === activeLang);
-
   return (
     <div className="w-full space-y-6 text-left">
       
@@ -722,76 +810,276 @@ export default function GutenbergExplorer({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              className="space-y-4"
+              className="space-y-8"
             >
-              <div className="flex items-center justify-between pb-1">
-                <h4 className="text-base font-extrabold text-stone-900 dark:text-white flex items-center gap-2">
-                  <Sparkles className="w-4 h-4 text-amber-500 fill-amber-500" />
-                  <span>Chefs-d'œuvre Classiques du Domaine Public ({filteredFeatured.length})</span>
-                </h4>
-                <p className="text-[10px] text-stone-400 font-mono font-bold hidden sm:block">CLIQUEZ POUR IMPORTER ET ÉCOUTER</p>
-              </div>
+              {/* Spectacular Book Carousel Showcase */}
+              {filteredFeatured.length > 0 && (
+                <div 
+                  onMouseEnter={() => setIsHovered(true)}
+                  onMouseLeave={() => setIsHovered(false)}
+                  className="relative overflow-hidden rounded-[28px] border border-stone-200 dark:border-stone-850 bg-white dark:bg-[#111010] shadow-lg p-5 sm:p-7 flex flex-col lg:flex-row gap-6 sm:gap-8 items-center transition-all duration-300"
+                >
+                  {/* Subtle color-reflective back glow matching the book's custom background color list */}
+                  <div className={`absolute -right-16 -bottom-16 w-80 h-80 rounded-full bg-gradient-to-tr ${filteredFeatured[carouselIndex].bgClasses} opacity-[0.05] dark:opacity-[0.12] blur-3xl pointer-events-none`} />
+                  <div className={`absolute -left-16 -top-16 w-60 h-60 rounded-full bg-gradient-to-br ${filteredFeatured[carouselIndex].bgClasses} opacity-[0.03] dark:opacity-[0.08] blur-2xl pointer-events-none`} />
 
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
-                {filteredFeatured.map((book) => {
-                  const hasRecent = recentBooks.some(b => b.id === `gutenberg_${book.id}`);
-                  
-                  return (
-                    <div
-                      key={book.id}
-                      className="flex flex-col p-5 bg-white dark:bg-[#131212]/90 border border-stone-200 dark:border-stone-900 rounded-[24px] shadow-sm relative group hover:border-[#646cff]/40 transition-all text-left space-y-4"
-                    >
-                      <div className="flex items-start gap-4">
-                        <div className="w-12 h-12 rounded-2xl bg-stone-50 dark:bg-stone-950 flex shadow-inner items-center justify-center text-xl border border-stone-100 dark:border-stone-905 flex-shrink-0">
-                          {book.cover}
+                  {/* LEFT: 3D Floating Book Cover Display with physical spine shading */}
+                  <div className="flex-shrink-0 relative select-none">
+                    <AnimatePresence mode="wait">
+                      <motion.div
+                        key={filteredFeatured[carouselIndex].id}
+                        initial={{ opacity: 0, scale: 0.94, y: 8, rotateY: -10 }}
+                        animate={{ opacity: 1, scale: 1, y: 0, rotateY: -4 }}
+                        exit={{ opacity: 0, scale: 0.94, y: -8, rotateY: 4 }}
+                        transition={{ duration: 0.35 }}
+                        style={{ transformStyle: 'preserve-3d', perspective: '1000px' }}
+                        className="relative"
+                      >
+                        {/* Real Soft 3D Shadow Cover Container */}
+                        <motion.div 
+                          whileHover={{ scale: 1.05, rotateY: -14, rotateX: 2, rotate: -0.5, z: 15 }}
+                          transition={{ type: "spring", stiffness: 180, damping: 15 }}
+                          onClick={() => handleImportGutenberg(filteredFeatured[carouselIndex].id, filteredFeatured[carouselIndex].title, filteredFeatured[carouselIndex].author, filteredFeatured[carouselIndex].language)}
+                          className={`w-[140px] h-[210px] sm:w-[170px] sm:h-[255px] rounded-r-lg rounded-l-[4px] shadow-[10px_12px_24px_-4px_rgba(0,0,0,0.35)] dark:shadow-[10px_12px_28px_-4px_rgba(0,0,0,0.65)] border-t border-r border-b ${filteredFeatured[carouselIndex].borderColor} text-white bg-gradient-to-br ${filteredFeatured[carouselIndex].bgClasses} relative flex flex-col justify-between p-4 sm:p-5 overflow-hidden group/cover cursor-pointer`}
+                        >
+                          {/* Book spine side-crease shadows for perfect mechanical texture */}
+                          <div className="absolute left-0 top-0 w-3.5 h-full bg-gradient-to-r from-black/28 via-black/10 to-transparent z-20" />
+                          <div className="absolute left-[3px] top-0 w-[1px] h-full bg-white/10 z-20" />
+                          <div className="absolute left-3.5 top-0 w-[1px] h-full bg-gradient-to-r from-black/12 to-transparent z-10" />
+
+                          {/* Deco corners */}
+                          <div className="absolute top-1.5 right-1.5 border-r border-t border-white/20 w-2.5 h-2.5 rounded-tr-sm" />
+                          <div className="absolute bottom-1.5 right-1.5 border-r border-b border-white/20 w-2.5 h-2.5 rounded-br-sm" />
+                          <div className="absolute top-1.5 left-5 border-l border-t border-white/20 w-2.5 h-2.5 rounded-tl-sm" />
+                          <div className="absolute bottom-1.5 left-5 border-l border-b border-white/20 w-2.5 h-2.5 rounded-bl-sm" />
+
+                          {/* Genre Header on cover */}
+                          <div className="text-[8px] font-mono tracking-widest text-center uppercase opacity-50 font-bold sm:pt-1 z-10">
+                            {filteredFeatured[carouselIndex].genre.split('/')[0].trim()}
+                          </div>
+
+                          {/* Large Cover Emblem */}
+                          <div className="flex flex-col items-center justify-center my-auto z-10">
+                            <span className="text-3xl sm:text-4xl drop-shadow-[0_4px_6px_rgba(0,0,0,0.4)] group-hover/cover:scale-110 duration-500 transform transition-all select-none">
+                              {filteredFeatured[carouselIndex].cover}
+                            </span>
+                          </div>
+
+                          {/* Footer information on cover */}
+                          <div className="text-center space-y-1 pb-1 z-10">
+                            <h4 className="font-serif font-extrabold text-[#ffffff] text-[10px] sm:text-[11px] tracking-tight line-clamp-2 leading-tight">
+                              {filteredFeatured[carouselIndex].title}
+                            </h4>
+                            <p className={`text-[8px] font-sans font-medium uppercase tracking-wider ${filteredFeatured[carouselIndex].accentColor}`}>
+                              {filteredFeatured[carouselIndex].author}
+                            </p>
+                          </div>
+
+                          <div className="absolute right-0 top-[1px] bottom-[1px] w-[1px] bg-white/20 z-10" />
+                        </motion.div>
+                      </motion.div>
+                    </AnimatePresence>
+                  </div>
+
+                  {/* RIGHT: Informative Description & Instant Action Panel */}
+                  <div className="flex-grow flex flex-col justify-between text-left h-full min-w-0 space-y-4">
+                    <div className="space-y-3">
+                      {/* Active Label Badges */}
+                      <div className="flex flex-wrap items-center gap-2">
+                        <span className="inline-flex items-center space-x-1 px-2.5 py-0.5 text-[10px] font-extrabold rounded-full bg-[#646cff]/10 text-[#646cff] dark:text-[#767fff] tracking-wide border border-[#646cff]/15">
+                          <Sparkles className="w-2.5 h-2.5 fill-current text-amber-500" />
+                          <span>À LA UNE SUR COGNITIVE SENS</span>
+                        </span>
+                        <span className="px-2 py-0.5 text-[9px] font-mono font-bold rounded bg-stone-100 dark:bg-stone-900 text-stone-600 dark:text-stone-300 border border-stone-200 dark:border-stone-850">
+                          {getLanguageLabel(filteredFeatured[carouselIndex].language)}
+                        </span>
+                        <span className="text-[10px] text-stone-400 font-semibold uppercase font-mono tracking-wider hidden sm:block">
+                          Domaine Public Complet
+                        </span>
+                      </div>
+
+                      {/* Display Typography Title & Author */}
+                      <div>
+                        <h2 className="text-xl sm:text-2xl font-black font-sans text-stone-900 dark:text-white leading-tight tracking-tight">
+                          {filteredFeatured[carouselIndex].title}
+                        </h2>
+                        <p className="text-xs sm:text-sm font-bold text-stone-500 dark:text-stone-400 mt-1">
+                          Écrit par <span className="text-[#646cff] dark:text-[#767fff]">{filteredFeatured[carouselIndex].author}</span>
+                        </p>
+                      </div>
+
+                      {/* Details row */}
+                      <div className="flex flex-wrap gap-x-4 gap-y-1.5 text-[10px] text-stone-400 font-mono">
+                        <div>
+                          Genre : <strong className="text-stone-700 dark:text-stone-250 font-sans font-semibold">{filteredFeatured[carouselIndex].genre}</strong>
                         </div>
-                        <div className="min-w-0 pr-2">
-                          <span className="px-2 py-0.5 text-[9px] font-mono font-bold rounded bg-[#646cff]/10 text-indigo-700 dark:text-[#767fff] uppercase border border-[#646cff]/15">
-                            {getLanguageLabel(book.language)}
-                          </span>
-                          <h4 className="font-extrabold text-stone-900 dark:text-white text-base leading-snug font-sans group-hover:text-[#646cff] transition-all tracking-tight mt-1">
-                            {book.title}
-                          </h4>
-                          <p className="text-xs text-stone-500 dark:text-stone-400 font-medium">
-                            {book.author}
-                          </p>
+                        <div className="hidden sm:block">
+                          Format : <strong className="text-stone-700 dark:text-stone-250 font-sans font-semibold">Gutenberg TXT optimisé</strong>
                         </div>
                       </div>
 
-                      <p className="text-xs text-stone-400 dark:text-stone-400 leading-relaxed font-sans line-clamp-2">
-                        {book.description}
+                      {/* Description / Review snippet */}
+                      <p className="text-xs sm:text-[13px] text-stone-500 dark:text-stone-400 leading-relaxed italic border-l-2 border-[#646cff] pl-3 py-0.5">
+                        "{filteredFeatured[carouselIndex].description}"
                       </p>
+                    </div>
 
-                      <div className="flex items-center justify-between pt-4 border-t border-stone-100 dark:border-stone-900/50">
-                        <span className="text-[10px] text-stone-400 font-mono">Genre : <strong className="text-stone-600 dark:text-stone-300 font-sans font-medium">{book.genre}</strong></span>
-
-                        {hasRecent ? (
-                          <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
-                            <CheckCircle className="w-4 h-4" /> Importé
-                          </span>
-                        ) : downloadingId === book.id ? (
-                          <span className="text-[10px] font-bold text-[#646cff] flex items-center gap-1.5 animate-pulse">
-                            <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-                            {downloadProgress}
-                          </span>
-                        ) : successId === book.id ? (
-                          <span className="text-xs font-black text-[#646cff] animate-bounce">
-                            Prêt ! 🚀
+                    {/* Lower Controls & Slider arrows */}
+                    <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3.5 pt-4 border-t border-stone-100 dark:border-stone-900/60 w-full">
+                      <div className="flex-grow">
+                        {recentBooks.some(b => b.id === `gutenberg_${filteredFeatured[carouselIndex].id}`) ? (
+                          <div className="flex items-center gap-2">
+                            <span className="inline-flex items-center gap-1 px-3 py-2.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-xl font-bold text-xs border border-emerald-500/15">
+                              <CheckCircle className="w-4 h-4" />
+                              <span>Déjà téléchargé !</span>
+                            </span>
+                            <button
+                              type="button"
+                              onClick={() => {
+                                const saved = recentBooks.find(b => b.id === `gutenberg_${filteredFeatured[carouselIndex].id}`);
+                                if (saved) {
+                                  onSelectSample(saved);
+                                  onNavigateToTab?.('lire');
+                                }
+                              }}
+                              className="px-4 py-2 bg-[#646cff] hover:bg-[#525aff] text-white text-xs font-black rounded-xl transition-all cursor-pointer shadow flex items-center gap-1"
+                            >
+                              <span>Laancer la liseuse</span>
+                              <span>&rarr;</span>
+                            </button>
+                          </div>
+                        ) : downloadingId === filteredFeatured[carouselIndex].id ? (
+                          <div className="px-3.5 py-2.5 bg-[#646cff]/5 border border-[#646cff]/15 text-[#646cff] rounded-xl flex items-center gap-2 text-xs font-black">
+                            <RefreshCw className="w-3.5 h-3.5 animate-spin flex-shrink-0" />
+                            <span>{downloadProgress}</span>
+                          </div>
+                        ) : successId === filteredFeatured[carouselIndex].id ? (
+                          <span className="inline-flex items-center gap-1.5 px-4 py-2.5 bg-[#646cff]/10 text-[#646cff] rounded-xl font-black text-xs">
+                            Prêt ! Initialisation liseuse...
                           </span>
                         ) : (
                           <button
                             type="button"
-                            onClick={() => handleImportGutenberg(book.id, book.title, book.author, book.language)}
-                            className="bg-[#646cff] hover:bg-[#525aff] text-white text-xs font-black py-2 px-4 rounded-full flex items-center gap-1.5 cursor-pointer shadow transition-all hover:scale-[1.02]"
+                            onClick={() => handleImportGutenberg(filteredFeatured[carouselIndex].id, filteredFeatured[carouselIndex].title, filteredFeatured[carouselIndex].author, filteredFeatured[carouselIndex].language)}
+                            className="px-5 py-2.5 bg-gradient-to-r from-[#646cff] to-[#7b83f8] hover:from-[#525aff] hover:to-[#646cff] text-white text-xs font-black rounded-xl transition-all cursor-pointer shadow-md hover:scale-[1.01] active:scale-[0.99] flex items-center justify-center gap-1.5"
                           >
                             <Download className="w-3.5 h-3.5" />
-                            <span>Lire & Écouter</span>
+                            <span>Télécharger & Écouter ce livre</span>
                           </button>
                         )}
                       </div>
+
+                      {/* Carousel Arrow selectors & Dot lists */}
+                      <div className="flex items-center justify-center gap-1.5 select-none self-center sm:self-auto">
+                        <button
+                          type="button"
+                          onClick={handlePrevFeatured}
+                          className="p-1.5 border border-stone-200 dark:border-stone-900 rounded-lg hover:bg-stone-50 dark:hover:bg-stone-900 text-stone-500 dark:text-stone-300 cursor-pointer"
+                          title="Précédent"
+                        >
+                          <ChevronLeft className="w-3.5 h-3.5" />
+                        </button>
+
+                        <div className="flex items-center space-x-1 mt-0.5">
+                          {filteredFeatured.map((_, idx) => (
+                            <button
+                              key={idx}
+                              type="button"
+                              onClick={() => setCarouselIndex(idx)}
+                              className={`h-1.5 rounded-full transition-all cursor-pointer ${
+                                idx === carouselIndex 
+                                  ? 'w-3.5 bg-[#646cff]' 
+                                  : 'w-1.5 bg-stone-300 dark:bg-stone-700 hover:bg-stone-400'
+                              }`}
+                            />
+                          ))}
+                        </div>
+
+                        <button
+                          type="button"
+                          onClick={handleNextFeatured}
+                          className="p-1.5 border border-stone-200 dark:border-stone-900 rounded-lg hover:bg-stone-50 dark:hover:bg-stone-900 text-stone-500 dark:text-stone-300 cursor-pointer"
+                          title="Suivant"
+                        >
+                          <ChevronRight className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
                     </div>
-                  );
-                })}
+                  </div>
+                </div>
+              )}
+
+              {/* Complete catalog section */}
+              <div className="space-y-4">
+                <div className="flex items-center justify-between pb-1">
+                  <h4 className="text-sm font-extrabold text-stone-900 dark:text-white flex items-center gap-1.5">
+                    <Sparkles className="w-3.5 h-3.5 text-amber-500 fill-amber-500" />
+                    <span>Toute la Sélection Littéraire ({filteredFeatured.length})</span>
+                  </h4>
+                  <p className="text-[10px] text-stone-400 font-mono font-bold hidden sm:block">SÉLECTION INTERNATIONALE COGNITIVE</p>
+                </div>
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  {filteredFeatured.map((book) => {
+                    const hasRecent = recentBooks.some(b => b.id === `gutenberg_${book.id}`);
+                    
+                    return (
+                      <div
+                        key={book.id}
+                        className="flex flex-col p-4 bg-white dark:bg-[#111010] border border-stone-200 dark:border-stone-900 rounded-[20px] shadow-sm relative group hover:border-[#646cff]/40 transition-all text-left space-y-3.5"
+                      >
+                        <div className="flex items-start gap-4">
+                          <div className={`w-11 h-11 rounded-xl bg-gradient-to-br ${book.bgClasses || 'from-stone-100 to-stone-200'} flex shadow-inner items-center justify-center text-lg border ${book.borderColor || 'border-stone-200'} flex-shrink-0`}>
+                            {book.cover}
+                          </div>
+                          <div className="min-w-0 pr-2">
+                            <span className="px-1.5 py-0.5 text-[8px] font-mono font-bold rounded bg-stone-100 dark:bg-stone-900 text-stone-500 dark:text-stone-400 uppercase">
+                              {getLanguageLabel(book.language)}
+                            </span>
+                            <h4 className="font-extrabold text-stone-900 dark:text-white text-[13px] leading-snug font-sans group-hover:text-[#646cff] transition-all tracking-tight mt-0.5 truncate">
+                              {book.title}
+                            </h4>
+                            <p className="text-[11px] text-stone-450 dark:text-stone-400 font-medium">
+                              {book.author}
+                            </p>
+                          </div>
+                        </div>
+
+                        <p className="text-xs text-stone-500 dark:text-stone-450 leading-relaxed font-sans line-clamp-2">
+                          {book.description}
+                        </p>
+
+                        <div className="flex items-center justify-between pt-3 border-t border-stone-100 dark:border-stone-900/40">
+                          <span className="text-[10px] text-stone-400 font-mono">Genre : <strong className="text-stone-600 dark:text-stone-300 font-sans font-medium">{book.genre}</strong></span>
+
+                          {hasRecent ? (
+                            <span className="inline-flex items-center gap-1 text-[11px] font-bold text-emerald-600 dark:text-emerald-400">
+                              <CheckCircle className="w-3.5 h-3.5" /> Importé
+                            </span>
+                          ) : downloadingId === book.id ? (
+                            <span className="text-[10px] font-bold text-[#646cff] flex items-center gap-1.5 animate-pulse">
+                              <RefreshCw className="w-3 h-3 animate-spin" />
+                              {downloadProgress}
+                            </span>
+                          ) : successId === book.id ? (
+                            <span className="text-[11px] font-bold text-[#646cff]">
+                              Prêt ! 🚀
+                            </span>
+                          ) : (
+                            <button
+                              type="button"
+                              onClick={() => handleImportGutenberg(book.id, book.title, book.author, book.language)}
+                              className="bg-stone-100 hover:bg-[#646cff] hover:text-white text-stone-700 dark:bg-stone-900 dark:text-stone-300 dark:hover:bg-[#646cff] dark:hover:text-white text-[10px] font-extrabold py-1.5 px-3 rounded-xl flex items-center gap-1 transition-all cursor-pointer"
+                            >
+                              <Download className="w-3 h-3" />
+                              <span>Écouter</span>
+                            </button>
+                          )}
+                        </div>
+                      </div>
+                    );
+                  })}
+                </div>
               </div>
             </motion.div>
           )}

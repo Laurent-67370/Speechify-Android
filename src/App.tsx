@@ -3,6 +3,7 @@ import { BookOpen, HelpCircle, X, ChevronLeft, VolumeX, Library, Home, Headphone
 import { motion, AnimatePresence } from 'motion/react';
 import { DocumentBook, UserSettings, Bookmark, Chapter } from './types';
 import { splitIntoSentences, preprocessTextForSpeech } from './utils/textUtils';
+import { getAllBooksFromDB, saveAllBooksToDB } from './utils/indexedDB';
 import { SAMPLES } from './data/samples';
 import DocumentUpload from './components/DocumentUpload';
 import Sidebar from './components/Sidebar';
@@ -83,14 +84,9 @@ export default function App() {
     };
   }, [isPlaying, currentChapterIdx, currentParagraphIdx, currentSentenceIdx, settings, activeBook]);
 
-  // 1. Initial configuration load from LocalStorage
+  // 1. Initial configuration load from LocalStorage & IndexedDB
   useEffect(() => {
     try {
-      const savedBooks = localStorage.getItem('liseuse_recent_books_v1');
-      if (savedBooks) {
-        setRecentBooks(JSON.parse(savedBooks));
-      }
-
       const savedSettings = localStorage.getItem('liseuse_settings_v1');
       if (savedSettings) {
         setSettings({ ...DEFAULT_SETTINGS, ...JSON.parse(savedSettings) });
@@ -103,6 +99,32 @@ export default function App() {
     } catch (e) {
       console.error('Failed to parse localStorage caches.', e);
     }
+
+    // Load books from IndexedDB with automated legacy localStorage migration fallback
+    const loadBooksData = async () => {
+      try {
+        const dbBooks = await getAllBooksFromDB();
+        if (dbBooks && dbBooks.length > 0) {
+          setRecentBooks(dbBooks);
+        } else {
+          const legacySaved = localStorage.getItem('liseuse_recent_books_v1');
+          if (legacySaved) {
+            const parsedLegacy = JSON.parse(legacySaved);
+            if (parsedLegacy && parsedLegacy.length > 0) {
+              setRecentBooks(parsedLegacy);
+              // Background migration
+              await saveAllBooksToDB(parsedLegacy);
+              // Prune legacy to clear up localStorage space immediately
+              localStorage.removeItem('liseuse_recent_books_v1');
+            }
+          }
+        }
+      } catch (err) {
+        console.error('[App] Failed to load/migrate books database.', err);
+      }
+    };
+
+    loadBooksData();
 
     // Set sidebar open on widescreen display (PC) by default, close on smaller tablets/smartphones
     if (typeof window !== 'undefined' && window.innerWidth >= 1024) {
@@ -163,12 +185,13 @@ export default function App() {
 
   // 2. Persist recent books and bookmarks whenever updated
   const saveRecentBooks = (books: DocumentBook[]) => {
+    // A. Update in-memory state instantly for snappy navigation
     setRecentBooks(books);
-    try {
-      localStorage.setItem('liseuse_recent_books_v1', JSON.stringify(books));
-    } catch (e) {
-      console.error(e);
-    }
+
+    // B. Save asynchronously to IndexedDB (unlimited quota, background speed!)
+    saveAllBooksToDB(books).catch((err) => {
+      console.error('[Storage] Save to IndexedDB failed:', err);
+    });
   };
 
   const saveBookmarks = (newBookmarks: Bookmark[]) => {
