@@ -13,9 +13,10 @@ import {
   RefreshCw, 
   FileText, 
   HelpCircle, 
-  AlertCircle 
+  AlertCircle,
+  Highlighter
 } from 'lucide-react';
-import { Chapter, Bookmark as BookmarkType, DocumentBook } from '../types';
+import { Chapter, Bookmark as BookmarkType, DocumentBook, Annotation } from '../types';
 import { searchInParagraph } from '../utils/textUtils';
 import { resolveSpeechConfig } from '../utils/customVoices';
 
@@ -29,9 +30,11 @@ interface SidebarProps {
   onDeleteBookmark: (id: string) => void;
   onJumpToLocation: (chapterIdx: number, paragraphIdx: number) => void;
   onUpdateBook: (updated: DocumentBook) => void;
+  annotations?: Annotation[];
+  onDeleteAnnotation?: (id: string) => void;
 }
 
-type TabType = 'toc' | 'search' | 'bookmarks' | 'summary';
+type TabType = 'toc' | 'search' | 'bookmarks' | 'annotations' | 'summary';
 
 export default function Sidebar({
   documentBook,
@@ -43,6 +46,8 @@ export default function Sidebar({
   onDeleteBookmark,
   onJumpToLocation,
   onUpdateBook,
+  annotations = [],
+  onDeleteAnnotation,
 }: SidebarProps) {
   const [activeTab, setActiveTab] = useState<TabType>('toc');
   const [searchQuery, setSearchQuery] = useState('');
@@ -360,12 +365,13 @@ export default function Sidebar({
   return (
     <div className="h-full flex flex-col bg-slate-50 border-r border-[#E5E3DF] dark:bg-stone-950 dark:border-stone-900">
       {/* Tab Select Header Panel */}
-      <div className="grid grid-cols-4 border-b border-stone-200 dark:border-stone-900 select-none bg-[#F5F2ED] dark:bg-stone-950/60 sticky top-0 z-10">
+      <div className="grid grid-cols-5 border-b border-stone-200 dark:border-stone-900 select-none bg-[#F5F2ED] dark:bg-stone-950/60 sticky top-0 z-10">
         {(
           [
             { id: 'toc', label: 'Sommaire', icon: BookOpen },
             { id: 'search', label: 'Recherche', icon: Search },
             { id: 'bookmarks', label: 'Signets', icon: Bookmark },
+            { id: 'annotations', label: 'Annot.', icon: Highlighter },
             { id: 'summary', label: 'Résumé IA', icon: Sparkles },
           ] as { id: TabType; label: string; icon: any }[]
         ).map((tab) => (
@@ -553,6 +559,84 @@ export default function Sidebar({
               <div className="text-center py-8 text-stone-400">
                 <Bookmark className="w-8 h-8 mx-auto stroke-1 text-stone-300 dark:text-stone-750" />
                 <p className="text-[10px] mt-2 font-medium px-4">Aucun signet enregistré. Ajoutez des notes pour suivre vos réflexions !</p>
+              </div>
+            )}
+          </div>
+        )}
+
+        {/* ANNOTATIONS TAB */}
+        {activeTab === 'annotations' && (
+          <div className="space-y-4">
+            <div className="flex items-center justify-between mb-2">
+              <h3 className="text-[10px] font-bold uppercase tracking-wider text-stone-400 dark:text-stone-500 px-1">
+                Mes annotations ({annotations.length})
+              </h3>
+              {annotations.length > 0 && (
+                <span className="text-[9px] text-stone-450 dark:text-stone-600 font-mono">
+                  Surlignées dans le texte
+                </span>
+              )}
+            </div>
+
+            {annotations.length > 0 ? (
+              <div className="space-y-2.5">
+                {[...annotations]
+                  .sort((a, b) => a.chapterIndex - b.chapterIndex || a.paragraphIndex - b.paragraphIndex)
+                  .map((ann) => {
+                    const colorClasses: Record<string, { border: string; dot: string }> = {
+                      yellow: { border: 'border-yellow-400', dot: 'bg-yellow-400' },
+                      green:  { border: 'border-green-400',  dot: 'bg-green-400' },
+                      blue:   { border: 'border-blue-400',   dot: 'bg-blue-400' },
+                      pink:   { border: 'border-pink-400',   dot: 'bg-pink-400' },
+                    };
+                    const cc = colorClasses[ann.color] || colorClasses.yellow;
+                    const chapterTitle = documentBook.chapters[ann.chapterIndex]?.title || `Section ${ann.chapterIndex + 1}`;
+
+                    return (
+                      <div
+                        key={ann.id}
+                        className="group flex flex-col p-3 bg-white border border-stone-200 rounded-xl hover:shadow-sm dark:bg-[#111] dark:border-stone-900 transition-all text-xs"
+                      >
+                        <div className="flex justify-between items-center mb-1.5 font-sans">
+                          <span className="flex items-center gap-1.5 text-[10px] font-semibold text-stone-400 font-mono min-w-0">
+                            <span className={`w-2.5 h-2.5 rounded-full flex-shrink-0 ${cc.dot}`} />
+                            <span className="truncate max-w-[130px]">{chapterTitle}</span>
+                            <span className="flex-shrink-0">· P.{ann.paragraphIndex + 1}</span>
+                          </span>
+                          {onDeleteAnnotation && (
+                            <button
+                              onClick={() => onDeleteAnnotation(ann.id)}
+                              className="text-stone-400 hover:text-red-500 p-1 rounded hover:bg-red-50/50 dark:hover:bg-red-950/20 transition-colors cursor-pointer flex-shrink-0"
+                              title="Supprimer cette annotation"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          )}
+                        </div>
+
+                        <p
+                          onClick={() => onJumpToLocation(ann.chapterIndex, ann.paragraphIndex)}
+                          className={`text-stone-700 cursor-pointer hover:text-[#646cff] font-serif leading-relaxed line-clamp-3 italic border-l-2 ${cc.border} pl-2 dark:text-stone-300 dark:hover:text-[#767fff]`}
+                        >
+                          "{ann.selectedText}"
+                        </p>
+
+                        {ann.note && (
+                          <div className="mt-2 p-2 bg-amber-500/5 rounded-lg border border-amber-500/15 text-stone-700 dark:bg-stone-950/50 dark:border-stone-900 dark:text-stone-300">
+                            <span className="font-extrabold text-[10px] text-amber-600 dark:text-amber-400 block mb-0.5 uppercase tracking-wide">Note :</span>
+                            {ann.note}
+                          </div>
+                        )}
+                      </div>
+                    );
+                  })}
+              </div>
+            ) : (
+              <div className="text-center py-8 text-stone-400">
+                <Highlighter className="w-8 h-8 mx-auto stroke-1 text-stone-300 dark:text-stone-750" />
+                <p className="text-[10px] mt-2 font-medium px-4 leading-relaxed">
+                  Aucune annotation. Sélectionnez un passage pendant la lecture puis touchez <strong>🖊 Annoter</strong> pour le surligner avec une note.
+                </p>
               </div>
             )}
           </div>
@@ -774,3 +858,4 @@ export default function Sidebar({
     </div>
   );
 }
+
