@@ -501,39 +501,41 @@ export default function InteractiveHelpGuide({ onClose, documentLanguage = 'fr' 
                 </div>
               )}
 
-              {/* Step 5: Gutenberg Library Exploration */}
+              {/* Step 5: Gutenberg Library Exploration + Import */}
               {currentStep === 'gutenberg' && (
                 <div className="space-y-4">
                   <div className="flex items-center space-x-2 text-[#646cff]">
                     <BookOpen className={`w-5 h-5 ${styleSet.accent}`} />
                     <h4 className="font-extrabold text-sm uppercase tracking-wide text-stone-900 dark:text-white font-sans">
-                      Étape 5 : 70 000 classiques gratuits
+                      Étape 5 : 70 000 classiques & vos documents
                     </h4>
                   </div>
 
                   <p className="text-xs text-stone-600 dark:text-stone-300 leading-relaxed">
-                    Découvrez des œuvres inestimables (Jules Verne, Victor Hugo, Jane Austen) sans débourser un centime. 
-                    Visitez l'onglet <strong className="text-stone-900 dark:text-white font-extrabold">Librairie</strong> pour parcourir le prestigieux **Projet Gutenberg** et télécharger n'importe quelle œuvre directement dans votre bibliothèque locale.
+                    L'onglet <strong className="text-stone-900 dark:text-white font-extrabold">Librairie</strong> donne accès au catalogue complet du Projet Gutenberg avec <strong className="text-stone-900 dark:text-white font-bold">4 modes d'exploration</strong> :
                   </p>
 
-                  <div className="border border-stone-150 dark:border-stone-900 bg-stone-50 dark:bg-stone-900/40 rounded-2xl p-4 flex items-center justify-between gap-4 font-sans max-w-sm mx-auto">
-                    <div className="flex items-center space-x-3 text-left">
-                      <div className="p-3 bg-white dark:bg-stone-950 border border-stone-150 dark:border-stone-850 rounded-xl">
-                        📖
+                  <div className="grid grid-cols-2 gap-2 font-sans">
+                    {[
+                      { icon: '🔥', label: 'Top téléchargements', desc: 'Les classiques les plus populaires, filtrés par langue.' },
+                      { icon: '🏷️', label: '15 genres', desc: 'Aventure, Policier, SF, Poésie, Contes, Histoire...' },
+                      { icon: '🎲', label: 'Découverte aléatoire', desc: '32 livres piochés au hasard — repiochez à volonté !' },
+                      { icon: '🔍', label: 'Recherche + pagination', desc: 'Par titre/auteur, avec « Charger plus » sans limite.' },
+                    ].map((item, i) => (
+                      <div key={i} className="p-2.5 rounded-xl border border-stone-150 dark:border-stone-900 bg-stone-50 dark:bg-stone-900/40 space-y-0.5">
+                        <p className="text-[11px] font-black text-stone-900 dark:text-white">{item.icon} {item.label}</p>
+                        <p className="text-[10px] text-stone-500 dark:text-stone-400 leading-snug">{item.desc}</p>
                       </div>
-                      <div>
-                        <h5 className="font-extrabold text-[#646cff] dark:text-[#767fff] text-xs">Jules Verne</h5>
-                        <p className="text-[10px] text-stone-450 dark:text-stone-400 truncate max-w-[150px]">L'Île mystérieuse</p>
-                      </div>
-                    </div>
+                    ))}
+                  </div>
 
-                    <button
-                      type="button"
-                      className="px-3 py-1.5 bg-[#646cff]/10 hover:bg-[#646cff]/20 text-[#646cff] dark:text-[#767fff] rounded-lg text-[10px] font-extrabold flex items-center gap-1 transition-all cursor-pointer"
-                    >
-                      <Download className="w-3 h-3" />
-                      Importer en 1-Clic
-                    </button>
+                  <p className="text-[11px] text-stone-500 dark:text-stone-400 leading-relaxed">
+                    Chaque résultat affiche sa <strong className="text-stone-700 dark:text-stone-200">vraie couverture</strong> 📖 et sa popularité. Votre recherche est conservée même si vous changez d'onglet.
+                  </p>
+
+                  <div className="bg-[#646cff]/5 border border-[#646cff]/20 rounded-xl p-3 text-[11px] text-stone-600 dark:text-stone-300 font-sans space-y-1">
+                    <p className="font-black text-[#646cff] dark:text-[#767fff]">📥 Et vos propres documents ?</p>
+                    <p>L'onglet <strong>Importer</strong> accepte <strong>6 formats</strong> (PDF, ePUB, TXT, Markdown, Word, HTML), les pages web par URL, et même le <strong>texte collé directement</strong> — copiez un email ou un cours, il devient un livre audio !</p>
                   </div>
                 </div>
               )}
@@ -878,5 +880,6 @@ export default function InteractiveHelpGuide({ onClose, documentLanguage = 'fr' 
     </div>
   );
 }
+
 
 
