@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef, lazy, Suspense } from 'react';
-import { BookOpen, HelpCircle, X, ChevronLeft, VolumeX, Library, Home, Headphones, Upload, Play, Pause, Globe } from 'lucide-react';
+import { BookOpen, HelpCircle, X, ChevronLeft, VolumeX, Library, Home, Headphones, Upload, Play, Pause, Globe , Bot } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { DocumentBook, UserSettings, Bookmark, Chapter, Annotation, Flashcard } from './types';
 import { splitIntoSentences, preprocessTextForSpeech } from './utils/textUtils';
@@ -1355,6 +1355,22 @@ export default function App() {
         </motion.div>
       )}
 
+      {/* Bouton flottant Charly Coach IA */}
+      {currentTab === 'lire' && activeBook && !showCharlyChatModal && (
+        <motion.button
+          initial={{ scale: 0, opacity: 0 }}
+          animate={{ scale: 1, opacity: 1 }}
+          transition={{ delay: 0.5, type: 'spring', damping: 15 }}
+          onClick={() => setShowCharlyChatModal(true)}
+          className="fixed bottom-[150px] right-4 z-40 w-12 h-12 bg-gradient-to-br from-indigo-600 to-purple-700 hover:from-indigo-500 hover:to-purple-600 rounded-full shadow-[0_4px_20px_rgba(100,108,255,0.4)] flex items-center justify-center cursor-pointer transition-all hover:scale-110 active:scale-95 group"
+          title="Discuter avec Charly, votre coach de lecture IA"
+          id="charly-coach-fab"
+        >
+          <Bot className="w-6 h-6 text-white" />
+          <span className="absolute -top-1 -right-1 w-3 h-3 bg-emerald-400 rounded-full border-2 border-[#0a0a09] animate-pulse" />
+        </motion.button>
+      )}
+
       {/* 3. Global Speech Ribbon Controls (floating only when inside 'lire' active tab and activeBook is present) */}
       {currentTab === 'lire' && activeBook && (
         <div className="fixed bottom-[56px] left-0 right-0 z-30 bg-[#1c1a19] shadow-lg">
@@ -1557,5 +1573,6 @@ export default function App() {
     </ErrorBoundary>
   );
 }
+
 
 
