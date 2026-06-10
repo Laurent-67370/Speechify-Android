@@ -41,6 +41,11 @@ db.exec(`
     data        TEXT NOT NULL,
     updated_at  INTEGER NOT NULL DEFAULT (unixepoch())
   );
+  CREATE TABLE IF NOT EXISTS definitions_cache (
+    cache_key   TEXT PRIMARY KEY,
+    data        TEXT NOT NULL,
+    created_at  INTEGER NOT NULL DEFAULT (unixepoch())
+  );
 `);
 
 console.log('[SQLite] Base de données initialisée :', path.join(DATA_DIR, 'speechify.db'));
@@ -71,6 +76,11 @@ const stmtUpsertFlashcard  = db.prepare(`
   ON CONFLICT(id) DO UPDATE SET data = excluded.data, updated_at = unixepoch()
 `);
 const stmtDeleteFlashcard  = db.prepare('DELETE FROM flashcards WHERE id = ?');
+const stmtGetDefinition    = db.prepare('SELECT data FROM definitions_cache WHERE cache_key = ?');
+const stmtUpsertDefinition = db.prepare(`
+  INSERT INTO definitions_cache (cache_key, data, created_at) VALUES (?, ?, unixepoch())
+  ON CONFLICT(cache_key) DO UPDATE SET data = excluded.data, created_at = unixepoch()
+`);
 
 // ── Rate Limiter (en mémoire, sans dépendance) ──────────────────────────────
 const rateHits = new Map<string, { count: number; resetAt: number }>();
@@ -496,6 +506,18 @@ async function startServer() {
     if (!word || typeof word !== "string" || !word.trim()) {
       return res.status(400).json({ error: "Le mot recherché est requis." });
     }
+    const cacheKey = `${(lang || 'fr')}:${word.trim().toLowerCase()}`;
+    // 1. Cache SQLite : mot déjà défini → réponse instantanée, zéro quota Gemini
+    try {
+      const cached = stmtGetDefinition.get(cacheKey) as { data: string } | undefined;
+      if (cached) {
+        console.log(`[API DEFINE] Cache hit: "${word}"`);
+        return res.json({ ...JSON.parse(cached.data), cached: true });
+      }
+    } catch (cacheErr) {
+      console.warn('[API DEFINE] Cache read error', cacheErr);
+    }
+
     try {
       console.log(`[API DEFINE] Looking up word: "${word}"`);
       const ai = getGeminiClient();
@@ -508,6 +530,12 @@ async function startServer() {
       });
       const responseText = response.text || "{}";
       const wordDefinition = JSON.parse(responseText.trim());
+      // 2. Stocker dans le cache pour les prochaines requêtes
+      try {
+        stmtUpsertDefinition.run(cacheKey, JSON.stringify(wordDefinition));
+      } catch (cacheErr) {
+        console.warn('[API DEFINE] Cache write error', cacheErr);
+      }
       return res.json(wordDefinition);
     } catch (error: any) {
       console.error(`[API DEFINE ERROR]`, error);
@@ -537,6 +565,7 @@ async function startServer() {
 }
 
 startServer();
+
 
 
 
