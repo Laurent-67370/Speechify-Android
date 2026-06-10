@@ -24,7 +24,7 @@ import {
   Check
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
-import { Chapter, UserSettings, DocumentBook, Bookmark as BookmarkType } from '../types';
+import { Chapter, UserSettings, DocumentBook, Bookmark as BookmarkType, Annotation, Flashcard } from '../types';
 import { splitIntoSentences } from '../utils/textUtils';
 import { resolveSpeechConfig } from '../utils/customVoices';
 import DictionaryModal from './DictionaryModal';
@@ -49,6 +49,11 @@ interface TextViewerProps {
   onUpdateBook?: (updated: DocumentBook) => void;
   bookmarks?: BookmarkType[];
   onJumpToLocation?: (chapterIdx: number, paragraphIdx: number) => void;
+
+  // Annotations & Flashcards
+  annotations?: Annotation[];
+  onAnnotate?: (selectedText: string, paragraphIdx: number) => void;
+  onSaveFlashcard?: (card: Flashcard) => void;
 }
 
 export default function TextViewer({
@@ -68,6 +73,9 @@ export default function TextViewer({
   onUpdateBook,
   bookmarks = [],
   onJumpToLocation,
+  annotations = [],
+  onAnnotate,
+  onSaveFlashcard,
 }: TextViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const activeSyllableRef = useRef<HTMLSpanElement>(null);
@@ -402,6 +410,24 @@ export default function TextViewer({
   const totalChapters = documentBook?.chapters.length || 0;
   const activeChapterSummary = documentBook?.chapters[currentChapterIndexVal]?.summary || null;
   const currentBookBookmarks = bookmarks.filter(b => b.chapterIndex === currentChapterIndexVal);
+
+  // Annotations du chapitre actif — pour surlignage visuel
+  const ANNOTATION_BG: Record<string, string> = {
+    yellow: 'rgba(250, 204, 21, 0.25)',
+    green:  'rgba(74, 222, 128, 0.22)',
+    blue:   'rgba(96, 165, 250, 0.22)',
+    pink:   'rgba(244, 114, 182, 0.25)',
+  };
+  const chapterAnnotations = annotations.filter(a => a.chapterIndex === currentChapterIndexVal);
+  const findSentenceAnnotation = (pIdx: number, sentence: string): Annotation | undefined => {
+    const s = sentence.trim();
+    if (!s) return undefined;
+    return chapterAnnotations.find(a =>
+      a.paragraphIndex === pIdx &&
+      a.selectedText &&
+      (s.includes(a.selectedText.trim()) || a.selectedText.trim().includes(s))
+    );
+  };
 
   return (
     <div
@@ -1098,6 +1124,7 @@ export default function TextViewer({
                   {sentences.map((sentence, sIdx) => {
                     const isSentenceCurrentlyRead = isParagraphCurrentlyRead && sIdx === currentSentenceIndex;
                     const isActive = isSentenceCurrentlyRead && isPlaying;
+                    const sentenceAnnotation = findSentenceAnnotation(pIdx, sentence);
 
                     return (
                       <span
@@ -1116,11 +1143,22 @@ export default function TextViewer({
                             : 'hover:bg-amber-500/10 dark:hover:bg-amber-500/20'
                         }`}
                         style={{
-                          backgroundColor: isActive ? settings.highlightColor : undefined,
+                          backgroundColor: isActive
+                            ? settings.highlightColor
+                            : sentenceAnnotation
+                            ? ANNOTATION_BG[sentenceAnnotation.color] || ANNOTATION_BG.yellow
+                            : undefined,
+                          boxShadow: sentenceAnnotation && !isActive
+                            ? 'inset 0 -2px 0 rgba(250, 204, 21, 0.5)'
+                            : undefined,
                           borderRadius: '0.25rem',
                           padding: '0.05rem 0.15rem'
                         }}
-                        title="Cliquer pour écouter cette phrase • Double-cliquer pour définir un mot"
+                        title={
+                          sentenceAnnotation?.note
+                            ? `🖊 Annotation : ${sentenceAnnotation.note}`
+                            : "Cliquer pour écouter cette phrase • Double-cliquer pour définir un mot"
+                        }
                       >
                         {sentence}{' '}
                       </span>
@@ -1290,6 +1328,8 @@ export default function TextViewer({
           sentenceContext={lookupContext}
           language={language}
           onClose={() => setLookupWord(null)}
+          onSaveFlashcard={onSaveFlashcard}
+          sourceBookTitle={documentBook?.title}
         />
       )}
 
@@ -1301,7 +1341,13 @@ export default function TextViewer({
         onJumpToSelection={(pIdx, sIdx) => {
           onLocationSelect(pIdx, sIdx);
         }}
+        onAnnotate={onAnnotate}
+        onDefineWord={(word, sentence) => {
+          setLookupWord(word);
+          setLookupContext(sentence);
+        }}
       />
     </div>
   );
 }
+
