@@ -259,6 +259,21 @@ export default function App() {
     } catch (e) { console.error('[Annotations] Save error', e); }
   };
 
+  const handleDeleteAnnotation = async (id: string) => {
+    setAnnotations(prev => prev.filter(a => a.id !== id));
+    try { await fetch(`/api/annotations/${id}`, { method: 'DELETE' }); }
+    catch (e) { console.error('[Annotations] Delete error', e); }
+  };
+
+  // Charger les annotations du livre actif depuis le serveur
+  useEffect(() => {
+    if (!activeBook?.id) { setAnnotations([]); return; }
+    fetch(`/api/annotations/${activeBook.id}`)
+      .then(r => r.json())
+      .then(data => { if (data.annotations) setAnnotations(data.annotations); })
+      .catch(() => setAnnotations([]));
+  }, [activeBook?.id]);
+
   // Handlers flashcards
   const handleSaveFlashcard = async (card: Flashcard) => {
     const updated = [...flashcards.filter(c => c.id !== card.id), card];
@@ -1230,6 +1245,8 @@ export default function App() {
                                 }
                               }}
                               onUpdateBook={handleUpdateBook}
+                              annotations={annotations}
+                              onDeleteAnnotation={handleDeleteAnnotation}
                             />
                           </div>
                         </motion.div>
@@ -1257,6 +1274,9 @@ export default function App() {
                         onUpdateBook={handleUpdateBook}
                         bookmarks={activeBookBookmarks}
                         onJumpToLocation={handleJumpToLocation}
+                        annotations={annotations}
+                        onAnnotate={handleAnnotate}
+                        onSaveFlashcard={handleSaveFlashcard}
                       />
                     ) : (
                       <div className="flex flex-col items-center justify-center h-full text-stone-400 bg-stone-950">
@@ -1573,6 +1593,7 @@ export default function App() {
     </ErrorBoundary>
   );
 }
+
 
 
 
