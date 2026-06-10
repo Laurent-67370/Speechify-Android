@@ -64,13 +64,25 @@ Fonctionne au **tap** (mobile) et à la **souris** (desktop).
 - **Mini-Lecteur Flottant Global :** Naviguez librement pendant la lecture en arrière-plan.
 - **Défilement automatique :** Le texte suit la lecture en douceur.
 
-### 📚 8. Bibliothèque & Import Multi-Source
+### 📚 8. Librairie Gutenberg — Accès complet aux 70 000 livres
 
-- **Projet Gutenberg :** 70 000+ ouvrages classiques en 🇫🇷 🇬🇧 🇪🇸 🇩🇪 🇮🇹.
-- **Import de fichiers :** Glissez-déposez vos **ePUB, PDF, TXT et Markdown** (.md, .markdown) locaux.
+- **🔥 Top téléchargements :** les classiques les plus populaires du catalogue, filtrés par langue.
+- **🏷️ Navigation par genres :** 15 thèmes (Aventure, Policier, SF, Romance, Fantastique, Poésie, Philosophie, Histoire, Théâtre, Contes, Jeunesse, Biographies, Voyages, Humour, Musique).
+- **🎲 Découverte aléatoire :** pioche 32 livres au hasard dans tout le catalogue, bouton "Repiocher".
+- **📖 Vraies couvertures :** jaquettes officielles Gutenberg sur chaque résultat, avec couverture de secours en dégradé généré.
+- **📚 Pagination "Charger plus" :** compteur réel (ex. 4 521 livres) et chargement progressif sans limite.
+- **🧠 État persistant :** la recherche, le genre actif et la pagination survivent aux changements d'onglet (cache module-scope).
+- **Recherche** par titre/auteur en 🇫🇷 🇬🇧 🇪🇸 🇩🇪 🇮🇹 + sélection éditoriale de 22 chefs-d'œuvre.
+
+### 📥 8bis. Import Multi-Source (6 formats + collage direct)
+
+- **Fichiers locaux :** **PDF, ePUB, TXT, Markdown, Word (.docx)** et **HTML** — zone de drop redessinée avec cartes formats colorées et icône animée.
+- **✍️ Coller du texte :** copiez n'importe quel texte (email, cours, notes) → collé → structuré en livre audio instantanément. Compteur de caractères en temps réel.
 - **Import URL :** Collez une URL web pour lire un article en un instant.
-- **Encodage auto :** Détection UTF-8 / Latin-1 pour les classiques Gutenberg et les fichiers TXT (accents corrects).
-- **Chapitrage intelligent :** Les fichiers TXT et Markdown sont découpés automatiquement en chapitres.
+- **Word :** extraction via mammoth (import dynamique, zéro impact bundle).
+- **HTML :** extraction intelligente du texte (scripts/menus/footers retirés), titre de page conservé.
+- **Encodage auto :** Détection UTF-8 / Latin-1 (accents corrects).
+- **Chapitrage intelligent :** découpage automatique en chapitres.
 
 ### 🎙️ 9. Voix de Studio Premium
 
@@ -123,11 +135,12 @@ Fonctionne au **tap** (mobile) et à la **souris** (desktop).
 | **Voix Premium** | Google Cloud TTS REST API (Neural2 / WaveNet) |
 | **Stockage** | SQLite (`better-sqlite3`) — livres, marque-pages, annotations, flashcards |
 | **Cache local** | IndexedDB (fallback offline) |
-| **Parseurs** | PDF.js 3.4 (PDF) · JSZip (ePUB) · Custom (TXT / Markdown) |
+| **Parseurs** | PDF.js 3.4 (PDF) · JSZip (ePUB) · mammoth (Word) · DOMParser (HTML) · Custom (TXT / MD / texte collé) |
 | **Encodage** | Détection auto UTF-8 / Latin-1 + normalisation apostrophes typographiques |
 | **Serveur** | Node.js / Express — proxy CORS, Gutenberg, Gemini, SQLite |
 | **Sécurité** | CORS restrictif (whitelist) · Rate limiting (200/min API, 10/min Gemini) |
 | **Résilience** | Error Boundary React · Code splitting (`React.lazy`) |
+| **Performance** | manualChunks vendor · PDF.js en import dynamique · `useMemo` lecture · cache SQLite définitions · SW v3 CacheFirst assets |
 | **Déploiement** | PM2 + Nginx + Let's Encrypt (HTTPS) |
 
 ---
@@ -197,8 +210,8 @@ src/
 │   ├── CharlyChatModal.tsx      # Coach IA contextuel sur le livre en cours 🤖 ⚡ lazy
 │   ├── HomeDashboard.tsx        # Accueil (carousel, objectif, égaliseur)
 │   ├── Sidebar.tsx              # Sommaire + recherche + signets + annotations + résumés IA
-│   ├── GutenbergExplorer.tsx    # Recherche + import Gutenberg (70k livres) ⚡ lazy
-│   ├── DocumentUpload.tsx       # Import PDF/ePUB/TXT/MD/URL
+│   ├── GutenbergExplorer.tsx    # Catalogue complet : genres, top, aléatoire, couvertures, pagination ⚡ lazy
+│   ├── DocumentUpload.tsx       # Import 6 formats + URL + collage texte (PDF.js dynamique) 📥
 │   ├── InteractiveHelpGuide.tsx # Guide Charly (6 étapes + quiz) ⚡ lazy
 │   └── ErrorBoundary.tsx        # Capture erreurs React + fallback UI 🛡️
 ├── utils/
@@ -264,6 +277,14 @@ data/
 | v2.1 | Juin 2026 | **Flashcards depuis le lecteur** — sauvegarde d'un mot via le dictionnaire du TextViewer |
 | v2.1 | Juin 2026 | **Dictionnaire FR** — fallback Wiktionnaire (définitions françaises natives) 📖 |
 | v2.1 | Juin 2026 | **Charly réponses complètes** — maxOutputTokens 1500, fin de phrases garantie |
+| v2.2 | Juin 2026 | **Librairie v2** — genres (15), top téléchargements, découverte aléatoire, pagination 📚 |
+| v2.2 | Juin 2026 | **Couvertures réelles** — jaquettes Gutenberg + fallback dégradé + badges sujets |
+| v2.2 | Juin 2026 | **État librairie persistant** — recherche/genre/pagination conservés entre onglets |
+| v2.2 | Juin 2026 | **Import v2** — mode "Coller du texte", support Word (.docx) et HTML, dropzone redessinée ✍️ |
+| v2.2 | Juin 2026 | **Perf bundle** — manualChunks vendor + PDF.js dynamique (bundle principal allégé) ⚡ |
+| v2.2 | Juin 2026 | **Perf lecture** — `useMemo` découpage phrases (1 calcul/chapitre vs chaque render) |
+| v2.2 | Juin 2026 | **Cache définitions** — table SQLite, mots déjà définis servis instantanément 💾 |
+| v2.2 | Juin 2026 | **SW v3** — CacheFirst sur les assets hashés (chargements répétés instantanés) 🚀 |
 
 ---
 
@@ -286,4 +307,5 @@ https://speechify.lhusser.fr
 ## 🎯 Commencer !
 
 Cliquez sur **`?`** en haut à droite pour déclencher Charly et commencer votre premier voyage littéraire. Bonne écoute ! 🎧
+
 
