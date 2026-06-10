@@ -7,8 +7,8 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { DocumentBook, Bookmark } from '../types';
 import { SAMPLES } from '../data/samples';
-import { parseEpub } from '../lib/epubParser';
-import { parsePdf } from '../lib/pdfParser';
+// parseEpub et parsePdf sont importés dynamiquement dans processFile :
+// PDF.js (~300 KB) et JSZip ne chargent que lors d'un import réel.
 import { fetchWebpageHtml, parseWebpageHtml } from '../utils/webParser';
 import { parsePlainText, parseMarkdown } from '../lib/textParser';
 
@@ -84,8 +84,11 @@ export default function DocumentUpload({
 
       if (extension === 'epub') {
         setProgressMessage('Extraction de l\'archive ePUB...');
+        const { parseEpub } = await import('../lib/epubParser');
         importedBook = await parseEpub(file);
       } else if (extension === 'pdf') {
+        setProgressMessage('Chargement du moteur PDF...');
+        const { parsePdf } = await import('../lib/pdfParser');
         setProgressMessage('Chargement du PDF...');
         importedBook = await parsePdf(file, (curr, total) => {
           setProgressMessage(`Extraction du texte : Page ${curr} sur ${total}`);
@@ -1227,5 +1230,6 @@ export default function DocumentUpload({
     </div>
   );
 }
+
 
 
