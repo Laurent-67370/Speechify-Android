@@ -2,7 +2,7 @@ import { useState, useRef, DragEvent, ChangeEvent, useEffect, FormEvent } from '
 import { 
   Upload, BookOpen, AlertCircle, Loader2, Sparkles, FileText, 
   Bookmark as BookmarkIcon, Trash2, Globe, Link, Search, Filter, 
-  ArrowUpDown, CheckCircle2, Clock 
+  ArrowUpDown, CheckCircle2, Clock, Type, FileCode, FileType
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { DocumentBook, Bookmark } from '../types';
@@ -49,8 +49,10 @@ export default function DocumentUpload({
   const [errorStatus, setErrorStatus] = useState<string | null>(null);
   const [confirmDeleteId, setConfirmDeleteId] = useState<string | null>(null);
   const fileInputRef = useRef<HTMLInputElement>(null);
-  const [importMode, setImportMode] = useState<'file' | 'url'>('file');
+  const [importMode, setImportMode] = useState<'file' | 'url' | 'paste'>('file');
   const [webUrl, setWebUrl] = useState('');
+  const [pasteText, setPasteText] = useState('');
+  const [pasteTitle, setPasteTitle] = useState('');
   
   // Filter and Sorting states for recentBooks in Bibliothèque
   const [searchQuery, setSearchQuery] = useState('');
@@ -94,8 +96,33 @@ export default function DocumentUpload({
       } else if (extension === 'md' || extension === 'markdown') {
         setProgressMessage('Conversion du Markdown...');
         importedBook = await parseMarkdown(file);
+      } else if (extension === 'docx') {
+        setProgressMessage('Extraction du document Word (.docx)...');
+        // Import dynamique de mammoth : ne pèse sur le bundle que si utilisé
+        const mammoth = await import('mammoth');
+        const arrayBuffer = await file.arrayBuffer();
+        const result = await mammoth.extractRawText({ arrayBuffer });
+        if (!result.value || result.value.trim().length < 50) {
+          throw new Error('Aucun texte exploitable trouvé dans ce document Word.');
+        }
+        const txtFile = new File([result.value], file.name.replace(/\.docx$/i, '.txt'), { type: 'text/plain' });
+        importedBook = await parsePlainText(txtFile);
+        importedBook.title = file.name.replace(/\.docx$/i, '');
+      } else if (extension === 'html' || extension === 'htm') {
+        setProgressMessage('Extraction du contenu HTML...');
+        const html = await file.text();
+        const doc = new DOMParser().parseFromString(html, 'text/html');
+        // Retirer les éléments non textuels
+        doc.querySelectorAll('script, style, nav, header, footer, aside, iframe, noscript').forEach(el => el.remove());
+        const text = (doc.body?.innerText || doc.body?.textContent || '').trim();
+        if (!text || text.length < 50) {
+          throw new Error('Aucun texte exploitable trouvé dans ce fichier HTML.');
+        }
+        const txtFile = new File([text], file.name.replace(/\.html?$/i, '.txt'), { type: 'text/plain' });
+        importedBook = await parsePlainText(txtFile);
+        importedBook.title = doc.title?.trim() || file.name.replace(/\.html?$/i, '');
       } else {
-        throw new Error('Format non supporté. Formats acceptés : PDF, ePUB, TXT, Markdown (.md).');
+        throw new Error('Format non supporté. Formats acceptés : PDF, ePUB, TXT, Markdown, Word (.docx), HTML.');
       }
 
       // Finalize book object
@@ -111,6 +138,41 @@ export default function DocumentUpload({
     } catch (err: any) {
       console.error(err);
       setErrorStatus(err.message || 'Une erreur inconnue est survenue lors du traitement du document.');
+    } finally {
+      setLoading(false);
+      setProgressMessage('');
+    }
+  };
+
+  // Importer du texte collé directement
+  const handlePasteSubmit = async (e?: FormEvent) => {
+    if (e) e.preventDefault();
+    const text = pasteText.trim();
+    if (!text || text.length < 50) {
+      setErrorStatus('Veuillez coller au moins 50 caractères de texte à écouter.');
+      return;
+    }
+    setLoading(true);
+    setErrorStatus(null);
+    setProgressMessage('Structuration de votre texte...');
+    try {
+      const title = pasteTitle.trim() || `Texte collé — ${new Date().toLocaleDateString('fr-FR')} ${new Date().toLocaleTimeString('fr-FR', { hour: '2-digit', minute: '2-digit' })}`;
+      const file = new File([text], `${title}.txt`, { type: 'text/plain' });
+      const importedBook = await parsePlainText(file);
+      const newBook: DocumentBook = {
+        ...importedBook,
+        title,
+        progressPercent: 0,
+        currentChapterIndex: 0,
+        currentParagraphIndex: 0,
+        addedAt: Date.now(),
+      };
+      onDocumentAdded(newBook);
+      setPasteText('');
+      setPasteTitle('');
+    } catch (err: any) {
+      console.error(err);
+      setErrorStatus(err.message || 'Erreur lors de la structuration du texte collé.');
     } finally {
       setLoading(false);
       setProgressMessage('');
@@ -233,6 +295,18 @@ export default function DocumentUpload({
             <Globe className="w-3.5 h-3.5" />
             <span>Site Web (URL)</span>
           </button>
+          <button
+            onClick={() => { setImportMode('paste'); setErrorStatus(null); }}
+            className={`flex items-center space-x-1.5 px-4 py-2 rounded-lg cursor-pointer transition-all ${
+              importMode === 'paste'
+                ? 'bg-[#646cff] text-white shadow-sm font-black'
+                : 'text-stone-400 hover:text-white hover:bg-stone-900/40'
+            }`}
+            disabled={loading}
+          >
+            <Type className="w-3.5 h-3.5" />
+            <span>Coller du texte</span>
+          </button>
         </div>
 
         <AnimatePresence mode="wait">
@@ -273,36 +347,49 @@ export default function DocumentUpload({
                 id="file-pick"
                 ref={fileInputRef}
                 onChange={handleFileChange}
-                accept=".pdf,.epub,.txt,.md,.markdown"
+                accept=".pdf,.epub,.txt,.md,.markdown,.docx,.html,.htm"
                 className="hidden"
                 disabled={loading}
               />
 
-              <div className="flex flex-col items-center space-y-4">
-                <div className="p-4 bg-stone-900 border border-stone-805 rounded-full text-stone-300">
-                  <Upload className="w-10 h-10 text-[#646cff]" />
+              <div className="flex flex-col items-center space-y-5">
+                {/* Icône animée avec halo */}
+                <div className="relative">
+                  <div className="absolute inset-0 bg-[#646cff]/20 rounded-full blur-xl animate-pulse" />
+                  <motion.div
+                    animate={{ y: [0, -6, 0] }}
+                    transition={{ duration: 2.5, repeat: Infinity, ease: 'easeInOut' }}
+                    className="relative p-5 bg-gradient-to-br from-stone-900 to-stone-950 border border-[#646cff]/30 rounded-2xl text-stone-300 shadow-[0_8px_24px_rgba(100,108,255,0.15)]"
+                  >
+                    <Upload className="w-9 h-9 text-[#646cff]" />
+                  </motion.div>
                 </div>
                 <div>
                   <p className="text-lg font-bold text-white">
                     Déposez votre document ici, ou <span className="text-[#646cff] hover:text-[#767fff] underline decoration-2 underline-offset-2">parcourez</span>
                   </p>
                   <p className="text-xs text-stone-400 mt-2">
-                    Prend en charge les formats <strong className="text-stone-300">PDF</strong>, <strong className="text-stone-300">ePUB</strong>, <strong className="text-stone-300">TXT</strong> et <strong className="text-stone-300">Markdown</strong>
+                    6 formats pris en charge — conversion automatique en livre audio
                   </p>
                 </div>
-                <div className="flex gap-3 pt-2 flex-wrap text-[10px] text-stone-500 font-mono">
-                  <span className="flex items-center gap-1">
-                    <FileText className="w-3.5 h-3.5" /> PDF
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <BookOpen className="w-3.5 h-3.5" /> ePUB
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <FileText className="w-3.5 h-3.5" /> TXT
-                  </span>
-                  <span className="flex items-center gap-1">
-                    <FileText className="w-3.5 h-3.5" /> Markdown
-                  </span>
+                {/* Cartes formats colorées */}
+                <div className="grid grid-cols-3 sm:grid-cols-6 gap-2 pt-1 w-full max-w-md">
+                  {[
+                    { label: 'PDF',      icon: FileText, color: 'text-rose-400 border-rose-500/25 bg-rose-500/5' },
+                    { label: 'ePUB',     icon: BookOpen, color: 'text-emerald-400 border-emerald-500/25 bg-emerald-500/5' },
+                    { label: 'TXT',      icon: FileText, color: 'text-sky-400 border-sky-500/25 bg-sky-500/5' },
+                    { label: 'Markdown', icon: FileType, color: 'text-violet-400 border-violet-500/25 bg-violet-500/5' },
+                    { label: 'Word',     icon: FileText, color: 'text-blue-400 border-blue-500/25 bg-blue-500/5' },
+                    { label: 'HTML',     icon: FileCode, color: 'text-orange-400 border-orange-500/25 bg-orange-500/5' },
+                  ].map((fmt) => (
+                    <div
+                      key={fmt.label}
+                      className={`flex flex-col items-center gap-1 py-2 px-1 rounded-xl border ${fmt.color} transition-transform hover:scale-105`}
+                    >
+                      <fmt.icon className="w-4 h-4" />
+                      <span className="text-[8.5px] font-black font-mono uppercase tracking-wide">{fmt.label}</span>
+                    </div>
+                  ))}
                 </div>
               </div>
             </motion.div>
@@ -364,6 +451,59 @@ export default function DocumentUpload({
                   ))}
                 </div>
               </div>
+            </motion.div>
+          ) : (
+            <motion.div
+              key="paste-state"
+              initial={{ opacity: 0, scale: 0.98 }}
+              animate={{ opacity: 1, scale: 1 }}
+              exit={{ opacity: 0, scale: 0.98 }}
+              className="relative overflow-hidden rounded-2xl border border-stone-850 p-6 md:p-8 bg-[#131212] hover:border-stone-700 transition-all"
+            >
+              <div className="flex flex-col sm:flex-row items-center sm:items-start gap-4 text-left max-w-2xl mx-auto mb-5">
+                <div className="p-4 bg-stone-900 border border-stone-850 rounded-2xl text-stone-300 flex-shrink-0">
+                  <Type className="w-8 h-8 text-[#646cff]" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-extrabold text-white">Coller du texte directement</h3>
+                  <p className="text-xs text-stone-400 mt-1 leading-relaxed">
+                    Copiez n'importe quel texte — email, notes, article, cours — et collez-le ici. Il sera automatiquement structuré en chapitres et prêt à écouter.
+                  </p>
+                </div>
+              </div>
+
+              <form onSubmit={handlePasteSubmit} className="space-y-3 max-w-2xl mx-auto">
+                <input
+                  type="text"
+                  value={pasteTitle}
+                  onChange={(e) => setPasteTitle(e.target.value)}
+                  placeholder="Titre du document (optionnel)"
+                  className="w-full bg-stone-950 border border-stone-900 focus:border-[#646cff]/60 px-4 py-3 rounded-xl text-sm text-white placeholder-stone-500 focus:outline-none transition-all"
+                  disabled={loading}
+                />
+                <textarea
+                  value={pasteText}
+                  onChange={(e) => setPasteText(e.target.value)}
+                  placeholder="Collez votre texte ici... (minimum 50 caractères)"
+                  rows={8}
+                  className="w-full bg-stone-950 border border-stone-900 focus:border-[#646cff]/60 px-4 py-3 rounded-xl text-sm text-white placeholder-stone-500 focus:outline-none transition-all resize-y leading-relaxed"
+                  disabled={loading}
+                />
+                <div className="flex items-center justify-between gap-3">
+                  <span className={`text-[10px] font-mono font-bold ${pasteText.trim().length >= 50 ? 'text-emerald-500' : 'text-stone-500'}`}>
+                    {pasteText.trim().length.toLocaleString('fr-FR')} caractères
+                    {pasteText.trim().length > 0 && pasteText.trim().length < 50 && ' (min. 50)'}
+                  </span>
+                  <button
+                    type="submit"
+                    disabled={loading || pasteText.trim().length < 50}
+                    className="px-5 py-2.5 bg-[#646cff] hover:bg-[#525aff] disabled:opacity-40 disabled:cursor-not-allowed text-white rounded-xl text-xs font-black transition-all cursor-pointer flex items-center gap-1.5 shadow-md"
+                  >
+                    <Sparkles className="w-3.5 h-3.5" />
+                    Créer le livre audio
+                  </button>
+                </div>
+              </form>
             </motion.div>
           )}
         </AnimatePresence>
@@ -520,7 +660,7 @@ export default function DocumentUpload({
             id="file-pick"
             ref={fileInputRef}
             onChange={handleFileChange}
-            accept=".pdf,.epub,.txt,.md,.markdown"
+            accept=".pdf,.epub,.txt,.md,.markdown,.docx,.html,.htm"
             className="hidden"
             disabled={loading}
           />
@@ -557,7 +697,7 @@ export default function DocumentUpload({
                     Déposez votre document ici, ou <span className="text-[#646cff] hover:text-[#767fff] underline decoration-2 underline-offset-2">parcourez</span>
                   </p>
                   <p className="text-sm text-stone-400 mt-2">
-                    Prend en charge les formats <strong className="text-stone-300">PDF</strong>, <strong className="text-stone-300">ePUB</strong>, <strong className="text-stone-300">TXT</strong> et <strong className="text-stone-300">Markdown</strong>
+                    Formats : <strong className="text-stone-300">PDF</strong>, <strong className="text-stone-300">ePUB</strong>, <strong className="text-stone-300">TXT</strong>, <strong className="text-stone-300">Markdown</strong>, <strong className="text-stone-300">Word</strong> et <strong className="text-stone-300">HTML</strong>
                   </p>
                 </div>
               </motion.div>
@@ -1087,3 +1227,4 @@ export default function DocumentUpload({
     </div>
   );
 }
+
