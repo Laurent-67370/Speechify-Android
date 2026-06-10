@@ -1,4 +1,4 @@
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState, useMemo } from 'react';
 import { 
   Bookmark, 
   Sparkles, 
@@ -419,6 +419,14 @@ export default function TextViewer({
     pink:   'rgba(244, 114, 182, 0.25)',
   };
   const chapterAnnotations = annotations.filter(a => a.chapterIndex === currentChapterIndexVal);
+
+  // PERF : découper les phrases UNE fois par chapitre, pas à chaque re-render.
+  // Pendant la lecture, chaque changement de phrase re-render le composant ;
+  // sans memo, splitIntoSentences() était rappelé pour tous les paragraphes à chaque fois.
+  const paragraphSentences = useMemo(
+    () => chapter.paragraphs.map(p => splitIntoSentences(p)),
+    [chapter]
+  );
   const findSentenceAnnotation = (pIdx: number, sentence: string): Annotation | undefined => {
     const s = sentence.trim();
     if (!s) return undefined;
@@ -1099,7 +1107,7 @@ export default function TextViewer({
           {chapter.paragraphs.map((pText, pIdx) => {
             const isParagraphBookmarkedCurrent = isParagraphBookmarked(pIdx);
             const isParagraphCurrentlyRead = pIdx === currentParagraphIndex;
-            const sentences = splitIntoSentences(pText);
+            const sentences = paragraphSentences[pIdx] || [];
 
             return (
               <div
@@ -1350,4 +1358,5 @@ export default function TextViewer({
     </div>
   );
 }
+
 
