@@ -393,7 +393,7 @@ export default function DocumentUpload({
                 </div>
               </div>
             </motion.div>
-          ) : (
+          ) : importMode === 'url' ? (
             <motion.div
               key="url-state"
               initial={{ opacity: 0, scale: 0.98 }}
@@ -1227,4 +1227,5 @@ export default function DocumentUpload({
     </div>
   );
 }
+
 
