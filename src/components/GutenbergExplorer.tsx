@@ -1,4 +1,4 @@
-import React, { useState, useEffect, FormEvent } from 'react';
+import React, { useState, useEffect, useRef, FormEvent } from 'react';
 import { Search, Download, BookOpen, Sparkles, Globe, RefreshCw, AlertCircle, CheckCircle, TrendingUp, ChevronRight, ChevronLeft, Flame, Dices, Tags } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { DocumentBook, Chapter } from '../types';
@@ -84,6 +84,21 @@ interface GutendexBook {
   download_count: number;
   formats: { [mimeType: string]: string };
 }
+
+// ── Cache module-scope : préserve l'état de la librairie entre les changements d'onglet ──
+// Le composant est lazy-loadé et démonté quand on quitte l'onglet ; ce cache survit
+// tant que la page n'est pas rechargée et restaure recherche/genre/pagination au retour.
+interface ExplorerCacheState {
+  searchQuery: string;
+  activeLang: 'all' | 'fr' | 'en' | 'es' | 'de' | 'it';
+  isSearching: boolean;
+  searchResults: any[];
+  activeTopic: string | null;
+  resultsTitle: string;
+  totalCount: number;
+  nextPageUrl: string | null;
+}
+let explorerCache: ExplorerCacheState | null = null;
 
 // Genres/thèmes navigables — le paramètre topic de Gutendex cherche dans subjects + bookshelves
 const GUTENBERG_TOPICS = [
@@ -447,19 +462,33 @@ export default function GutenbergExplorer({
   onSelectSample,
   onNavigateToTab
 }: GutenbergExplorerProps) {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [activeLang, setActiveLang] = useState<'all' | 'fr' | 'en' | 'es' | 'de' | 'it'>('fr');
-  const [searchResults, setSearchResults] = useState<GutendexBook[]>([]);
+  const [searchQuery, setSearchQuery] = useState(explorerCache?.searchQuery ?? '');
+  const [activeLang, setActiveLang] = useState<'all' | 'fr' | 'en' | 'es' | 'de' | 'it'>(explorerCache?.activeLang ?? 'fr');
+  const [searchResults, setSearchResults] = useState<GutendexBook[]>(explorerCache?.searchResults ?? []);
   const [loading, setLoading] = useState(false);
   const [errorText, setErrorText] = useState<string | null>(null);
-  const [isSearching, setIsSearching] = useState(false);
+  const [isSearching, setIsSearching] = useState(explorerCache?.isSearching ?? false);
 
   // Navigation catalogue complet : genres, top, pagination
-  const [activeTopic, setActiveTopic] = useState<string | null>(null);
-  const [resultsTitle, setResultsTitle] = useState('Résultats de recherche');
-  const [totalCount, setTotalCount] = useState(0);
-  const [nextPageUrl, setNextPageUrl] = useState<string | null>(null);
+  const [activeTopic, setActiveTopic] = useState<string | null>(explorerCache?.activeTopic ?? null);
+  const [resultsTitle, setResultsTitle] = useState(explorerCache?.resultsTitle ?? 'Résultats de recherche');
+  const [totalCount, setTotalCount] = useState(explorerCache?.totalCount ?? 0);
+  const [nextPageUrl, setNextPageUrl] = useState<string | null>(explorerCache?.nextPageUrl ?? null);
   const [loadingMore, setLoadingMore] = useState(false);
+
+  // Sauvegarder l'état dans le cache module-scope à chaque changement
+  useEffect(() => {
+    explorerCache = {
+      searchQuery,
+      activeLang,
+      isSearching,
+      searchResults,
+      activeTopic,
+      resultsTitle,
+      totalCount,
+      nextPageUrl,
+    };
+  }, [searchQuery, activeLang, isSearching, searchResults, activeTopic, resultsTitle, totalCount, nextPageUrl]);
   
   // Carousel states for featured books
   const [carouselIndex, setCarouselIndex] = useState(0);
@@ -625,8 +654,14 @@ export default function GutenbergExplorer({
     }
   };
 
-  // Relancer la requête active quand la langue change
+  // Relancer la requête active quand la langue change (mais PAS au montage,
+  // sinon le retour sur l'onglet écrase les résultats restaurés et la pagination)
+  const isFirstRender = useRef(true);
   useEffect(() => {
+    if (isFirstRender.current) {
+      isFirstRender.current = false;
+      return;
+    }
     if (searchQuery.trim()) {
       handleSearch();
     } else if (activeTopic === '__top__') {
@@ -1534,4 +1569,5 @@ function LoaderIcon({ className }: { className?: string }) {
     </svg>
   );
 }
+
 
