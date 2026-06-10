@@ -44,11 +44,13 @@ Fonctionne au **tap** (mobile) et à la **souris** (desktop).
 
 - Surlignez des passages en **4 couleurs** (jaune, vert, bleu, rose).
 - Ajoutez une **note textuelle** à chaque annotation.
+- **Surlignage visible pendant la lecture** : les passages annotés restent colorés dans le texte, avec la note au survol.
+- **Onglet "Annot."** dans le panneau latéral : liste de toutes vos annotations avec pastille couleur, navigation directe vers le passage et suppression.
 - Annotations **persistées en SQLite VPS** — retrouvez-les sur tous vos appareils.
 
 ### 🧠 6. Flashcards & Révision Vocabulaire
 
-- Sauvegardez les mots découverts pendant la lecture dans un **deck personnel**.
+- Sauvegardez les mots découverts pendant la lecture dans un **deck personnel** — depuis le dictionnaire (double-clic sur un mot ou bouton 📖 Définir de la popup de sélection).
 - **Mode révision** avec cartes retournables (flip recto/verso).
 - Marquage **"Maîtrisée"** / **"À revoir"** avec suivi de progression.
 - Prononciation des mots via synthèse vocale.
@@ -183,7 +185,7 @@ pm2 restart speechify
 ```
 src/
 ├── components/
-│   ├── TextViewer.tsx           # Lecteur avec surlignage phrase par phrase
+│   ├── TextViewer.tsx           # Lecteur : surlignage lecture + annotations colorées 🖊️
 │   ├── ReaderControls.tsx       # Barre audio (play/pause/skip/vitesse)
 │   ├── ReaderSettings.tsx       # Paramètres (voix, thème, taille)
 │   ├── GoogleTTSSettings.tsx    # Config Google Cloud TTS ✨
@@ -194,7 +196,7 @@ src/
 │   ├── FlashcardsPage.tsx       # Deck vocabulaire + mode révision flip 🧠 ⚡ lazy
 │   ├── CharlyChatModal.tsx      # Coach IA contextuel sur le livre en cours 🤖 ⚡ lazy
 │   ├── HomeDashboard.tsx        # Accueil (carousel, objectif, égaliseur)
-│   ├── Sidebar.tsx              # Table des matières + marque-pages + résumés IA
+│   ├── Sidebar.tsx              # Sommaire + recherche + signets + annotations + résumés IA
 │   ├── GutenbergExplorer.tsx    # Recherche + import Gutenberg (70k livres) ⚡ lazy
 │   ├── DocumentUpload.tsx       # Import PDF/ePUB/TXT/MD/URL
 │   ├── InteractiveHelpGuide.tsx # Guide Charly (6 étapes + quiz) ⚡ lazy
@@ -254,6 +256,14 @@ data/
 | v2.0 | Juin 2026 | **Fix TTS** — apostrophes typographiques normalisées (d'Amérique, l'homme...) |
 | v2.0 | Juin 2026 | **SW v2** — NetworkFirst JS/CSS, nettoyage auto anciens caches |
 | v2.0 | Juin 2026 | **Rate limiter** — 200 req/min sur `/api` uniquement (plus de blocage chargement) |
+| v2.0 | Juin 2026 | **Bouton Charly flottant** 🤖 — accès au coach IA depuis la vue Lire |
+| v2.0 | Juin 2026 | **PM2 production** — `dist/server.cjs` + NODE_ENV=production (RAM ÷4, zéro restart) |
+| v2.1 | Juin 2026 | **Surlignage visuel** — passages annotés colorés dans le texte, note au survol ✨ |
+| v2.1 | Juin 2026 | **Onglet Annotations** — panneau latéral : liste, navigation, suppression 🖊️ |
+| v2.1 | Juin 2026 | **Popup lecteur complète** — Annoter + Définir câblés dans la vue Lire |
+| v2.1 | Juin 2026 | **Flashcards depuis le lecteur** — sauvegarde d'un mot via le dictionnaire du TextViewer |
+| v2.1 | Juin 2026 | **Dictionnaire FR** — fallback Wiktionnaire (définitions françaises natives) 📖 |
+| v2.1 | Juin 2026 | **Charly réponses complètes** — maxOutputTokens 1500, fin de phrases garantie |
 
 ---
 
@@ -276,3 +286,4 @@ https://speechify.lhusser.fr
 ## 🎯 Commencer !
 
 Cliquez sur **`?`** en haut à droite pour déclencher Charly et commencer votre premier voyage littéraire. Bonne écoute ! 🎧
+
