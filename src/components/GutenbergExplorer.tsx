@@ -83,7 +83,31 @@ interface GutendexBook {
   languages: string[];
   download_count: number;
   formats: { [mimeType: string]: string };
+  subjects?: string[];
 }
+
+// Formater le compteur de téléchargements (24726 → 24,7k)
+function formatDownloads(n: number): string {
+  if (!n) return '0';
+  if (n >= 1000000) return `${(n / 1000000).toFixed(1).replace('.', ',')}M`;
+  if (n >= 1000) return `${(n / 1000).toFixed(1).replace('.', ',')}k`;
+  return n.toString();
+}
+
+// Nettoyer un sujet Gutenberg ("Detective and mystery stories -- Fiction" → "Detective and mystery stories")
+function cleanSubject(s: string): string {
+  return s.split('--')[0].trim();
+}
+
+// Palette de dégradés pour les couvertures de secours, choisie selon l'ID du livre
+const FALLBACK_GRADIENTS = [
+  'from-indigo-700 to-purple-900',
+  'from-rose-700 to-pink-950',
+  'from-amber-600 to-orange-900',
+  'from-emerald-700 to-teal-950',
+  'from-sky-700 to-blue-950',
+  'from-fuchsia-700 to-purple-950',
+];
 
 // ── Cache module-scope : préserve l'état de la librairie entre les changements d'onglet ──
 // Le composant est lazy-loadé et démonté quand on quitte l'onglet ; ce cache survit
@@ -1173,60 +1197,104 @@ export default function GutenbergExplorer({
                   {searchResults.map((book) => {
                     const authorName = book.authors && book.authors.length > 0 ? book.authors[0].name : 'Auteur classique';
                     const hasRecent = recentBooks.some(b => b.id === `gutenberg_${book.id}`);
-                    
+                    const coverUrl = book.formats?.['image/jpeg'] || null;
+                    const fallbackGradient = FALLBACK_GRADIENTS[book.id % FALLBACK_GRADIENTS.length];
+                    const subjects = (book.subjects || []).map(cleanSubject).filter((s, i, arr) => arr.indexOf(s) === i).slice(0, 2);
+
                     return (
                       <div
                         key={book.id}
-                        className="flex flex-col sm:flex-row items-stretch sm:items-center justify-between p-4 bg-white dark:bg-[#131212]/90 border border-stone-200 dark:border-stone-900 rounded-[20px] shadow-sm hover:border-[#646cff]/50 transition-all text-xs"
+                        className="flex items-stretch gap-4 p-3.5 bg-white dark:bg-[#131212]/90 border border-stone-200 dark:border-stone-900 rounded-[20px] shadow-sm hover:border-[#646cff]/50 hover:shadow-md transition-all text-xs group/card"
                       >
-                        <div className="min-w-0 pr-4 text-left flex-grow space-y-1">
-                          <div className="flex items-center space-x-2">
-                            <span className="px-1.5 py-0.5 rounded bg-stone-100 dark:bg-stone-905 text-[9px] font-mono font-bold text-stone-500 uppercase border border-stone-200 dark:border-[#131212]">
-                              ID {book.id}
-                            </span>
-                            <span className="px-1.5 py-0.5 rounded bg-indigo-50 dark:bg-indigo-950/20 text-[#646cff] text-[9px] font-mono font-bold uppercase">
-                              {book.languages.join(', ').toUpperCase()}
-                            </span>
-                            <span className="text-[10px] text-stone-400 font-medium">
-                              {book.download_count?.toLocaleString()} dlds
-                            </span>
-                          </div>
-                          <h4 className="font-extrabold text-stone-900 dark:text-white text-sm truncate font-sans tracking-tight">
-                            {book.title}
-                          </h4>
-                          <p className="text-stone-500 dark:text-stone-400 text-xs font-sans truncate">
-                            {authorName}
-                          </p>
-                        </div>
-
-                        {/* Import button */}
-                        <div className="mt-3 sm:mt-0 flex-shrink-0 self-end sm:self-auto">
-                          {hasRecent ? (
-                            <span className="inline-flex items-center gap-1 px-3 py-2 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-xl font-bold font-sans">
-                              <CheckCircle className="w-3.5 h-3.5" />
-                              <span>Importé</span>
-                            </span>
-                          ) : downloadingId === book.id ? (
-                            <div className="flex flex-col items-end min-w-[124px]">
-                              <span className="text-[10px] text-[#646cff] font-bold flex items-center gap-1.5 animate-pulse">
-                                <RefreshCw className="w-3 h-3 animate-spin" />
-                                {downloadProgress}
+                        {/* Couverture du livre */}
+                        <div className="flex-shrink-0 relative w-[68px] sm:w-[76px] self-center">
+                          <div className="aspect-[2/3] rounded-lg overflow-hidden shadow-[3px_4px_12px_rgba(0,0,0,0.25)] border border-stone-200/50 dark:border-stone-800 relative bg-stone-100 dark:bg-stone-900">
+                            {coverUrl ? (
+                              <img
+                                src={coverUrl}
+                                alt={book.title}
+                                loading="lazy"
+                                className="w-full h-full object-cover group-hover/card:scale-105 transition-transform duration-500"
+                                onError={(e) => {
+                                  // Fallback gradient si la couverture ne charge pas
+                                  const img = e.target as HTMLImageElement;
+                                  img.style.display = 'none';
+                                  const fallback = img.nextElementSibling as HTMLElement;
+                                  if (fallback) fallback.style.display = 'flex';
+                                }}
+                              />
+                            ) : null}
+                            <div
+                              className={`w-full h-full bg-gradient-to-br ${fallbackGradient} flex-col items-center justify-center p-1.5 absolute inset-0 ${coverUrl ? 'hidden' : 'flex'}`}
+                              style={{ display: coverUrl ? 'none' : 'flex' }}
+                            >
+                              <BookOpen className="w-5 h-5 text-white/60 mb-1" />
+                              <span className="text-[7px] font-serif font-bold text-white/90 text-center leading-tight line-clamp-3">
+                                {book.title}
                               </span>
                             </div>
-                          ) : successId === book.id ? (
-                            <span className="inline-flex items-center gap-1 px-3 py-2 bg-[#646cff]/10 text-[#646cff] dark:text-[#767fff] rounded-xl font-black">
-                              Prêt ! &rarr;
+                            {/* Reflet subtil */}
+                            <div className="absolute inset-0 bg-gradient-to-tr from-transparent via-transparent to-white/10 pointer-events-none" />
+                          </div>
+                          {/* Badge langue sur la couverture */}
+                          <span className="absolute -top-1.5 -right-1.5 px-1.5 py-0.5 rounded-md bg-[#646cff] text-white text-[8px] font-mono font-black uppercase shadow-md">
+                            {(book.languages[0] || '??').toUpperCase()}
+                          </span>
+                        </div>
+
+                        {/* Infos */}
+                        <div className="min-w-0 flex-grow flex flex-col justify-between py-0.5 text-left">
+                          <div className="space-y-1">
+                            <h4 className="font-extrabold text-stone-900 dark:text-white text-[13px] leading-snug font-sans tracking-tight line-clamp-2 group-hover/card:text-[#646cff] transition-colors">
+                              {book.title}
+                            </h4>
+                            <p className="text-stone-500 dark:text-stone-400 text-[11px] font-sans truncate">
+                              {authorName}
+                            </p>
+                            {/* Sujets / genres du livre */}
+                            {subjects.length > 0 && (
+                              <div className="flex flex-wrap gap-1 pt-0.5">
+                                {subjects.map((subject, i) => (
+                                  <span key={i} className="px-1.5 py-0.5 rounded-md bg-stone-100 dark:bg-stone-900 border border-stone-200 dark:border-stone-850 text-[8.5px] font-semibold text-stone-500 dark:text-stone-400 truncate max-w-[140px]">
+                                    {subject}
+                                  </span>
+                                ))}
+                              </div>
+                            )}
+                          </div>
+
+                          {/* Pied de carte : popularité + action */}
+                          <div className="flex items-center justify-between pt-2 gap-2">
+                            <span className="flex items-center gap-1 text-[10px] text-orange-500 dark:text-orange-400 font-bold flex-shrink-0">
+                              <Flame className="w-3 h-3" />
+                              {formatDownloads(book.download_count)}
                             </span>
-                          ) : (
-                            <button
-                              type="button"
-                              onClick={() => handleImportGutenberg(book.id, book.title, authorName, book.languages[0] || 'fr')}
-                              className="px-3.5 py-2 bg-stone-100 hover:bg-[#646cff] text-stone-700 hover:text-white dark:bg-stone-900 dark:hover:bg-[#646cff] dark:text-stone-300 rounded-xl font-black cursor-pointer shadow-sm hover:shadow transition-all flex items-center gap-1.5 border border-stone-200 dark:border-stone-800"
-                            >
-                              <Download className="w-3.5 h-3.5" />
-                              <span>Importer</span>
-                            </button>
-                          )}
+
+                            {hasRecent ? (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 rounded-lg font-bold font-sans text-[10px]">
+                                <CheckCircle className="w-3 h-3" />
+                                <span>Importé</span>
+                              </span>
+                            ) : downloadingId === book.id ? (
+                              <span className="text-[9px] text-[#646cff] font-bold flex items-center gap-1 animate-pulse text-right">
+                                <RefreshCw className="w-3 h-3 animate-spin flex-shrink-0" />
+                                <span className="truncate max-w-[110px]">{downloadProgress}</span>
+                              </span>
+                            ) : successId === book.id ? (
+                              <span className="inline-flex items-center gap-1 px-2.5 py-1.5 bg-[#646cff]/10 text-[#646cff] dark:text-[#767fff] rounded-lg font-black text-[10px]">
+                                Prêt ! &rarr;
+                              </span>
+                            ) : (
+                              <button
+                                type="button"
+                                onClick={() => handleImportGutenberg(book.id, book.title, authorName, book.languages[0] || 'fr')}
+                                className="px-3 py-1.5 bg-stone-100 hover:bg-[#646cff] text-stone-700 hover:text-white dark:bg-stone-900 dark:hover:bg-[#646cff] dark:text-stone-300 rounded-lg font-black cursor-pointer shadow-sm hover:shadow transition-all flex items-center gap-1 border border-stone-200 dark:border-stone-800 text-[10px]"
+                              >
+                                <Download className="w-3 h-3" />
+                                <span>Importer</span>
+                              </button>
+                            )}
+                          </div>
                         </div>
                       </div>
                     );
@@ -1569,5 +1637,6 @@ function LoaderIcon({ className }: { className?: string }) {
     </svg>
   );
 }
+
 
 
