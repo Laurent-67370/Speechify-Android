@@ -1,5 +1,5 @@
 import React, { useState, useEffect, FormEvent } from 'react';
-import { Search, Download, BookOpen, Sparkles, Globe, RefreshCw, AlertCircle, CheckCircle, TrendingUp, ChevronRight, ChevronLeft } from 'lucide-react';
+import { Search, Download, BookOpen, Sparkles, Globe, RefreshCw, AlertCircle, CheckCircle, TrendingUp, ChevronRight, ChevronLeft, Flame, Dices, Tags } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { DocumentBook, Chapter } from '../types';
 
@@ -84,6 +84,25 @@ interface GutendexBook {
   download_count: number;
   formats: { [mimeType: string]: string };
 }
+
+// Genres/thèmes navigables — le paramètre topic de Gutendex cherche dans subjects + bookshelves
+const GUTENBERG_TOPICS = [
+  { id: 'adventure',   label: '🗺️ Aventure',        query: 'adventure' },
+  { id: 'detective',   label: '🔍 Policier',         query: 'detective' },
+  { id: 'scifi',       label: '🚀 Science-Fiction',  query: 'science fiction' },
+  { id: 'love',        label: '💌 Romance',          query: 'love stories' },
+  { id: 'horror',      label: '👻 Fantastique',      query: 'horror' },
+  { id: 'poetry',      label: '🖋️ Poésie',           query: 'poetry' },
+  { id: 'philosophy',  label: '🤔 Philosophie',      query: 'philosophy' },
+  { id: 'history',     label: '🏛️ Histoire',         query: 'history' },
+  { id: 'drama',       label: '🎭 Théâtre',          query: 'drama' },
+  { id: 'fairy',       label: '🧚 Contes',           query: 'fairy tales' },
+  { id: 'children',    label: '🧒 Jeunesse',         query: 'children' },
+  { id: 'biography',   label: '👤 Biographies',      query: 'biography' },
+  { id: 'travel',      label: '✈️ Voyages',          query: 'travel' },
+  { id: 'humor',       label: '😄 Humour',           query: 'humor' },
+  { id: 'music',       label: '🎵 Musique',          query: 'music' },
+];
 
 // Hand-picked famous Gutenberg masterpieces across languages with verified IDs
 const FEATURED_GUTENBERG = [
@@ -434,6 +453,13 @@ export default function GutenbergExplorer({
   const [loading, setLoading] = useState(false);
   const [errorText, setErrorText] = useState<string | null>(null);
   const [isSearching, setIsSearching] = useState(false);
+
+  // Navigation catalogue complet : genres, top, pagination
+  const [activeTopic, setActiveTopic] = useState<string | null>(null);
+  const [resultsTitle, setResultsTitle] = useState('Résultats de recherche');
+  const [totalCount, setTotalCount] = useState(0);
+  const [nextPageUrl, setNextPageUrl] = useState<string | null>(null);
+  const [loadingMore, setLoadingMore] = useState(false);
   
   // Carousel states for featured books
   const [carouselIndex, setCarouselIndex] = useState(0);
@@ -478,31 +504,25 @@ export default function GutenbergExplorer({
     // We remain on local hand-picked classics by default, then load live searches when requested
   }, []);
 
-  const handleSearch = async (e?: React.FormEvent) => {
-    if (e) e.preventDefault();
-    if (!searchQuery.trim()) {
-      setIsSearching(false);
-      setSearchResults([]);
-      return;
-    }
-
+  // ── Moteur de requête générique Gutendex (recherche, genres, top, aléatoire) ──
+  const runCatalogQuery = async (url: string, title: string) => {
     setLoading(true);
     setErrorText(null);
     setIsSearching(true);
-    
+    setResultsTitle(title);
+    setSearchResults([]);
+    setNextPageUrl(null);
+    setTotalCount(0);
+
     try {
-      // Gutenberg search API
-      let url = `https://gutendex.com/books/?search=${encodeURIComponent(searchQuery)}`;
-      if (activeLang !== 'all') {
-        url += `&languages=${activeLang}`;
-      }
-      
       const response = await fetch(url);
       if (!response.ok) {
         throw new Error('Impossible de contacter la bibliothèque Gutenberg (Gutendex).');
       }
       const data = await response.json();
       setSearchResults(data.results || []);
+      setTotalCount(data.count || 0);
+      setNextPageUrl(data.next || null);
     } catch (err: any) {
       console.error(err);
       setErrorText('Erreur lors de la recherche. Veuillez vérifier votre connexion internet et réessayer.');
@@ -511,10 +531,108 @@ export default function GutenbergExplorer({
     }
   };
 
-  // Run search automatically when active language changes while search matches
+  const langParam = () => (activeLang !== 'all' ? `&languages=${activeLang}` : '');
+
+  const handleSearch = async (e?: React.FormEvent) => {
+    if (e) e.preventDefault();
+    if (!searchQuery.trim()) {
+      setIsSearching(false);
+      setSearchResults([]);
+      setActiveTopic(null);
+      return;
+    }
+    setActiveTopic(null);
+    await runCatalogQuery(
+      `https://gutendex.com/books/?search=${encodeURIComponent(searchQuery)}${langParam()}`,
+      `Résultats pour « ${searchQuery} »`
+    );
+  };
+
+  // Naviguer par genre/thème
+  const handleTopicSelect = async (topicId: string) => {
+    const topic = GUTENBERG_TOPICS.find(t => t.id === topicId);
+    if (!topic) return;
+    setSearchQuery('');
+    setActiveTopic(topicId);
+    await runCatalogQuery(
+      `https://gutendex.com/books/?topic=${encodeURIComponent(topic.query)}${langParam()}&sort=popular`,
+      `Genre : ${topic.label}`
+    );
+  };
+
+  // Top des livres les plus téléchargés
+  const handleTopPopular = async () => {
+    setSearchQuery('');
+    setActiveTopic('__top__');
+    await runCatalogQuery(
+      `https://gutendex.com/books/?sort=popular${langParam()}`,
+      '🔥 Les plus téléchargés'
+    );
+  };
+
+  // Découverte aléatoire : tirer une page au hasard du catalogue
+  const handleRandomDiscovery = async () => {
+    setSearchQuery('');
+    setActiveTopic('__random__');
+    setLoading(true);
+    setErrorText(null);
+    setIsSearching(true);
+    setResultsTitle('🎲 Découverte aléatoire');
+    setSearchResults([]);
+    setNextPageUrl(null);
+
+    try {
+      // 1er appel : connaître le nombre total de pages pour cette langue
+      const probe = await fetch(`https://gutendex.com/books/?${langParam().replace('&', '')}`);
+      if (!probe.ok) throw new Error('Gutendex indisponible.');
+      const probeData = await probe.json();
+      const count = probeData.count || 1000;
+      const totalPages = Math.max(1, Math.min(Math.floor(count / 32), 500));
+      const randomPage = Math.floor(Math.random() * totalPages) + 1;
+
+      // 2e appel : la page aléatoire
+      const response = await fetch(`https://gutendex.com/books/?page=${randomPage}${langParam()}`);
+      if (!response.ok) throw new Error('Gutendex indisponible.');
+      const data = await response.json();
+      // Mélanger les 32 résultats pour plus de surprise
+      const shuffled = (data.results || []).sort(() => Math.random() - 0.5);
+      setSearchResults(shuffled);
+      setTotalCount(count);
+      setNextPageUrl(null); // pas de pagination en mode aléatoire — recliquer pour repiocher
+    } catch (err: any) {
+      console.error(err);
+      setErrorText('Erreur lors de la découverte aléatoire. Réessayez.');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Pagination : charger la page suivante (append)
+  const handleLoadMore = async () => {
+    if (!nextPageUrl || loadingMore) return;
+    setLoadingMore(true);
+    try {
+      const response = await fetch(nextPageUrl);
+      if (!response.ok) throw new Error('Erreur de pagination.');
+      const data = await response.json();
+      setSearchResults(prev => [...prev, ...(data.results || [])]);
+      setNextPageUrl(data.next || null);
+    } catch (err: any) {
+      console.error(err);
+      setErrorText('Impossible de charger la suite. Réessayez.');
+    } finally {
+      setLoadingMore(false);
+    }
+  };
+
+  // Relancer la requête active quand la langue change
   useEffect(() => {
     if (searchQuery.trim()) {
       handleSearch();
+    } else if (activeTopic === '__top__') {
+      handleTopPopular();
+    } else if (activeTopic && activeTopic !== '__random__') {
+      handleTopicSelect(activeTopic);
     }
   }, [activeLang]);
 
@@ -911,6 +1029,59 @@ export default function GutenbergExplorer({
         </button>
       </form>
 
+      {/* 2bis. Navigation catalogue : Top, Découverte, Genres */}
+      <div className="space-y-2.5">
+        <div className="flex items-center gap-2 flex-wrap">
+          <button
+            type="button"
+            onClick={handleTopPopular}
+            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[11px] font-black transition-all cursor-pointer border ${
+              activeTopic === '__top__'
+                ? 'bg-orange-500 text-white border-orange-500 shadow-md'
+                : 'bg-orange-500/10 text-orange-600 dark:text-orange-400 border-orange-500/20 hover:bg-orange-500/20'
+            }`}
+          >
+            <Flame className="w-3.5 h-3.5" />
+            Top téléchargements
+          </button>
+          <button
+            type="button"
+            onClick={handleRandomDiscovery}
+            className={`flex items-center gap-1.5 px-3.5 py-2 rounded-xl text-[11px] font-black transition-all cursor-pointer border ${
+              activeTopic === '__random__'
+                ? 'bg-purple-600 text-white border-purple-600 shadow-md'
+                : 'bg-purple-500/10 text-purple-600 dark:text-purple-400 border-purple-500/20 hover:bg-purple-500/20'
+            }`}
+            title="Piocher 32 livres au hasard parmi tout le catalogue"
+          >
+            <Dices className="w-3.5 h-3.5" />
+            Découverte aléatoire
+          </button>
+          <span className="hidden sm:flex items-center gap-1 text-[10px] text-stone-400 font-mono ml-auto">
+            <Tags className="w-3 h-3" />
+            Ou explorez par genre :
+          </span>
+        </div>
+
+        {/* Chips genres — scrollables horizontalement sur mobile */}
+        <div className="flex gap-1.5 overflow-x-auto pb-1.5 scrollbar-none -mx-1 px-1">
+          {GUTENBERG_TOPICS.map(topic => (
+            <button
+              key={topic.id}
+              type="button"
+              onClick={() => handleTopicSelect(topic.id)}
+              className={`flex-shrink-0 px-3 py-1.5 rounded-full text-[11px] font-bold transition-all cursor-pointer border whitespace-nowrap ${
+                activeTopic === topic.id
+                  ? 'bg-[#646cff] text-white border-[#646cff] shadow-md'
+                  : 'bg-white dark:bg-stone-900/40 text-stone-600 dark:text-stone-300 border-stone-200 dark:border-stone-850 hover:border-[#646cff]/50 hover:text-[#646cff]'
+              }`}
+            >
+              {topic.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* Error prompt */}
       <AnimatePresence>
         {errorText && (
@@ -942,11 +1113,16 @@ export default function GutenbergExplorer({
               <div className="flex items-center justify-between">
                 <h4 className="text-base font-extrabold text-stone-900 dark:text-white flex items-center gap-2">
                   <TrendingUp className="w-4 h-4 text-[#646cff]" />
-                  <span>Résultats de recherche ({searchResults.length})</span>
+                  <span>{resultsTitle}</span>
+                  {totalCount > 0 && (
+                    <span className="text-[10px] font-mono font-bold text-stone-400 bg-stone-100 dark:bg-stone-900 px-2 py-0.5 rounded-full">
+                      {totalCount.toLocaleString('fr-FR')} livres
+                    </span>
+                  )}
                 </h4>
                 <button
-                  onClick={() => { setIsSearching(false); setSearchQuery(''); setSearchResults([]); }}
-                  className="text-xs text-stone-500 hover:text-[#646cff] font-bold"
+                  onClick={() => { setIsSearching(false); setSearchQuery(''); setSearchResults([]); setActiveTopic(null); setNextPageUrl(null); }}
+                  className="text-xs text-stone-500 hover:text-[#646cff] font-bold cursor-pointer"
                 >
                   Retour aux sélections
                 </button>
@@ -1025,6 +1201,38 @@ export default function GutenbergExplorer({
                 <div className="py-16 text-center flex flex-col items-center justify-center p-6 border border-dashed border-stone-200 dark:border-stone-850 rounded-[32px]">
                   <p className="text-stone-500 text-sm">Aucun résultat trouvé pour votre recherche.</p>
                   <p className="text-xs text-stone-400 mt-1">Veuillez essayer avec un autre mot-clé ou changer le filtre linguistique.</p>
+                </div>
+              )}
+
+              {/* Pagination : Charger plus */}
+              {!loading && searchResults.length > 0 && nextPageUrl && (
+                <div className="flex justify-center pt-2">
+                  <button
+                    type="button"
+                    onClick={handleLoadMore}
+                    disabled={loadingMore}
+                    className="px-6 py-3 bg-white dark:bg-stone-900/60 border-2 border-[#646cff]/30 hover:border-[#646cff] text-[#646cff] dark:text-[#767fff] rounded-2xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 shadow-sm hover:shadow-md disabled:opacity-50"
+                  >
+                    {loadingMore ? (
+                      <><RefreshCw className="w-4 h-4 animate-spin" /> Chargement...</>
+                    ) : (
+                      <>📚 Charger plus de livres ({searchResults.length} / {totalCount.toLocaleString('fr-FR')})</>
+                    )}
+                  </button>
+                </div>
+              )}
+
+              {/* Mode aléatoire : bouton repiocher */}
+              {!loading && searchResults.length > 0 && activeTopic === '__random__' && (
+                <div className="flex justify-center pt-2">
+                  <button
+                    type="button"
+                    onClick={handleRandomDiscovery}
+                    className="px-6 py-3 bg-purple-600 hover:bg-purple-500 text-white rounded-2xl text-xs font-black transition-all cursor-pointer flex items-center gap-2 shadow-md"
+                  >
+                    <Dices className="w-4 h-4" />
+                    Repiocher 32 nouveaux livres au hasard
+                  </button>
                 </div>
               )}
             </motion.div>
@@ -1326,3 +1534,4 @@ function LoaderIcon({ className }: { className?: string }) {
     </svg>
   );
 }
+
