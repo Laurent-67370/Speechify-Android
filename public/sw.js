@@ -12,14 +12,15 @@ if (workbox) {
 
   const CACHE_NAME_PREFIX = 'liseuse-vocale-pwa';
   // ⚠️ Bump de version → invalide tous les caches JS/CSS précédents
-  const STATIC_CACHE_NAME = `${CACHE_NAME_PREFIX}-static-v2`;
+  const STATIC_CACHE_NAME = `${CACHE_NAME_PREFIX}-static-v3`;
+  const ASSETS_CACHE_NAME = `${CACHE_NAME_PREFIX}-assets-v1`;
   const PAGES_CACHE_NAME = `${CACHE_NAME_PREFIX}-pages-v2`;
   const IMAGES_CACHE_NAME = `${CACHE_NAME_PREFIX}-images-v1`;
   const FONTS_CACHE_NAME = `${CACHE_NAME_PREFIX}-fonts-v1`;
 
   // Nettoyage automatique des anciens caches au activate
   self.addEventListener('activate', (event) => {
-    const validCaches = [STATIC_CACHE_NAME, PAGES_CACHE_NAME, IMAGES_CACHE_NAME, FONTS_CACHE_NAME];
+    const validCaches = [STATIC_CACHE_NAME, ASSETS_CACHE_NAME, PAGES_CACHE_NAME, IMAGES_CACHE_NAME, FONTS_CACHE_NAME];
     event.waitUntil(
       caches.keys().then(cacheNames =>
         Promise.all(
@@ -48,7 +49,26 @@ if (workbox) {
     })
   );
 
-  // JS/CSS — Network First (pas StaleWhileRevalidate) pour toujours servir la dernière version
+  // Assets hashés Vite (/assets/index-Ab12Cd34.js) — CacheFirst longue durée :
+  // le hash change à chaque build, donc un fichier en cache est toujours valide.
+  // Chargements répétés instantanés, même hors ligne.
+  workbox.routing.registerRoute(
+    ({ url, request }) =>
+      url.pathname.startsWith('/assets/') &&
+      (request.destination === 'script' || request.destination === 'style'),
+    new workbox.strategies.CacheFirst({
+      cacheName: ASSETS_CACHE_NAME,
+      plugins: [
+        new workbox.expiration.ExpirationPlugin({
+          maxEntries: 60,
+          maxAgeSeconds: 30 * 24 * 60 * 60 // 30 jours
+        }),
+        new workbox.cacheableResponse.CacheableResponsePlugin({ statuses: [0, 200] })
+      ]
+    })
+  );
+
+  // Autres JS/CSS (non hashés : sw.js, externes...) — Network First pour la fraîcheur
   workbox.routing.registerRoute(
     ({ request }) => 
       request.destination === 'script' || 
@@ -107,3 +127,4 @@ if (workbox) {
 } else {
   console.log('[Service Worker] Échec du chargement de Workbox.');
 }
+
