@@ -237,7 +237,7 @@ server.ts                        # Serveur Express + CORS restrictif + Rate limi
 ├── /api/flashcards              # CRUD flashcards SQLite 🧠
 ├── /api/proxy                   # Proxy web (import URL)
 ├── /api/gemini/summarize        # Résumés IA Gemini (10 req/min) 🧠
-├── /api/gemini/define           # Dictionnaire IA Gemini (15 req/min)
+├── /api/gemini/define           # Dictionnaire IA Gemini (15 req/min, cache SQLite 💾)
 └── /api/gemini/chat             # Coach Charly IA (20 req/min) 🤖
 
 data/
