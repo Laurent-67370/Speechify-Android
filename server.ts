@@ -322,11 +322,11 @@ async function startServer() {
       const ai = getGeminiClient();
       const history = messages.slice(0, -1).map((m: any) => `${m.role === 'user' ? 'Utilisateur' : 'Charly'}: ${m.content}`).join("\n");
       const lastMsg = messages[messages.length - 1].content;
-      const prompt = `${systemContext}\n\nHistorique de la conversation:\n${history}\n\nUtilisateur: ${lastMsg}\n\nCharly:`;
+      const prompt = `${systemContext}\nIMPORTANT : Termine toujours tes phrases. Réponds de façon complète mais concise (max 250 mots).\n\nHistorique de la conversation:\n${history}\n\nUtilisateur: ${lastMsg}\n\nCharly:`;
       const response = await ai.models.generateContent({
         model: "gemini-2.5-flash",
         contents: prompt,
-        config: { temperature: 0.7, maxOutputTokens: 600 }
+        config: { temperature: 0.7, maxOutputTokens: 1500 }
       });
       return res.json({ reply: response.text || "Je n'ai pas pu répondre." });
     } catch (error: any) {
@@ -537,6 +537,7 @@ async function startServer() {
 }
 
 startServer();
+
 
 
 
