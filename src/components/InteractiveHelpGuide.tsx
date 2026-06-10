@@ -570,8 +570,10 @@ export default function InteractiveHelpGuide({ onClose, documentLanguage = 'fr' 
                     ))}
                   </div>
 
-                  <div className="bg-amber-500/5 border border-amber-500/20 rounded-xl p-3 text-[11px] text-amber-700 dark:text-amber-400 font-sans">
-                    💾 <strong>Vos annotations sont synchronisées</strong> sur tous vos appareils via le serveur SQLite — retrouvez-les même après fermeture du navigateur.
+                  <div className="bg-amber-500/5 border border-amber-500/20 rounded-xl p-3 text-[11px] text-amber-700 dark:text-amber-400 font-sans space-y-1.5">
+                    <p>✨ <strong>Les passages annotés restent surlignés</strong> dans leur couleur pendant la lecture — survolez-les pour voir votre note.</p>
+                    <p>📂 Retrouvez toutes vos annotations dans le panneau latéral, onglet <strong>Annot.</strong> — touchez une annotation pour sauter directement au passage.</p>
+                    <p>💾 <strong>Synchronisées</strong> sur tous vos appareils via le serveur SQLite.</p>
                   </div>
                 </div>
               )}
@@ -876,4 +878,5 @@ export default function InteractiveHelpGuide({ onClose, documentLanguage = 'fr' 
     </div>
   );
 }
+
 
