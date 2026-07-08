@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Play, Pause, Square, SkipBack, SkipForward, Volume2, Settings, List, Sliders, ChevronDown } from 'lucide-react';
+import { Play, Pause, Square, SkipBack, SkipForward, Volume2, Settings, List, Sliders, ChevronDown, Eye } from 'lucide-react';
 import { UserSettings } from '../types';
 import { AppVoice, getAllAvailableVoices } from '../utils/customVoices';
 
@@ -14,6 +14,7 @@ interface ReaderControlsProps {
   documentLanguage: string;
   onToggleSidebar: () => void;
   onToggleSettings: () => void;
+  onToggleZen: () => void;
   chapterProgressText: string;
 }
 
@@ -28,6 +29,7 @@ export default function ReaderControls({
   documentLanguage,
   onToggleSidebar,
   onToggleSettings,
+  onToggleZen,
   chapterProgressText,
 }: ReaderControlsProps) {
   const [voices, setVoices] = useState<AppVoice[]>([]);
@@ -239,6 +241,16 @@ export default function ReaderControls({
               title="Vitesse de lecture"
             />
           </div>
+
+          {/* Mode Zen — téléprompteur plein écran */}
+          <button
+            onClick={onToggleZen}
+            className="p-2 text-stone-300 hover:text-white bg-stone-900 hover:bg-stone-800 rounded-xl border border-stone-800 flex items-center gap-1.5 cursor-pointer transition-colors"
+            title="Mode Zen — téléprompteur plein écran"
+          >
+            <Eye className="w-4 h-4 text-[#646cff]" />
+            <span className="text-xs font-bold hidden sm:inline">Zen</span>
+          </button>
 
           {/* Quick Display settings modal toggle */}
           <button
