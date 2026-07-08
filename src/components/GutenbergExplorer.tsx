@@ -3,6 +3,41 @@ import { Search, Download, BookOpen, Sparkles, Globe, RefreshCw, AlertCircle, Ch
 import { motion, AnimatePresence } from 'motion/react';
 import { DocumentBook, Chapter } from '../types';
 
+// Helper : fetch Gutendex via le proxy VPS (cache SQLite serveur) avec fallback direct
+// Cache mémoire client par session pour les recherches répétées
+const _gutendexMemCache = new Map<string, any>();
+
+async function fetchGutendex(gutendexUrl: string): Promise<any> {
+  // Extraire le chemin après gutendex.com/
+  const path = gutendexUrl.replace(/^https?:\/\/gutendex\.com\//, '');
+
+  // 1. Cache mémoire session (instantané)
+  if (_gutendexMemCache.has(path)) {
+    return _gutendexMemCache.get(path);
+  }
+
+  // 2. Proxy VPS avec cache SQLite (rapide après première recherche)
+  try {
+    const res = await fetch(`/api/gutendex?path=${encodeURIComponent(path)}`, {
+      signal: AbortSignal.timeout(18000),
+    });
+    if (res.ok) {
+      const data = await res.json();
+      if (data && !data.error) {
+        _gutendexMemCache.set(path, data);
+        return data;
+      }
+    }
+  } catch { /* fallback below */ }
+
+  // 3. Fallback : appel direct gutendex.com
+  const res = await fetch(gutendexUrl, { signal: AbortSignal.timeout(20000) });
+  if (!res.ok) throw new Error(`Gutendex ${res.status}`);
+  const data = await res.json();
+  _gutendexMemCache.set(path, data);
+  return data;
+}
+
 // Helper : décoder un ArrayBuffer en détectant l'encodage (UTF-8 ou Latin-1/ISO-8859-1)
 function decodeBuffer(buffer: ArrayBuffer): string {
   const bytes = new Uint8Array(buffer);
@@ -568,11 +603,7 @@ export default function GutenbergExplorer({
     setTotalCount(0);
 
     try {
-      const response = await fetch(url);
-      if (!response.ok) {
-        throw new Error('Impossible de contacter la bibliothèque Gutenberg (Gutendex).');
-      }
-      const data = await response.json();
+      const data = await fetchGutendex(url);
       setSearchResults(data.results || []);
       setTotalCount(data.count || 0);
       setNextPageUrl(data.next || null);
@@ -636,17 +667,13 @@ export default function GutenbergExplorer({
 
     try {
       // 1er appel : connaître le nombre total de pages pour cette langue
-      const probe = await fetch(`https://gutendex.com/books/?${langParam().replace('&', '')}`);
-      if (!probe.ok) throw new Error('Gutendex indisponible.');
-      const probeData = await probe.json();
+      const probeData = await fetchGutendex(`https://gutendex.com/books/?${langParam().replace('&', '')}`);
       const count = probeData.count || 1000;
       const totalPages = Math.max(1, Math.min(Math.floor(count / 32), 500));
       const randomPage = Math.floor(Math.random() * totalPages) + 1;
 
       // 2e appel : la page aléatoire
-      const response = await fetch(`https://gutendex.com/books/?page=${randomPage}${langParam()}`);
-      if (!response.ok) throw new Error('Gutendex indisponible.');
-      const data = await response.json();
+      const data = await fetchGutendex(`https://gutendex.com/books/?page=${randomPage}${langParam()}`);
       // Mélanger les 32 résultats pour plus de surprise
       const shuffled = (data.results || []).sort(() => Math.random() - 0.5);
       setSearchResults(shuffled);
@@ -665,9 +692,7 @@ export default function GutenbergExplorer({
     if (!nextPageUrl || loadingMore) return;
     setLoadingMore(true);
     try {
-      const response = await fetch(nextPageUrl);
-      if (!response.ok) throw new Error('Erreur de pagination.');
-      const data = await response.json();
+      const data = await fetchGutendex(nextPageUrl);
       setSearchResults(prev => [...prev, ...(data.results || [])]);
       setNextPageUrl(data.next || null);
     } catch (err: any) {
@@ -709,9 +734,8 @@ export default function GutenbergExplorer({
       // Phase 1: Tenter de requêter les métadonnées Gutendex d'abord pour trouver l'URL texte exacte
       try {
         setDownloadProgress('Recherche du format adapté sur Gutendex...');
-        const bookMetaRes = await fetch(`https://gutendex.com/books/${bookId}`);
-        if (bookMetaRes.ok) {
-          const meta = await bookMetaRes.json();
+        const meta = await fetchGutendex(`https://gutendex.com/books/${bookId}`).catch(() => null);
+        if (meta) {
           const formats = meta.formats || {};
           
           // Mimes préférés dans l'ordre de compatibilité texte brute
