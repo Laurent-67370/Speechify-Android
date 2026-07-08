@@ -20,6 +20,7 @@ import { useGoogleTTS } from './utils/useGoogleTTS';
 const GutenbergExplorer   = lazy(() => import('./components/GutenbergExplorer'));
 const InteractiveHelpGuide = lazy(() => import('./components/InteractiveHelpGuide'));
 const StatsPage           = lazy(() => import('./components/StatsPage'));
+const ZenMode             = lazy(() => import('./components/ZenMode'));
 const FlashcardsPage      = lazy(() => import('./components/FlashcardsPage'));
 const CharlyChatModal     = lazy(() => import('./components/CharlyChatModal'));
 import AnnotationModal from './components/AnnotationModal';
@@ -66,6 +67,7 @@ export default function App() {
   // UI states
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const [settingsOpen, setSettingsOpen] = useState(false);
+  const [zenOpen, setZenOpen] = useState(false);
   const [showWelcomeHelp, setShowWelcomeHelp] = useState(false);
 
   // Annotations
@@ -1405,6 +1407,7 @@ export default function App() {
             documentLanguage={activeBook.language || 'fr'}
             onToggleSidebar={() => setSidebarOpen(!sidebarOpen)}
             onToggleSettings={() => setSettingsOpen(!settingsOpen)}
+            onToggleZen={() => setZenOpen(true)}
             chapterProgressText={getChapterProgressText()}
           />
         </div>
@@ -1575,6 +1578,27 @@ export default function App() {
           </ErrorBoundary>
         )}
       </AnimatePresence>
+
+      {/* Mode Zen — téléprompteur plein écran */}
+      {activeBook && (
+        <ErrorBoundary>
+          <Suspense fallback={null}>
+            <ZenMode
+              isOpen={zenOpen}
+              onClose={() => setZenOpen(false)}
+              bookTitle={activeBook.title}
+              paragraphs={activeBook.chapters[currentChapterIdx]?.paragraphs || []}
+              currentParagraphIdx={currentParagraphIdx}
+              currentSentenceIdx={currentSentenceIdx}
+              isPlaying={isPlaying}
+              onPlayPause={handlePlayPause}
+              onLocationSelect={(pIdx, sIdx) => handleJumpToLocation(currentChapterIdx, pIdx, sIdx)}
+              onPrevSentence={handlePreviousSentence}
+              onNextSentence={handleNextSentence}
+            />
+          </Suspense>
+        </ErrorBoundary>
+      )}
 
       {/* 5. Overlay Welcome help guide */}
       <AnimatePresence>
