@@ -41,6 +41,11 @@ db.exec(`
     data        TEXT NOT NULL,
     updated_at  INTEGER NOT NULL DEFAULT (unixepoch())
   );
+  CREATE TABLE IF NOT EXISTS gutendex_cache (
+    cache_key   TEXT PRIMARY KEY,
+    data        TEXT NOT NULL,
+    cached_at   INTEGER NOT NULL DEFAULT (unixepoch())
+  );
   CREATE TABLE IF NOT EXISTS definitions_cache (
     cache_key   TEXT PRIMARY KEY,
     data        TEXT NOT NULL,
@@ -64,6 +69,12 @@ const stmtUpsertBookmark = db.prepare(`
   ON CONFLICT(id) DO UPDATE SET data = excluded.data
 `);
 const stmtDeleteBookmark = db.prepare('DELETE FROM bookmarks WHERE id = ?');
+const stmtGetGutendexCache = db.prepare('SELECT data, cached_at FROM gutendex_cache WHERE cache_key = ?');
+const stmtSetGutendexCache = db.prepare(`
+  INSERT INTO gutendex_cache (cache_key, data, cached_at) VALUES (?, ?, unixepoch())
+  ON CONFLICT(cache_key) DO UPDATE SET data = excluded.data, cached_at = unixepoch()
+`);
+const GUTENDEX_CACHE_TTL = 7 * 24 * 3600; // 7 jours — le catalogue Gutenberg est quasi statique
 const stmtGetAnnotations   = db.prepare('SELECT data FROM annotations WHERE book_id = ? ORDER BY created_at DESC');
 const stmtUpsertAnnotation = db.prepare(`
   INSERT INTO annotations (id, book_id, data, created_at) VALUES (?, ?, ?, unixepoch())
@@ -343,6 +354,72 @@ async function startServer() {
     } catch (error: any) {
       console.error("[API CHAT ERROR]", error);
       return res.status(500).json({ error: `Erreur Charly : ${error.message}` });
+    }
+  });
+
+  // ── API GUTENDEX (recherche catalogue avec cache SQLite 7 jours) ─────────
+  app.get("/api/gutendex", async (req, res) => {
+    const { path: gutendexPath } = req.query;
+    if (!gutendexPath || typeof gutendexPath !== "string") {
+      return res.status(400).json({ error: "Paramètre 'path' requis (ex: books/?search=hugo)" });
+    }
+
+    // Sécurité : n'autoriser que les chemins gutendex valides
+    if (!gutendexPath.startsWith('books')) {
+      return res.status(400).json({ error: "Chemin gutendex invalide" });
+    }
+
+    const cacheKey = gutendexPath;
+
+    // 1. Vérifier le cache SQLite
+    try {
+      const cached = stmtGetGutendexCache.get(cacheKey) as { data: string; cached_at: number } | undefined;
+      if (cached && (Date.now() / 1000 - cached.cached_at) < GUTENDEX_CACHE_TTL) {
+        res.setHeader('X-Cache', 'HIT');
+        res.setHeader('Content-Type', 'application/json');
+        return res.send(cached.data);
+      }
+    } catch (e) {
+      console.warn('[GUTENDEX CACHE] Read error:', e);
+    }
+
+    // 2. Cache miss → appeler gutendex.com
+    try {
+      const controller = new AbortController();
+      const timeoutId = setTimeout(() => controller.abort(), 15000);
+      const response = await fetch(`https://gutendex.com/${gutendexPath}`, {
+        headers: { "User-Agent": "SpeechifyPro/1.0" },
+        signal: controller.signal,
+      });
+      clearTimeout(timeoutId);
+
+      if (!response.ok) {
+        return res.status(response.status).json({ error: `Gutendex a répondu ${response.status}` });
+      }
+
+      const data = await response.text();
+
+      // 3. Sauvegarder dans le cache
+      try {
+        stmtSetGutendexCache.run(cacheKey, data);
+      } catch (e) {
+        console.warn('[GUTENDEX CACHE] Write error:', e);
+      }
+
+      res.setHeader('X-Cache', 'MISS');
+      res.setHeader('Content-Type', 'application/json');
+      return res.send(data);
+    } catch (err: any) {
+      // 4. En cas d'échec réseau, servir le cache périmé si disponible (stale-while-error)
+      try {
+        const stale = stmtGetGutendexCache.get(cacheKey) as { data: string } | undefined;
+        if (stale) {
+          res.setHeader('X-Cache', 'STALE');
+          res.setHeader('Content-Type', 'application/json');
+          return res.send(stale.data);
+        }
+      } catch {}
+      return res.status(502).json({ error: `Gutendex inaccessible: ${err.message}` });
     }
   });
 
