@@ -116,7 +116,8 @@ setInterval(() => {
 
 // ── CORS — Origines autorisées ───────────────────────────────────────────────
 const ALLOWED_ORIGINS = [
-  'https://speechify.lhusser.fr',
+  'https://speechify.lhusser.fr',      // VPS Hostinger (PM2 + Nginx)
+  'https://speechify.lhusser.cloud',   // VPS Oracle Cloud (Coolify)
   'http://localhost:5173',       // Vite dev
   'http://localhost:3000',       // Express dev
   'http://localhost:4173',       // Vite preview
