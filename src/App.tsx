@@ -42,6 +42,7 @@ const DEFAULT_SETTINGS: UserSettings = {
   fontFamily: 'serif',
   fontSize: 110,
   lineHeight: 'relaxed',
+  columnWidth: 'normal',
   autoScroll: true,
   highlightColor: 'rgba(245, 158, 11, 0.25)', // Amber matching professional polish theme
   speechRate: 1.1,
