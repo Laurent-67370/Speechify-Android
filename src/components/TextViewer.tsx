@@ -22,7 +22,7 @@ import {
   X,
   Volume2,
   Check
-} from 'lucide-react';
+, ArrowDownToLine, Clock } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
 import { Chapter, UserSettings, DocumentBook, Bookmark as BookmarkType, Annotation, Flashcard } from '../types';
 import { splitIntoSentences } from '../utils/textUtils';
@@ -78,6 +78,73 @@ export default function TextViewer({
   onSaveFlashcard,
 }: TextViewerProps) {
   const containerRef = useRef<HTMLDivElement>(null);
+
+  // ── Largeur de colonne réglable ──
+  const getColumnWidthClass = () => {
+    switch (settings.columnWidth) {
+      case 'narrow': return 'max-w-xl';
+      case 'wide':   return 'max-w-4xl';
+      default:       return 'max-w-2xl';
+    }
+  };
+
+  // ── Temps de lecture estimé (basé sur ~155 mots/min ajusté par la vitesse TTS) ──
+  const estimatedTimes = (() => {
+    const WPM = 155 * (settings.speechRate || 1);
+    const chapterWords = chapter.wordCount || chapter.paragraphs.join(' ').split(/\s+/).length;
+    // Mots déjà lus dans le chapitre
+    const readWords = chapter.paragraphs
+      .slice(0, currentParagraphIndex)
+      .join(' ').split(/\s+/).filter(Boolean).length;
+    const chapterRemainMin = Math.max(0, Math.ceil((chapterWords - readWords) / WPM));
+    // Total livre
+    const totalWords = (documentBook?.chapters || []).reduce(
+      (s, c) => s + (c.wordCount || c.paragraphs.join(' ').split(/\s+/).length), 0);
+    const wordsBeforeChapter = (documentBook?.chapters || [])
+      .slice(0, chapterIndex)
+      .reduce((s, c) => s + (c.wordCount || c.paragraphs.join(' ').split(/\s+/).length), 0);
+    const bookRemainMin = Math.max(0, Math.ceil((totalWords - wordsBeforeChapter - readWords) / WPM));
+    return { chapterRemainMin, bookRemainMin };
+  })();
+
+  const fmtTime = (min: number) => {
+    if (min < 1) return '< 1 min';
+    if (min < 60) return `${min} min`;
+    const h = Math.floor(min / 60);
+    const m = min % 60;
+    return m > 0 ? `${h} h ${m} min` : `${h} h`;
+  };
+
+  // ── Bouton flottant "Reprendre" ──
+  const [showResumeBtn, setShowResumeBtn] = useState(false);
+  const activeParaRef = useRef<HTMLDivElement | null>(null);
+
+  const scrollToActive = () => {
+    if (activeParaRef.current) {
+      activeParaRef.current.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      setShowResumeBtn(false);
+    }
+  };
+
+  // Détecter si la phrase active est hors écran → afficher le bouton
+  useEffect(() => {
+    if (!isPlaying) { setShowResumeBtn(false); return; }
+    const checkVisibility = () => {
+      const node = activeParaRef.current;
+      const box = containerRef.current;
+      if (!node || !box) return;
+      const nodeRect = node.getBoundingClientRect();
+      const boxRect = box.getBoundingClientRect();
+      const isVisible = nodeRect.top < boxRect.bottom - 40 && nodeRect.bottom > boxRect.top + 40;
+      setShowResumeBtn(!isVisible);
+    };
+    const box = containerRef.current;
+    if (box) {
+      box.addEventListener('scroll', checkVisibility, { passive: true });
+      const t = setTimeout(checkVisibility, 100);
+      return () => { box.removeEventListener('scroll', checkVisibility); clearTimeout(t); };
+    }
+  }, [isPlaying, currentParagraphIndex]);
   const activeSyllableRef = useRef<HTMLSpanElement>(null);
 
   // States to facilitate online Definition & Language lookups
@@ -1086,7 +1153,7 @@ export default function TextViewer({
       {/* Reading Document Sheet Content Container */}
       <div className="pt-6 pb-4 sm:pt-10 sm:pb-8 px-4 sm:px-12 md:px-16 lg:px-24 w-full flex-grow min-w-0">
         {/* Chapter header */}
-        <div className="max-w-2xl mx-auto mb-6 sm:mb-10 pb-4 sm:pb-6 border-b border-stone-200/40 dark:border-stone-800/40">
+        <div className={`${getColumnWidthClass()} mx-auto mb-6 sm:mb-10 pb-4 sm:pb-6 border-b border-stone-200/40 dark:border-stone-800/40`}>
           <div className="flex items-center gap-1 text-[11px] font-mono tracking-wider text-stone-400 uppercase mb-2">
             <Sparkles className="w-3.5 h-3.5 text-amber-500" />
             <span>Section Lecture active</span>
@@ -1097,12 +1164,20 @@ export default function TextViewer({
           <div className="mt-2 text-xs text-[#2D2926]/60 dark:text-stone-400/80 font-mono">
             <span>{chapter.paragraphs.length} paragraphes • ~{chapter.wordCount} mots</span>
           </div>
+          <div className="mt-2 flex flex-wrap items-center gap-3 text-[11px]">
+            <span className="flex items-center gap-1 text-[#646cff] font-bold">
+              <Clock className="w-3 h-3" /> {fmtTime(estimatedTimes.chapterRemainMin)} restantes (chapitre)
+            </span>
+            <span className="flex items-center gap-1 text-stone-400 font-medium">
+              📖 {fmtTime(estimatedTimes.bookRemainMin)} pour le livre
+            </span>
+          </div>
         </div>
 
         {/* Main Text Corpus */}
         <div
           style={{ fontSize: `${settings.fontSize}%` }}
-          className={`max-w-2xl mx-auto space-y-6 ${getFontFamilyClass()} ${getLineHeightClass()} transition-all`}
+          className={`${getColumnWidthClass()} mx-auto space-y-6 ${getFontFamilyClass()} ${getLineHeightClass()} transition-all`}
         >
           {chapter.paragraphs.map((pText, pIdx) => {
             const isParagraphBookmarkedCurrent = isParagraphBookmarked(pIdx);
@@ -1112,6 +1187,7 @@ export default function TextViewer({
             return (
               <div
                 key={pIdx}
+                ref={isParagraphCurrentlyRead ? activeParaRef : undefined}
                 className="group relative flex items-start gap-3 p-2.5 -mx-2.5 rounded-xl border border-transparent hover:bg-stone-500/5 dark:hover:bg-stone-900/20 transition-all duration-200"
               >
                 {/* Quick Bookmark Button inside bounds (safe on mobile!) */}
@@ -1339,6 +1415,18 @@ export default function TextViewer({
           onSaveFlashcard={onSaveFlashcard}
           sourceBookTitle={documentBook?.title}
         />
+      )}
+
+      {/* ── Bouton flottant "Reprendre la lecture" ── */}
+      {showResumeBtn && (
+        <button
+          onClick={scrollToActive}
+          className="fixed bottom-24 left-1/2 -translate-x-1/2 z-40 flex items-center gap-2 px-4 py-2.5 bg-[#646cff] hover:bg-[#535bf2] text-white text-xs font-bold rounded-full shadow-[0_4px_20px_rgba(100,108,255,0.5)] cursor-pointer transition-all animate-in fade-in slide-in-from-bottom-2"
+          title="Revenir à la phrase en cours de lecture"
+        >
+          <ArrowDownToLine className="w-4 h-4" />
+          Reprendre la lecture
+        </button>
       )}
 
       {/* ── Popup sélection de texte ── */}
