@@ -23,14 +23,14 @@ import {
   Brain,
   Bot,
   BookmarkPlus
-} from 'lucide-react';
+, Eye } from 'lucide-react';
 
 interface InteractiveHelpGuideProps {
   onClose: () => void;
   documentLanguage?: string;
 }
 
-type GuideStep = 'welcome' | 'vocalLab' | 'gestures' | 'aiFeatures' | 'gutenberg' | 'annotations' | 'flashcardsCoach' | 'quiz' | 'congrats';
+type GuideStep = 'welcome' | 'vocalLab' | 'gestures' | 'aiFeatures' | 'gutenberg' | 'annotations' | 'comfort' | 'flashcardsCoach' | 'quiz' | 'congrats';
 
 export default function InteractiveHelpGuide({ onClose, documentLanguage = 'fr' }: InteractiveHelpGuideProps) {
   const [currentStep, setCurrentStep] = useState<GuideStep>('welcome');
@@ -159,7 +159,7 @@ export default function InteractiveHelpGuide({ onClose, documentLanguage = 'fr' 
   const styleSet = companionColors[selectedCompanionColor];
 
   // Steps Navigator
-  const stepsOrder: GuideStep[] = ['welcome', 'vocalLab', 'gestures', 'aiFeatures', 'gutenberg', 'annotations', 'flashcardsCoach', 'quiz', 'congrats'];
+  const stepsOrder: GuideStep[] = ['welcome', 'vocalLab', 'gestures', 'aiFeatures', 'gutenberg', 'annotations', 'comfort', 'flashcardsCoach', 'quiz', 'congrats'];
   
   const handleNext = () => {
     const currentIndex = stepsOrder.indexOf(currentStep);
@@ -580,13 +580,52 @@ export default function InteractiveHelpGuide({ onClose, documentLanguage = 'fr' 
                 </div>
               )}
 
+              {/* Step 7: Confort de lecture — Zen, largeur, temps estimé */}
+              {currentStep === 'comfort' && (
+                <div className="space-y-4">
+                  <div className="flex items-center space-x-2">
+                    <Eye className={`w-5 h-5 ${styleSet.accent}`} />
+                    <h4 className="font-extrabold text-sm uppercase tracking-wide text-stone-900 dark:text-white font-sans">
+                      Étape 7 : Confort de lecture
+                    </h4>
+                  </div>
+
+                  <p className="text-xs text-stone-600 dark:text-stone-300 leading-relaxed">
+                    SpeechifyPro s'adapte à <strong className="text-stone-900 dark:text-white font-bold">votre confort visuel</strong> pour des sessions de lecture agréables et sans fatigue.
+                  </p>
+
+                  <div className="space-y-2 font-sans">
+                    {[
+                      { icon: '🧘', color: 'bg-[#646cff]/10 border-[#646cff]/30 text-[#646cff]', label: 'Mode Zen', desc: 'Téléprompteur plein écran. Swipe ←→ pour naviguer, double-tap pour lire/pause, swipe ↑ pour quitter.' },
+                      { icon: '⏱️', color: 'bg-emerald-400/10 border-emerald-400/30 text-emerald-500', label: 'Temps estimé', desc: 'Minutes restantes du chapitre et du livre, ajustées à votre vitesse de lecture.' },
+                      { icon: '📐', color: 'bg-amber-400/10 border-amber-400/30 text-amber-500', label: 'Largeur réglable', desc: 'Colonne étroite, normale ou large selon votre écran et votre préférence.' },
+                      { icon: '⬇️', color: 'bg-indigo-400/10 border-indigo-400/30 text-indigo-400', label: 'Bouton Reprendre', desc: 'Si vous faites défiler, un bouton vous ramène instantanément à la phrase en cours.' },
+                    ].map((item, i) => (
+                      <div key={i} className={`flex items-start gap-3 p-3 rounded-xl border ${item.color}`}>
+                        <span className="text-base flex-shrink-0 mt-0.5">{item.icon}</span>
+                        <div>
+                          <p className="text-xs font-black text-stone-900 dark:text-white">{item.label}</p>
+                          <p className="text-[11px] text-stone-500 dark:text-stone-400 mt-0.5">{item.desc}</p>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="bg-[#646cff]/5 border border-[#646cff]/20 rounded-xl p-3 text-[11px] text-[#646cff] dark:text-[#a78bfa] font-sans space-y-1.5">
+                    <p>🎨 Réglez tout ça via le bouton <strong>Options</strong> dans la barre du lecteur : 3 thèmes (Clair / Sépia / Sombre), police dyslexie, taille, interligne et largeur.</p>
+                    <p>📊 Suivez votre progression dans l'onglet <strong>Stats</strong> : objectif quotidien, série de jours, temps par livre.</p>
+                    <p>📁 Importez vos propres fichiers : <strong>PDF, ePUB, TXT et Markdown</strong> — glissez-déposez dans l'onglet Importer.</p>
+                  </div>
+                </div>
+              )}
+
               {/* Step 7: Flashcards & Charly Coach */}
               {currentStep === 'flashcardsCoach' && (
                 <div className="space-y-4">
                   <div className="flex items-center space-x-2">
                     <Brain className={`w-5 h-5 ${styleSet.accent}`} />
                     <h4 className="font-extrabold text-sm uppercase tracking-wide text-stone-900 dark:text-white font-sans">
-                      Étape 7 : Flashcards & Charly Coach IA
+                      Étape 8 : Flashcards & Charly Coach IA
                     </h4>
                   </div>
 
@@ -638,7 +677,7 @@ export default function InteractiveHelpGuide({ onClose, documentLanguage = 'fr' 
                   <div className="flex items-center space-x-2 text-[#646cff]">
                     <Award className={`w-5 h-5 ${styleSet.accent}`} />
                     <h4 className="font-extrabold text-sm uppercase tracking-wide text-stone-900 dark:text-white font-sans">
-                      Étape 8 : Quiz interactif rapide !
+                      Étape 9 : Quiz interactif rapide !
                     </h4>
                   </div>
 
