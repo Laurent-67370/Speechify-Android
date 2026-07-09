@@ -101,7 +101,7 @@ export default function TextViewer({
     const totalWords = (documentBook?.chapters || []).reduce(
       (s, c) => s + (c.wordCount || c.paragraphs.join(' ').split(/\s+/).length), 0);
     const wordsBeforeChapter = (documentBook?.chapters || [])
-      .slice(0, chapterIndex)
+      .slice(0, currentChapterIndex)
       .reduce((s, c) => s + (c.wordCount || c.paragraphs.join(' ').split(/\s+/).length), 0);
     const bookRemainMin = Math.max(0, Math.ceil((totalWords - wordsBeforeChapter - readWords) / WPM));
     return { chapterRemainMin, bookRemainMin };
