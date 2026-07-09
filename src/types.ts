@@ -71,6 +71,7 @@ export interface UserSettings {
   fontFamily: FontFamily;
   fontSize: number;
   lineHeight: 'snug' | 'normal' | 'relaxed';
+  columnWidth?: 'narrow' | 'normal' | 'wide';
   autoScroll: boolean;
   highlightColor: string;
   speechRate: number;
