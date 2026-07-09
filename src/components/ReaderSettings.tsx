@@ -146,6 +146,30 @@ export default function ReaderSettings({ settings, onSettingsChange, documentLan
         </div>
       </div>
 
+      {/* 4bis. Largeur de colonne */}
+      <div>
+        <h4 className="text-xs font-bold uppercase tracking-wider text-stone-400 mb-3 flex items-center">
+          <AlignLeft className="w-3.5 h-3.5 mr-1.5 text-amber-500" /> Largeur de colonne
+        </h4>
+        <div className="grid grid-cols-3 gap-2">
+          {(['narrow', 'normal', 'wide'] as ('narrow' | 'normal' | 'wide')[]).map((cw) => (
+            <button
+              key={cw}
+              onClick={() => onSettingsChange({ columnWidth: cw })}
+              className={`py-2 px-1 text-xs font-bold border rounded-xl hover:scale-[1.01] cursor-pointer transition-all ${
+                (settings.columnWidth || 'normal') === cw
+                  ? 'border-amber-505 bg-amber-500/10 text-amber-900 dark:text-amber-300 dark:bg-amber-950/20 font-extrabold'
+                  : 'border-stone-200 dark:border-stone-800 text-stone-600 dark:text-stone-400'
+              }`}
+            >
+              {cw === 'narrow' && 'Étroite'}
+              {cw === 'normal' && 'Normale'}
+              {cw === 'wide' && 'Large'}
+            </button>
+          ))}
+        </div>
+      </div>
+
       {/* 5. Highlight color selections */}
       <div>
         <h4 className="text-xs font-bold uppercase tracking-wider text-stone-400 mb-3 flex items-center">
